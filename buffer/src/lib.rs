@@ -1,14 +1,42 @@
 extern crate interpolation;
-use interpolation::interpolation::{Interpolation, Linear, Floor, Cubic};
+use interpolation::interpolation::{Interpolation, Linear, Floor, Cubic, Hermetic, Cosine};
+use core::marker::PhantomData;
 
-#[derive(Default, Debug, Clone)]
 pub struct Buffer<T> {
   buffer: Vec<f32>,
+  #[allow(unused)]
   samplerate: f32,
-  interpolation: T
+  interpolation: PhantomData<T>
 }
 
 impl<T: Interpolation> Buffer<T> {
+  pub fn new(size: usize, samplerate: f32) -> Self {
+    let bufsize = Buffer::<Floor>::minimum_buf_size(size);
+    Buffer{
+      buffer: Vec::with_capacity((bufsize) as usize), 
+      samplerate,
+      interpolation: PhantomData 
+    }
+  }
+
+  /// Initializes a Buffer from previously populated Vec<f32>
+  pub fn from_buffer(samplerate: f32, buffer: Vec<f32>) -> Self {
+    Buffer{
+      buffer, 
+      samplerate,
+      interpolation: PhantomData 
+    }
+  }
+
+  /// Initializes a Buffer of n seconds (x = n * samplerate)
+  pub fn from_seconds(size: f32, samplerate: f32) -> Self {
+    let bufsize = Buffer::<Floor>::minimum_buf_size((size * samplerate).floor() as usize);
+    Buffer{
+      buffer: Vec::with_capacity(bufsize),
+      samplerate,
+      interpolation: PhantomData
+    }
+  }
   /// Writes and updates buffer at position
   pub fn write(&mut self, sample: f32, position: usize) {
     let mut pos = position;
@@ -23,98 +51,9 @@ impl<T: Interpolation> Buffer<T> {
   fn minimum_buf_size(size: usize) -> usize {
     match size { x if x < 4 => 4, _ => size }
   }
-}
 
-impl Buffer<Floor> {
-  /// Initializes a Buffer of x samples
-  pub fn new(size: usize, samplerate: f32) -> Self {
-    let bufsize = Buffer::<Floor>::minimum_buf_size(size);
-    Buffer{
-      buffer: Vec::with_capacity((bufsize) as usize), 
-      samplerate,
-      interpolation: Floor{}
-    }
-  }
-
-  /// Initializes a Buffer from previously populated Vec<f32>
-  pub fn from_buffer(samplerate: f32, buffer: Vec<f32>) -> Self {
-    Buffer{
-      buffer, 
-      samplerate,
-      interpolation: Floor{}
-    }
-  }
-
-  /// Initializes a Buffer of n seconds (x = n * samplerate)
-  pub fn from_seconds(size: f32, samplerate: f32) -> Self {
-    let bufsize = Buffer::<Floor>::minimum_buf_size((size * samplerate).floor() as usize);
-    Buffer{
-      buffer: Vec::with_capacity(bufsize),
-      samplerate,
-      interpolation: Floor{}
-    }
-  }
-}
-
-impl Buffer<Linear> {
-  /// Initializes a Buffer of x samples
-  pub fn new(size: usize, samplerate: f32) -> Self {
-    let bufsize = Buffer::<Linear>::minimum_buf_size(size);
-    Buffer{
-      buffer: Vec::with_capacity(bufsize), 
-      samplerate,
-      interpolation: Linear{}
-    }
-  }
-
-  /// Initializes a Buffer from previously populated Vec<f32>
-  pub fn from_buffer(samplerate: f32, buffer: Vec<f32>) -> Self {
-    Buffer{
-      buffer, 
-      samplerate,
-      interpolation: Linear{}
-    }
-  }
-
-  /// Initializes a Buffer of n seconds (x = n * samplerate)
-  pub fn from_seconds(size: f32, samplerate: f32) -> Self {
-    let bufsize = Buffer::<Linear>::minimum_buf_size((size * samplerate).floor() as usize);
-    Buffer{
-      buffer: Vec::with_capacity((size*samplerate) as usize),
-      samplerate,
-      interpolation: Linear{}
-    }
-  }
-}
-
-impl Buffer<Cubic> {
-  /// Initializes a Buffer of x samples
-  pub fn new(size: usize, samplerate: f32) -> Self {
-    let bufsize = Buffer::<Cubic>::minimum_buf_size(size);
-    Buffer{
-      buffer: Vec::with_capacity(bufsize), 
-      samplerate,
-      interpolation: Cubic{}
-    }
-  }
-
-  /// Initializes a Buffer from previously populated Vec<f32>
-  pub fn from_buffer(samplerate: f32, buffer: Vec<f32>) -> Self {
-    Buffer{
-      buffer, 
-      samplerate,
-      interpolation: Cubic{}
-    }
-  }
-
-  /// Initializes a Buffer of n seconds (x = n * samplerate)
-  pub fn from_seconds(size: f32, samplerate: f32) -> Self {
-    let bufsize = Buffer::<Cubic>::minimum_buf_size((size * samplerate).floor() as usize);
-    Buffer{
-      buffer: Vec::with_capacity((size*samplerate) as usize),
-      samplerate,
-      interpolation: Cubic{}
-    }
+  pub fn len(&self) -> usize {
+    self.buffer.len()
   }
 }
 
