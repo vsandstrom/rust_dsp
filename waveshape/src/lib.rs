@@ -9,6 +9,7 @@ pub fn sine(table: &mut Vec<f32>, length: usize) {
     table.push(angle.sin());
     angle += inc;
   }
+  table.push(0.0);
 }
 
 pub fn triangle(table: &mut Vec<f32>, length: usize) {
@@ -19,6 +20,7 @@ pub fn triangle(table: &mut Vec<f32>, length: usize) {
     table.push(angle);
     angle += inc;
   }
+  table.push(0.0);
 }
 
 pub fn square(table: &mut Vec<f32>, length: usize) {
@@ -27,6 +29,7 @@ pub fn square(table: &mut Vec<f32>, length: usize) {
     table.push(val);
     if i == length/2-1 { val = 1.0; } 
   }
+  table.push(0.0);
 }
 
 pub fn sawtooth(table: &mut Vec<f32>, length: usize) {
@@ -36,6 +39,7 @@ pub fn sawtooth(table: &mut Vec<f32>, length: usize) {
     table.push(angle - 1.0);
     angle += inc;
   }
+  table.push(0.0);
 }
 
 pub fn reverse_sawtooth(table: &mut Vec<f32>, length: usize) {
@@ -45,6 +49,7 @@ pub fn reverse_sawtooth(table: &mut Vec<f32>, length: usize) {
     table.push(angle + 1.0);
     angle -= inc;
   }
+  table.push(0.0);
 }
 
 pub fn hanning(table: &mut Vec<f32>, length: usize) {
@@ -54,6 +59,7 @@ pub fn hanning(table: &mut Vec<f32>, length: usize) {
     table.push(angle.sin().powf(2.0));
     angle += inc;
   }
+  table.push(0.0);
 }
 
 pub fn complex_sine(
@@ -74,6 +80,7 @@ pub fn complex_sine(
     }
     n += 1.0;
   }
+  table.push(0.0);
   scale(table, -1.0f32, 1.0f32);
 }
 

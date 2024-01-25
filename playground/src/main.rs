@@ -2,10 +2,10 @@ extern crate interpolation;
 extern crate wavetable;
 extern crate cpal;
 extern crate anyhow;
-use interpolation::interpolation::Linear;
+use interpolation::interpolation::{Linear, Cubic};
 use wavetable::{WaveTable, Waveshape};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use cpal::{SizedSample, FromSample, Sample};
+use cpal::{SizedSample, FromSample, Sample, SampleRate};
 
 
 fn main() -> anyhow::Result<()> {
@@ -61,8 +61,11 @@ where
 {
     let ffreq: f32 = 80.0;
     let num_channels = config.channels as usize;
-    let mut wt = WaveTable::<Linear>::new(48000.0, Waveshape::Sawtooth, 512);
+    let samplerate = config.sample_rate.0;
+    let mut wt = WaveTable::<Cubic>::new(samplerate as f32, Waveshape::Sine, 512);
+    let mut md = WaveTable::<Linear>::new(samplerate as f32, Waveshape::Triangle, 512);
     wt.frequency = 80.0;
+    md.frequency = 75.0;
     let err_fn = |err| eprintln!("Error building output sound stream: {}", err);
 
     let time_at_start = std::time::Instant::now();
@@ -85,7 +88,7 @@ where
             } else {
               wt.frequency = ffreq;
             }
-            process_frame(output, &mut wt, num_channels)
+            process_frame(output, &mut wt, &mut md, num_channels)
         },
         err_fn,
         None,
@@ -96,13 +99,14 @@ where
 
 fn process_frame<SampleType>(
     output: &mut [SampleType],
-    wavetable: &mut WaveTable<Linear>,
+    wavetable: &mut WaveTable<Cubic>,
+    modtable: &mut WaveTable<Linear>,
     num_channels: usize,
 ) where
     SampleType: Sample + FromSample<f32>,
 {
     for frame in output.chunks_mut(num_channels) {
-        let value: SampleType = SampleType::from_sample(wavetable.play(1.0));
+        let value: SampleType = SampleType::from_sample(wavetable.play(modtable.play(1.0)));
 
         // copy the same value to all channels
         for sample in frame.iter_mut() {
