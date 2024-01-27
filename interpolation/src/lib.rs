@@ -1,5 +1,5 @@
 pub mod interpolation {
-    use std::{env::consts::FAMILY, f32::consts::PI};
+    use std::f32::consts::PI;
 
   pub struct Linear { }
   pub struct Cubic { }
@@ -70,7 +70,7 @@ pub mod interpolation {
 
   /// No interpolation - read position is floored.
   impl Interpolation for Floor {
-    fn interpolate(position: f32, buffer: &Vec<f32>, buffer_size: usize) -> f32 {
+    fn interpolate(position: f32, buffer: &Vec<f32>, _buffer_size: usize) -> f32 {
       let i: usize = position as usize;
       buffer[i]
     }
@@ -133,10 +133,12 @@ mod tests {
       assert_eq!(3.725, Cubic::interpolate(pos, &buffer, 5), "wrapping around buffer works")
     }
 
-    fn cubic_vs_linear() {
+    #[test] fn cubic_vs_linear() {
       let mut buf = Vec::with_capacity(16);
       sine(&mut buf, 16);
       let pos = 4.5;
-      assert_ne!(Linear::interpolate(pos, &buf, 16), Cubic::interpolate(pos, &buf, 16))
+      let lin = Linear::interpolate(pos, &buf, 16);
+      let cub = Cubic::interpolate(pos, &buf, 16);
+      assert_ne!(lin, cub, "Linear: {} should not be equal Cubic: {}", lin, cub)
     }
 }

@@ -1,9 +1,9 @@
 extern crate interpolation;
-use interpolation::interpolation::{Interpolation, Linear, Floor, Cubic, Hermetic, Cosine};
+use interpolation::interpolation::{Interpolation, Floor};
 use core::marker::PhantomData;
 
 pub struct Buffer<T> {
-  buffer: Vec<f32>,
+  pub buffer: Vec<f32>,
   #[allow(unused)]
   samplerate: f32,
   interpolation: PhantomData<T>
@@ -59,6 +59,7 @@ impl<T: Interpolation> Buffer<T> {
 
 #[cfg(test)]
 mod tests {
+  use crate::interpolation::interpolation::{Floor, Linear, Cubic};
   use super::*;
 
   #[test]
