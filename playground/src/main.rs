@@ -76,7 +76,7 @@ where
     let mut tr = Impulse::new(0.1, samplerate as f32);
     let mut buf = Buffer::<Cubic>::new((samplerate * 4) as usize, samplerate as f32);
     let mut env = Envelope::<Linear>::new(vec![0.0, 1.0, 0.0], vec![0.1, 0.8], vec![1.4, 1.2], samplerate as f32);
-    let mut gr = Granulator::<Cubic>::new(
+    let mut gr = Granulator::<Cubic, Cubic, Linear>::new(
       buf, env, samplerate as f32, 32
       );
     // wt.frequency = 80.0;
@@ -104,7 +104,7 @@ where
             // } else {
             //   wt.frequency = ffreq;
             // }
-            process_frame(output, &mut gr, &mut tr, &mut buf, &counter, num_channels, samplerate)
+            process_frame(output, &mut gr, &mut tr, &mut buf, &counter, num_channels, &samplerate)
         },
         err_fn,
         None,
@@ -113,9 +113,11 @@ where
     Ok(stream)
 }
 
+
+
 fn process_frame<SampleType>(
     output: &mut [SampleType],
-    gr: &mut Granulator<Cubic>,
+    gr: &mut Granulator<Cubic, Cubic, Linear>,
     tr: &mut Impulse,
     bf: &mut Buffer<Cubic>,
     c: &u32,
@@ -125,8 +127,11 @@ fn process_frame<SampleType>(
     SampleType: Sample + FromSample<f32>,
 {
     for frame in output.chunks_mut(num_channels) {
+      for sample in frame {
+
+      }
       if c < &(4*sr) {
-        bf.write(frame[0], c);
+        bf.write(frame, c);
       }
         // let value: SampleType = SampleType::from_sample(wavetable.play(modtable.play(1.0)));
         //
