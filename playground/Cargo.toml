@@ -8,5 +8,9 @@ edition = "2021"
 [dependencies]
 wavetable = {path = "../wavetable"}
 interpolation = {path= "../interpolation"}
+buffer = {path= "../buffer"}
+envelope = {path= "../envelope"}
+grains = {path= "../grains"}
+trig = {path= "../trig"}
 cpal = "0.15.2"
 anyhow = "1.0.79"

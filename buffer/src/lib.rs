@@ -5,7 +5,7 @@ use core::marker::PhantomData;
 pub struct Buffer<T> {
   pub buffer: Vec<f32>,
   #[allow(unused)]
-  samplerate: f32,
+  pub samplerate: f32,
   interpolation: PhantomData<T>
 }
 

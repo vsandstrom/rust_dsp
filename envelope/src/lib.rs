@@ -96,6 +96,24 @@ impl<T: Interpolation> Envelope<T> {
   }
 }
 
+impl<T> From<Buffer<T>> for Envelope<T> {
+  fn from(value: Buffer<T>) -> Self {
+    Envelope{buffer: value.buffer, buf_position: 0.0, speed: 1.0, interpolation: PhantomData}
+  }
+}
+
+impl<T> From<Vec<f32>> for Envelope<T> {
+  fn from(value: Vec<f32>) -> Self {
+    Envelope{buffer: value, buf_position: 0.0, speed: 1.0, interpolation: PhantomData}
+  }
+}
+
+impl<T> From<&[f32]> for Envelope<T> {
+  fn from(value: &[f32]) -> Self {
+    Envelope{buffer: value.to_vec(), buf_position: 0.0, speed: 1.0, interpolation: PhantomData}
+  }
+}
+
 #[cfg(test)]
 mod tests {
 

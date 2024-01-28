@@ -1,9 +1,17 @@
 extern crate interpolation; 
 extern crate wavetable;
+extern crate grains;
+extern crate buffer;
+extern crate trig;
+extern crate envelope;
 extern crate cpal;
 extern crate anyhow;
-use interpolation::interpolation::{Linear, Cubic};
+use interpolation::interpolation::{Linear, Cubic, Floor};
 use wavetable::{WaveTable, Waveshape};
+use grains::Granulator;
+use envelope::Envelope;
+use buffer::Buffer;
+use trig::Impulse;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{SizedSample, FromSample, Sample, SampleRate};
 
@@ -62,10 +70,17 @@ where
     let ffreq: f32 = 80.0;
     let num_channels = config.channels as usize;
     let samplerate = config.sample_rate.0;
-    let mut wt = WaveTable::<Cubic>::new(samplerate as f32, Waveshape::Sine, 512);
-    let mut md = WaveTable::<Linear>::new(samplerate as f32, Waveshape::Triangle, 512);
-    wt.frequency = 80.0;
-    md.frequency = 75.0;
+    // let mut wt = WaveTable::<Cubic>::new(samplerate as f32, Waveshape::Sine, 512);
+    // let mut md = WaveTable::<Linear>::new(samplerate as f32, Waveshape::Triangle, 512);
+
+    let mut tr = Impulse::new(0.1, samplerate as f32);
+    let mut buf = Buffer::<Cubic>::new((samplerate * 4) as usize, samplerate as f32);
+    let mut env = Envelope::<Linear>::new(vec![0.0, 1.0, 0.0], vec![0.1, 0.8], vec![1.4, 1.2], samplerate as f32);
+    let mut gr = Granulator::<Cubic>::new(
+      buf, env, samplerate as f32, 32
+      );
+    // wt.frequency = 80.0;
+    // md.frequency = 75.0;
     let err_fn = |err| eprintln!("Error building output sound stream: {}", err);
 
     let time_at_start = std::time::Instant::now();
@@ -74,21 +89,22 @@ where
     let stream = device.build_output_stream(
         config,
         move |output: &mut [T], _: &cpal::OutputCallbackInfo| {
+          let counter = 0;
             // for 0-1s play sine, 1-2s play square, 2-3s play saw, 3-4s play triangle_wave
-            let time_since_start = std::time::Instant::now()
-                .duration_since(time_at_start)
-                .as_secs_f32();
-            if time_since_start < 1.0 {
-            } else if time_since_start < 2.0 {
-              wt.frequency = ffreq*3.0/2.0;
-            } else if time_since_start < 3.0 {
-              wt.frequency = ffreq*5.0/2.0;
-            } else if time_since_start < 4.0 {
-              wt.frequency = ffreq*5.0/3.0;
-            } else {
-              wt.frequency = ffreq;
-            }
-            process_frame(output, &mut wt, &mut md, num_channels)
+            // let time_since_start = std::time::Instant::now()
+            //     .duration_since(time_at_start)
+            //     .as_secs_f32();
+            // if time_since_start < 1.0 {
+            // } else if time_since_start < 4.0 {
+            //   wt.frequency = ffreq*3.0/2.0;
+            // } else if time_since_start < 3.0 {
+            //   wt.frequency = ffreq*5.0/2.0;
+            // } else if time_since_start < 4.0 {
+            //   wt.frequency = ffreq*5.0/3.0;
+            // } else {
+            //   wt.frequency = ffreq;
+            // }
+            process_frame(output, &mut gr, &mut tr, &mut buf, &counter, num_channels, samplerate)
         },
         err_fn,
         None,
@@ -99,18 +115,24 @@ where
 
 fn process_frame<SampleType>(
     output: &mut [SampleType],
-    wavetable: &mut WaveTable<Cubic>,
-    modtable: &mut WaveTable<Linear>,
+    gr: &mut Granulator<Cubic>,
+    tr: &mut Impulse,
+    bf: &mut Buffer<Cubic>,
+    c: &u32,
     num_channels: usize,
+    sr: &u32,
 ) where
     SampleType: Sample + FromSample<f32>,
 {
     for frame in output.chunks_mut(num_channels) {
-        let value: SampleType = SampleType::from_sample(wavetable.play(modtable.play(1.0)));
-
-        // copy the same value to all channels
-        for sample in frame.iter_mut() {
-            *sample = value;
-        }
+      if c < &(4*sr) {
+        bf.write(frame[0], c);
+      }
+        // let value: SampleType = SampleType::from_sample(wavetable.play(modtable.play(1.0)));
+        //
+        // // copy the same value to all channels
+        // for sample in frame.iter_mut() {
+        //     *sample = value;
+        // }
     }
 }
