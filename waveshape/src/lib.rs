@@ -1,65 +1,94 @@
 use std::f32::consts::PI;
+use core::marker::PhantomData;
 use dsp::buffer::{normalize, scale};
 
+pub struct Sine;
+pub struct Triangle;
+pub struct Square;
+pub struct Sawtooth;
+pub struct Hanning;
+pub struct RevSawtooth;
+pub struct User;
 
-pub fn sine(table: &mut Vec<f32>, length: usize) {
-  let mut angle: f32 = 0.0;
-  let inc: f32 = PI * 2.0 / length as f32;
-  for _ in 0..length {
-    table.push(angle.sin());
-    angle += inc;
-  }
-  table.push(0.0);
+pub trait Waveshape {
+  fn create(table: &mut Vec<f32>, length: usize);
 }
 
-pub fn triangle(table: &mut Vec<f32>, length: usize) {
-  let mut angle = 0.0;
-  let mut inc: f32 = 2.0 / (length as f32 / 2.0);
-  for _ in 0..length {
-    if angle >= 1.0 || angle <= -1.0 { inc = inc * -1.0; }
-    table.push(angle);
-    angle += inc;
+impl Waveshape for Sine {
+  fn create(table: &mut Vec<f32>, length: usize) {
+    let mut angle: f32 = 0.0;
+    let inc: f32 = PI * 2.0 / length as f32;
+    for _ in 0..length {
+      table.push(angle.sin());
+      angle += inc;
+    }
+    table.push(0.0);
   }
-  table.push(0.0);
 }
 
-pub fn square(table: &mut Vec<f32>, length: usize) {
-  let mut val = -1.0;
-  for i in 0..length {
-    table.push(val);
-    if i == length/2-1 { val = 1.0; } 
+impl Waveshape for Triangle {
+  fn create(table: &mut Vec<f32>, length: usize) {
+    let mut angle = 0.0;
+    let mut inc: f32 = 2.0 / (length as f32 / 2.0);
+    for _ in 0..length {
+      if angle >= 1.0 || angle <= -1.0 { inc = inc * -1.0; }
+      table.push(angle);
+      angle += inc;
+    }
+    table.push(0.0);
   }
-  table.push(0.0);
 }
 
-pub fn sawtooth(table: &mut Vec<f32>, length: usize) {
-  let mut angle: f32 = 0.0;
-  let inc: f32 = 2.0 / (length as f32 - 1.0);
-  for _ in 0..length {
-    table.push(angle - 1.0);
-    angle += inc;
+impl Waveshape for Square {
+  fn create(table: &mut Vec<f32>, length: usize) {
+    let mut val = -1.0;
+    for i in 0..length {
+      table.push(val);
+      if i == length/2-1 { val = 1.0; } 
+    }
+    table.push(0.0);
   }
-  table.push(0.0);
 }
 
-pub fn reverse_sawtooth(table: &mut Vec<f32>, length: usize) {
-  let mut angle: f32 = 0.0;
-  let inc: f32 = 2.0 / (length as f32 - 1.0);
-  for _ in 0..length {
-    table.push(angle + 1.0);
-    angle -= inc;
+impl Waveshape for Sawtooth {
+  fn create(table: &mut Vec<f32>, length: usize) {
+    let mut angle: f32 = 0.0;
+    let inc: f32 = 2.0 / (length as f32 - 1.0);
+    for _ in 0..length {
+      table.push(angle - 1.0);
+      angle += inc;
+    }
+    table.push(0.0);
   }
-  table.push(0.0);
+}
+impl Waveshape for RevSawtooth {
+  fn create(table: &mut Vec<f32>, length: usize) {
+    let mut angle: f32 = 0.0;
+    let inc: f32 = 2.0 / (length as f32 - 1.0);
+    for _ in 0..length {
+      table.push(angle + 1.0);
+      angle -= inc;
+    }
+    table.push(0.0);
+  }
 }
 
-pub fn hanning(table: &mut Vec<f32>, length: usize) {
-  let mut angle: f32 = 0.0;
-  let inc: f32 = PI / (length as f32);
-  for _ in 0..length {
-    table.push(angle.sin().powf(2.0));
-    angle += inc;
+impl Waveshape for Hanning {
+  fn create(table: &mut Vec<f32>, length: usize) {
+    let mut angle: f32 = 0.0;
+    let inc: f32 = PI / (length as f32);
+    for _ in 0..length {
+      table.push(angle.sin().powf(2.0));
+      angle += inc;
+    }
+    table.push(0.0);
   }
-  table.push(0.0);
+}
+
+impl Waveshape for User {
+  fn create(_table: &mut Vec<f32>, _length: usize) {
+    panic!("dummy method for use when Wavetable is using the ::from() method")
+  }
 }
 
 pub fn complex_sine(
@@ -68,7 +97,6 @@ pub fn complex_sine(
   amps: &mut Vec<f32>,
   phases: &Vec<f32>) 
 {
-  let mut angle = 0.0;
   normalize(amps);
   let mut n: f32 = 1.0;
   while let Some((amp, phs)) = amps.iter().zip(phases.into_iter()).next() {

@@ -2,7 +2,7 @@ extern crate envelope; extern crate buffer;
 use core::marker::PhantomData;
 use std::sync::Arc;
 use envelope::Envelope;
-use interpolation::interpolation::{Interpolation, Linear};
+use interpolation::interpolation::Interpolation;
 use buffer::Buffer;
 use rand::Rng;
 
@@ -39,14 +39,13 @@ pub struct Granulator<T: Interpolation, U: Interpolation, V: Interpolation> {
   env_interpolation: PhantomData<V>,
 }
 
-trait Trigger {
-  fn play() -> f32;
-}
-
 impl<T: Interpolation, U: Interpolation, V: Interpolation> Granulator<T, U, V> {
   // Interpolation trait allows Buffer, Envelope and Granulator to use different interpolation
   // methods that fit the method signature. Grain will inherit the Granulators T
-  /// Creates a new Granulator, with a Buffer of fixed size and an Envelope for Grain volume
+  /// Creates a new Granulator, with a Buffer of fixed size and an Envelope for Grain volume, 
+  /// T = Interpolation for Grains, 
+  /// U = Interpolation for Buffer, 
+  /// V = Interpolation for Envelope
   pub fn new(buffer: Buffer<U>, grain_env: Envelope<V>, samplerate: f32, max_grains: usize) -> Self {
     // Shared pointers between grains
     let buffer = Arc::new(buffer);
