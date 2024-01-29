@@ -9,7 +9,9 @@ edition = "2021"
 wavetable = {path = "../wavetable"}
 interpolation = {path= "../interpolation"}
 buffer = {path= "../buffer"}
+waveshape = {path= "../waveshape"}
 envelope = {path= "../envelope"}
+reverb = {path= "../reverb"}
 grains = {path= "../grains"}
 trig = {path= "../trig"}
 cpal = "0.15.2"

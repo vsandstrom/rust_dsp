@@ -18,7 +18,9 @@ pub struct Comb<T> {
 
 impl<T: Interpolation> Comb<T> {
   pub fn new(delay: usize, samplerate: f32, feedforward: f32, feedback: f32) -> Self {
-    let buffer = Buffer::<T>::new(delay, samplerate);
+    let mut buffer = Buffer::<T>::new(delay, samplerate);
+    buffer.init();
+
     Comb{
       buffer,
       previous: 0.0,
@@ -44,7 +46,7 @@ impl<T: Interpolation> Comb<T> {
     self.previous = delayed * (1.0 * self.damp) + self.previous * self.damp;
     let fb = sample - self.feedback * self.previous;
     self.buffer.write(fb, self.position);
-    self.position += 1 % self.delay;
+    self.position = (self.position + 1) % self.delay;
     self.feedforward * fb + delayed
   }
 }

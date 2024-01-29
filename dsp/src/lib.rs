@@ -22,33 +22,33 @@ pub mod signal {
 pub mod buffer {
   use crate::signal::map;
   /// Same as map, but for entire buffers. Suitable for normalizing Wavetable buffers.
-  pub fn range(buffer: &mut Vec<f32>, in_min: f32, in_max: f32, out_min: f32, out_max: f32) {
-      for sample in buffer {
-          map(*sample, in_min, in_max, out_min, out_max);
-      }
+  pub fn range(values: &mut Vec<f32>, in_min: f32, in_max: f32, out_min: f32, out_max: f32) {
+    for i in 0..values.len() {
+      map(values[i], in_min, in_max, out_min, out_max);
+    }
   }
 
   pub fn sum(values: &Vec<f32>) -> f32 {
     let mut sum = 0.0;
-    for val in values {
-      sum += *val;
+    for i in 0..values.len() {
+      sum += values[i];
     }
     sum
   }
     
   pub fn normalize(values: &mut Vec<f32>) {
     let x = 1.0 / sum(values);
-    for val in values {
-      *val *= x;
+    for i in 0..values.len() {
+      values[i] *= x;
     }
   }
 
   pub fn scale(values: &mut Vec<f32>, outmin: f32, outmax: f32) {
     let mut min = 0.0f32;
     let mut max = 0.0f32;
-    for val in &mut *values {
-      if *val < min { min = *val };
-      if *val > max { max = *val };
+    for i in 0..values.len() {
+      if values[i] < min { min = values[i] };
+      if values[i] > max { max = values[i] };
     }
     range(values, min, max, outmin, outmax)
   }
@@ -90,7 +90,6 @@ mod tests {
     use crate::signal::map;
     use crate::math::mtof;
     use crate::math::ftom;
-    use super::*;
 
     #[test]
     fn test_unipolar() {

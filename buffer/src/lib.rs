@@ -5,6 +5,7 @@ use core::marker::PhantomData;
 pub struct Buffer<T> {
   pub buffer: Vec<f32>,
   #[allow(unused)]
+  size: usize,
   pub samplerate: f32,
   interpolation: PhantomData<T>
 }
@@ -14,15 +15,19 @@ impl<T: Interpolation> Buffer<T> {
     let bufsize = Buffer::<Floor>::minimum_buf_size(size);
     Buffer{
       buffer: Vec::with_capacity((bufsize) as usize), 
+      size,
       samplerate,
       interpolation: PhantomData 
     }
   }
 
+
   /// Initializes a Buffer from previously populated Vec<f32>
   pub fn from_buffer(samplerate: f32, buffer: Vec<f32>) -> Self {
+    let len = buffer.len();
     Buffer{
       buffer, 
+      size: len,
       samplerate,
       interpolation: PhantomData 
     }
@@ -33,6 +38,7 @@ impl<T: Interpolation> Buffer<T> {
     let bufsize = Buffer::<Floor>::minimum_buf_size((size * samplerate).floor() as usize);
     Buffer{
       buffer: Vec::with_capacity(bufsize),
+      size: (size * samplerate) as usize,
       samplerate,
       interpolation: PhantomData
     }
@@ -47,6 +53,12 @@ impl<T: Interpolation> Buffer<T> {
   pub fn read(&self, position: f32) -> f32{
     T::interpolate(position, &self.buffer, self.buffer.len())
   } 
+
+  pub fn init(&mut self) {
+    for _ in 0..self.size {
+      self.buffer.push(0.0);
+    }
+  }
 
   fn minimum_buf_size(size: usize) -> usize {
     match size { x if x < 4 => 4, _ => size }

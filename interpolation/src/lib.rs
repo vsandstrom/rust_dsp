@@ -1,5 +1,5 @@
 pub mod interpolation {
-    use std::f32::consts::PI;
+    use std::{f32::consts::PI, io::BufRead};
 
   pub struct Linear { }
   pub struct Cubic { }
@@ -9,10 +9,6 @@ pub mod interpolation {
 
   pub trait Interpolation {
     fn interpolate(position: f32, buffer: &Vec<f32>, buffer_size: usize) -> f32;
-  }
-
-  trait Wrap {
-    fn wrapf(position: f32, maxlength: usize) -> usize;
   }
 
   /// Linear interpolation - read position is interpolated between 2 points
@@ -70,7 +66,7 @@ pub mod interpolation {
 
   /// No interpolation - read position is floored.
   impl Interpolation for Floor {
-    fn interpolate(position: f32, buffer: &Vec<f32>, _buffer_size: usize) -> f32 {
+    fn interpolate(position: f32, buffer: &Vec<f32>, buffer_size: usize) -> f32 {
       let i: usize = position as usize;
       buffer[i]
     }

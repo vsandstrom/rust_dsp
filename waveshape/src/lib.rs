@@ -1,5 +1,4 @@
 use std::f32::consts::PI;
-use core::marker::PhantomData;
 use dsp::buffer::{normalize, scale};
 
 pub struct Sine;
@@ -91,25 +90,21 @@ impl Waveshape for User {
   }
 }
 
-pub fn complex_sine(
-  table: &mut Vec<f32>,
-  length: usize,
-  amps: &mut Vec<f32>,
-  phases: &Vec<f32>) 
-{
+pub fn complex_sine(length: usize, amps: &mut Vec<f32>, phases: &Vec<f32>) -> Vec<f32> {
+  let mut v = Vec::with_capacity(length);
   normalize(amps);
   let mut n: f32 = 1.0;
   while let Some((amp, phs)) = amps.iter().zip(phases.into_iter()).next() {
     let inc = PI * 2.0f32 * n / length as f32;
     let mut angle = inc * length as f32 * phs;
     for _ in 0..length {
-      table.push(angle.sin() * amp);
+      v.push(angle.sin() * amp);
       angle += inc;
     }
     n += 1.0;
   }
-  table.push(0.0);
-  scale(table, -1.0f32, 1.0f32);
+  scale(&mut v, -1.0f32, 1.0f32);
+  v
 }
 
 #[cfg(test)]

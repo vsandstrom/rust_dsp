@@ -4,7 +4,7 @@ extern crate filter;
 use filter::Comb;
 use interpolation::interpolation::Floor;
 
-struct SchroederVerb {
+pub struct SchroederVerb {
   cvec: [Comb<Floor>; 4],
   avec: [Comb<Floor>; 3],
 }
@@ -37,7 +37,7 @@ impl Verb for SchroederVerb {
   }
 }
 
-trait Verb {
+pub trait Verb {
   fn new(samplerate: f32) -> Self;
   fn process(&mut self, sample: f32) -> f32;
 }
