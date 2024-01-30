@@ -31,7 +31,7 @@ fn main() -> anyhow::Result<()> {
     let latency_frames = (150.0 / 1000.0) * f_sample_rate;
     let latency_samples = latency_frames as usize * config.channels as usize;
 
-    // Create a ringbuffer to store samples
+    // Create a channel to send and receive samples
     let (tx, rx): (Sender<f32>, Receiver<f32>) = channel();
 
     // SETUP YOUR AUDIO PROCESSING STRUCTS HERE !!!! <-------------------------
