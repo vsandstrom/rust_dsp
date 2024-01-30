@@ -3,7 +3,7 @@ use rand::Rng;
 pub struct Impulse { samplerate: f32, duration: f32, counter: u32 }
 pub struct Dust { samplerate: f32, duration: f32, counter: u32 }
 
-trait Trigger { fn play(&mut self, duration: f32) -> f32; }
+pub trait Trigger { fn play(&mut self, duration: f32) -> f32; }
 
 impl Impulse {
   pub fn new(duration: f32, samplerate: f32) -> Self {

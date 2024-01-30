@@ -60,6 +60,10 @@ impl<T: Interpolation> Buffer<T> {
     }
   }
 
+  pub fn record(&mut self, sample: f32) {
+    self.buffer.push(sample)
+  }
+
   fn minimum_buf_size(size: usize) -> usize {
     match size { x if x < 4 => 4, _ => size }
   }

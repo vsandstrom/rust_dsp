@@ -1,3 +1,4 @@
+
 pub mod signal {
   pub fn clamp(signal: f32, bottom: f32, top: f32 ) -> f32 {
       f32::max(bottom, f32::min(signal, top))

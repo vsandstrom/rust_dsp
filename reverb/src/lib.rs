@@ -35,11 +35,18 @@ impl Verb for SchroederVerb {
     for i in 0..3 { out = self.avec[i].process(out); }
     out
   }
+
+  fn set_damp(&mut self, damp: f32) {
+    for comb in self.cvec.iter_mut() {
+      comb.set_damp(damp);
+    }
+  }
 }
 
 pub trait Verb {
   fn new(samplerate: f32) -> Self;
   fn process(&mut self, sample: f32) -> f32;
+  fn set_damp(&mut self, damp: f32);
 }
 
 #[cfg(test)]

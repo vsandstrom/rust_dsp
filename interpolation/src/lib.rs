@@ -67,7 +67,7 @@ pub mod interpolation {
   /// No interpolation - read position is floored.
   impl Interpolation for Floor {
     fn interpolate(position: f32, buffer: &Vec<f32>, buffer_size: usize) -> f32 {
-      let i: usize = position as usize;
+      let i: usize = position as usize % buffer_size;
       buffer[i]
     }
   }

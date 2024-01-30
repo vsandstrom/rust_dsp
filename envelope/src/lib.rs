@@ -46,24 +46,6 @@ impl<T: Interpolation> Envelope<T> {
     }
   }
 
-  pub fn from_vec(buffer: Vec<f32>) -> Self {
-    Envelope {
-      buffer, 
-      buf_position: 0.0,
-      speed: 1.0,
-      interpolation: PhantomData
-    }
-  }
-
-  pub fn from_buffer(buffer: Buffer<T>) -> Self {
-    Envelope {
-      buffer: buffer.buffer,
-      buf_position: 0.0,
-      speed: 1.0,
-      interpolation: PhantomData
-    }
-  }
-
   pub fn len(&self) -> usize {
     self.buffer.len()
   }
@@ -97,20 +79,20 @@ impl<T: Interpolation> Envelope<T> {
 }
 
 impl<T> From<Buffer<T>> for Envelope<T> {
-  fn from(value: Buffer<T>) -> Self {
-    Envelope{buffer: value.buffer, buf_position: 0.0, speed: 1.0, interpolation: PhantomData}
+  fn from(buffer: Buffer<T>) -> Self {
+    Envelope{buffer: buffer.buffer, buf_position: 0.0, speed: 1.0, interpolation: PhantomData}
   }
 }
 
 impl<T> From<Vec<f32>> for Envelope<T> {
-  fn from(value: Vec<f32>) -> Self {
-    Envelope{buffer: value, buf_position: 0.0, speed: 1.0, interpolation: PhantomData}
+  fn from(buffer: Vec<f32>) -> Self {
+    Envelope{buffer, buf_position: 0.0, speed: 1.0, interpolation: PhantomData}
   }
 }
 
 impl<T> From<&[f32]> for Envelope<T> {
-  fn from(value: &[f32]) -> Self {
-    Envelope{buffer: value.to_vec(), buf_position: 0.0, speed: 1.0, interpolation: PhantomData}
+  fn from(buffer: &[f32]) -> Self {
+    Envelope{buffer: buffer.to_vec(), buf_position: 0.0, speed: 1.0, interpolation: PhantomData}
   }
 }
 
