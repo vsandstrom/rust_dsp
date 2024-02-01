@@ -1,6 +1,8 @@
 use std::{thread, time, usize};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use std::sync::mpsc::{channel, Receiver, Sender};
+use interpolation::interpolation::Linear;
+use delay::Delay;
 
 
 fn main() -> anyhow::Result<()> {
@@ -27,24 +29,21 @@ fn main() -> anyhow::Result<()> {
     println!("{:#?}", config);
 
     let f_sample_rate = config.sample_rate.0 as f32;
+
     // Calculate size of ringbuffer
     let latency_frames = (150.0 / 1000.0) * f_sample_rate;
     let latency_samples = latency_frames as usize * config.channels as usize;
 
-    // Create a channel to send and receive samples
-    let (tx, rx): (Sender<f32>, Receiver<f32>) = channel();
 
     // SETUP YOUR AUDIO PROCESSING STRUCTS HERE !!!! <-------------------------
-    //
-    //
-    //
-    //
-    //
-    //
-    //
+    let mut del_l = Delay::new(0.2, 10.0, 5, f_sample_rate);
+    let mut del_r = Delay::new(0.5, 10.0, 5, f_sample_rate);
 
     let time_at_start = std::time::Instant::now();
     
+    // Create a channel to send and receive samples
+    let (tx, rx): (Sender<f32>, Receiver<f32>) = channel();
+
     // Callbacks
     let input_callback = move | data: &[f32], _: &cpal::InputCallbackInfo | {
         // Process input data
@@ -62,14 +61,23 @@ fn main() -> anyhow::Result<()> {
 
     let output_callback = move | data: &mut [f32], _: &cpal::OutputCallbackInfo | {
         // Process output data
+        let t = time_at_start.elapsed().as_secs();
+        let mut l = true;
+
         let mut input_fell_behind = false;
         for sample in data {
           // Recieve sample from input stream
           let raw_sample = rx.recv();
           *sample = match raw_sample { 
             Ok(sample) =>{
-              // DO AUDIO PROCESSING HERE <------------------------------
-              0.0
+              // Stereo handling in interleaved stream
+              if l {
+                l = !l;
+                del_l.play(sample, 0.2) // PASSTHRU
+              } else {
+                l = !l;
+                del_r.play(sample, 0.2) // PASSTHRU
+              }
             },
             Err(_) => {
               input_fell_behind = true;

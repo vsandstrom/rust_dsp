@@ -21,7 +21,11 @@ pub struct Grain<T, U, V> {
 }
 
 #[allow(unused)]
-pub struct Granulator<T: Interpolation, U: Interpolation, V: Interpolation> {
+pub struct Granulator<T, U, V> 
+  where T: Interpolation,
+        U: Interpolation,
+        V: Interpolation
+{
   buffer: Buffer<U>,
   envelope: Envelope<V>,
   samplerate: f32,

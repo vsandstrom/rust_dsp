@@ -15,5 +15,6 @@ reverb = {path= "../reverb"}
 grains = {path= "../grains"}
 trig = {path= "../trig"}
 dsp = {path= "../dsp"}
+delay = {path="../delay"}
 cpal = "0.15.2"
 anyhow = "1.0.79"
