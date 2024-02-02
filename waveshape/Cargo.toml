@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 dsp = {path = "../dsp/"}
+simple-plot = "0.1.0"

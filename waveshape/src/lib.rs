@@ -1,23 +1,37 @@
 use std::f32::consts::PI;
 use dsp::buffer::{normalize, scale};
 
+
 /// Create a complex waveform from amplitudes and phases of sine partials
-pub fn complex_sine(length: usize, amps: &mut Vec<f32>, phases: &Vec<f32>) -> Vec<f32> {
-  let mut v = Vec::with_capacity(length);
-  normalize(amps);
+/// (tip: normalize amplitudes to get waveform within -1.0 - 1.0)
+pub fn complex_sine<'a>(table: &'a mut Vec<f32>, amps: &'a Vec<f32>, phases: &'a Vec<f32>) -> &'a Vec<f32> {
+  let len = table.len();
   let mut n: f32 = 1.0;
-  while let Some((amp, phs)) = amps.iter().zip(phases.into_iter()).next() {
-    let inc = PI * 2.0f32 * n / length as f32;
-    let mut angle = inc * length as f32 * phs;
-    for _ in 0..length {
-      v.push(angle.sin() * amp);
-      angle += inc;
+  if amps.len() == phases.len() {
+    for i in 0..amps.len() {
+      let inc = PI * 2.0f32 * n / len as f32;
+      let mut angle = inc * len as f32 * phases[i];
+      for j in 0..len {
+        table[j] += angle.sin() * amps[i];
+        angle += inc;
+      }
+      n += 1.0;
     }
-    n += 1.0;
+    scale(table, -1.0f32, 1.0f32);
   }
-  scale(&mut v, -1.0f32, 1.0f32);
-  v
+  table
 }
+/// Sine: sin(2pi / table.len() * n)
+pub fn sine(table: &mut Vec<f32>) -> &Vec<f32> {
+  let mut angle: f32 = 0.0;
+  let inc: f32 = PI * 2.0 / table.len() as f32;
+  for i in 0..table.len() {
+    table[i] = angle.sin();
+    angle += inc;
+  }
+  table
+}
+
 
 /// Squared sinewave, positive bellcurve. Useful as envelope
 pub fn hanning(table: &mut Vec<f32>) -> &Vec<f32> {
@@ -25,17 +39,6 @@ pub fn hanning(table: &mut Vec<f32>) -> &Vec<f32> {
   let inc: f32 = PI / (table.len() as f32);
   for i in 0..table.len() {
     table[i] = angle.sin().powf(2.0);
-    angle += inc;
-  }
-  table
-}
-
-/// Sine: sin(2pi / table.len() * n)
-pub fn sine(table: &mut Vec<f32>) -> &Vec<f32> {
-  let mut angle: f32 = 0.0;
-  let inc: f32 = PI * 2.0 / table.len() as f32;
-  for i in 0..table.len() {
-    table[i] = angle.sin();
     angle += inc;
   }
   table
@@ -85,7 +88,7 @@ pub fn reverse_sawtooth(table: &mut Vec<f32>) -> &Vec<f32> {
   table
 }
 
-mod traits {
+pub mod traits {
   use super::*;
   pub trait Waveshape {
     fn sine(self) -> Self;
@@ -94,7 +97,7 @@ mod traits {
     fn square(self) -> Self;
     fn sawtooth(self) -> Self;
     fn reverse_sawtooth(self) -> Self;
-    fn complex_sine(self, amps: &mut Vec<f32>, phases: &Vec<f32>) -> Self;
+    fn complex_sine(self, amps: &Vec<f32>, phases: &Vec<f32>) -> Self;
   }
 
   impl Waveshape for Vec<f32>  {
@@ -165,19 +168,20 @@ mod traits {
     }
 
     /// Create a complex waveform from amplitudes and phases of sine partials
-    fn complex_sine(mut self, amps: &mut Vec<f32>, phases: &Vec<f32>) -> Self {
-      normalize(amps);
+    fn complex_sine(mut self, amps: &Vec<f32>, phases: &Vec<f32>) -> Self {
       let mut n: f32 = 1.0;
-      while let Some((amp, phs)) = amps.iter().zip(phases.into_iter()).next() {
-        let inc = PI * 2.0f32 * n / self.len() as f32;
-        let mut angle = inc * self.len() as f32 * phs;
-        for i in 0..self.len() {
-          self[i] = angle.sin() * amp;
-          angle += inc;
+      if amps.len() == phases.len() {
+        for i in 0..amps.len() {
+          let inc = PI * 2.0f32 * n / self.len() as f32;
+          let mut angle = inc * self.len() as f32 * phases[i];
+          for j in 0..self.len() {
+            self[j] += angle.sin() * amps[i];
+            angle += inc;
+          }
+          n += 1.0;
         }
-        n += 1.0;
+        scale(&mut self, -1.0f32, 1.0f32);
       }
-      scale(&mut self, -1.0f32, 1.0f32);
       self
     }
   }
@@ -185,6 +189,16 @@ mod traits {
 
 #[cfg(test)]
 mod tests {
+  use crate::traits::Waveshape;
+    use simple_plot::_plotly::Plot;
+
     use super::*;
+
+
+    #[test]
+    fn plot_complex() {
+      let cs = vec![0.0; 16].complex_sine(&mut vec![1.0, 0.2, 0.3], &vec![0.0, 0.5, 0.2]);
+      plot!("complex_sine", 0..16, cs);
+    }
 
 }

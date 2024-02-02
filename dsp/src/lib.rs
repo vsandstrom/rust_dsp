@@ -52,7 +52,7 @@ pub mod signal {
 }
 
 pub mod buffer {
-  use crate::signal::{map, SignalFloat};
+  use crate::signal::{map};
 
   /// Same as map, but for entire buffers. Suitable for normalizing Wavetable buffers.
   pub fn range(values: &mut Vec<f32>, in_min: f32, in_max: f32, out_min: f32, out_max: f32) {

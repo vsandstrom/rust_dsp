@@ -3,10 +3,11 @@ use buffer::Buffer;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use envelope::Envelope;
 use grains::{Grain, Granulator};
+use trig::{Trigger, Impulse};
 use wavetable::WaveTable;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use interpolation::interpolation::{Linear, Cubic};
-use waveshape::Waveshape;
+use waveshape::traits::Waveshape;
 use delay::Delay;
 
 
@@ -41,16 +42,18 @@ fn main() -> anyhow::Result<()> {
 
 
     // SETUP YOUR AUDIO PROCESSING STRUCTS HERE !!!! <-------------------------
-    let buf_l = Buffer::<Linear>::new(4 * config.sample_rate.0 as usize, f_sample_rate);
-    let buf_r = Buffer::<Linear>::new(4 * config.sample_rate.0 as usize, f_sample_rate);
-    let env = Envelope::<Linear>::from(vec![0.0; 512].hanning().sine());
+    let buf_l = Buffer::new(4 * config.sample_rate.0 as usize, f_sample_rate);
+    let buf_r = Buffer::new(4 * config.sample_rate.0 as usize, f_sample_rate);
+    let env = Envelope::from(vec![0.0; 512].hanning());
 
     let t = vec![0.0; 512];
-    let wt = WaveTable::<Linear>::new(&t.hanning(), f_sample_rate);
+    let mut ph = WaveTable::<Linear>::new(&t.sawtooth(), f_sample_rate);
 
+    let mut tl = Impulse::new(0.15, f_sample_rate);
+    let mut tr = Impulse::new(0.19, f_sample_rate);
 
-    let mut gl = Granulator::<Cubic, Linear, Linear>::new(buf_l, env.clone(), f_sample_rate, 16);
-    let mut gr = Granulator::<Cubic, Linear, Linear>::new(buf_r, env, f_sample_rate, 16);
+    let mut gl = Granulator::<Cubic, Linear, Cubic>::new(buf_l, env.clone(), f_sample_rate, 16);
+    let mut gr = Granulator::<Cubic, Linear, Cubic>::new(buf_r, env, f_sample_rate, 16);
 
     let time_at_start = std::time::Instant::now();
     
@@ -74,6 +77,7 @@ fn main() -> anyhow::Result<()> {
 
     let output_callback = move | data: &mut [f32], _: &cpal::OutputCallbackInfo | {
         // Process output data
+        let mut ch = 0;
         let t = time_at_start.elapsed().as_secs();
         let mut input_fell_behind = false;
         for sample in data {
@@ -81,8 +85,27 @@ fn main() -> anyhow::Result<()> {
           let raw_sample = rx.recv();
           *sample = match raw_sample { 
             Ok(sample) =>{
+              if t < 4 {
+                if ch % 2 == 0 {
+                  ch+=1;
+                  gl.record(sample);
+                } else {
+                  ch+=1;
+                  gr.record(sample);
+                }
+                sample
+              } else {
+                let p = ph.play(1.0/20.0);
+                if ch % 2 == 0 {
+                  ch += 1;
+                  gl.play(0.1, p, tl.play(0.05))
+                } else {
+                  ch += 1;
+                  gr.play(1.4, p, tr.play(2.5))
+                }
+              }
               // Stereo handling in interleaved stream
-              sample
+              // sample
             },
             Err(_) => {
               input_fell_behind = true;
