@@ -18,10 +18,42 @@ pub mod signal {
       map(sample, -1.0, 1.0, 0.0, 1.0)
   }
 
+
+  pub mod traits {
+    use crate::signal::map;
+    /// DSP specific trait for manipulating samples. For chaining method calls on <f32>
+    pub trait SignalFloat {
+      fn unipolar(self) -> Self;
+      fn dcblock(self, xm1: f32, ym1: f32 ) -> Self;
+      fn map(self, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> Self;
+      fn clamp(self, bottom: f32, top: f32 ) -> Self; 
+    }
+
+    impl SignalFloat for f32 {
+      fn clamp(self, bottom: f32, top: f32 ) -> f32 {
+          f32::max(bottom, f32::min(self, top))
+      }
+
+      /// Map a signal of range m -> n into new range, x -> y
+      fn map(self, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> f32 {
+          (out_max - out_min) * (self - in_min) / (in_max - in_min) + out_min
+      }
+
+      fn dcblock(self, xm1: f32, ym1: f32 ) -> f32 {
+          self - xm1 + 0.995 * ym1
+      }
+      
+      /// Convenience for normalizing a signal to be only positive.
+      fn unipolar(self) -> f32{
+          map(self, -1.0, 1.0, 0.0, 1.0)
+      }
+    }
+  }
 }
 
 pub mod buffer {
-  use crate::signal::map;
+  use crate::signal::{map, SignalFloat};
+
   /// Same as map, but for entire buffers. Suitable for normalizing Wavetable buffers.
   pub fn range(values: &mut Vec<f32>, in_min: f32, in_max: f32, out_min: f32, out_max: f32) {
     for i in 0..values.len() {
@@ -52,6 +84,55 @@ pub mod buffer {
       if values[i] > max { max = values[i] };
     }
     range(values, min, max, outmin, outmax)
+  }
+
+
+  pub mod traits {
+    use crate::buffer::{range, sum, map};
+    /// DSP specific trait for manipulating arrays/vectors. 
+    /// For chaining method calls Vec<f32>
+    pub trait SignalVector {
+      fn scale(self, outmin: f32, outmax: f32) -> Self;
+      fn normalize(self) -> Self;
+      fn sum(&self) -> f32;
+      fn range(self, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> Self; 
+    }
+
+    impl SignalVector for Vec<f32> {
+      fn range(self, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> Self {
+        for x in &self {
+          map(*x, in_min, in_max, out_min, out_max);
+        }
+        self
+      }
+
+      fn sum(&self) -> f32 {
+        let mut sum = 0.0;
+        for x in self {
+          sum += x;
+        }
+        sum
+      }
+        
+      fn normalize(self) -> Self {
+        let y = 1.0 / sum(&self);
+        for mut x in &self {
+          x = &(x * y);
+        }
+        self
+      }
+
+      fn scale(mut self, outmin: f32, outmax: f32) -> Self{
+        let mut min = 0.0f32;
+        let mut max = 0.0f32;
+        for x in &self {
+          if x < &min { min = *x };
+          if x > &max { max = *x };
+        }
+        range(&mut self, min, max, outmin, outmax);
+        self
+      }
+    }
   }
 }
 
@@ -87,15 +168,16 @@ pub mod math {
 
 #[cfg(test)]
 mod tests {
-    use crate::signal::unipolar;
-    use crate::signal::map;
+    use crate::signal::traits::SignalFloat;
+    use crate::buffer::traits::SignalVector;
+    use crate::signal::{unipolar, map};
     use crate::math::mtof;
     use crate::math::ftom;
 
     #[test]
     fn test_unipolar() {
         let sample:f32 = 0.0;
-        assert_eq!(0.5f32, unipolar(sample));
+        assert_eq!(0.5f32, sample.unipolar());
     }
 
     #[test]
@@ -107,7 +189,7 @@ mod tests {
     #[test]
     fn test_map2() {
         let signal: f32 = 0.0;
-        assert_eq!(0.25f32, map(signal, -1.0, 1.0, -0.5, 1.0))
+        assert_eq!(0.25f32, signal.map(-1.0, 1.0, -0.5, 1.0))
     }
 
     #[test]

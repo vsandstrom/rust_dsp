@@ -3,35 +3,20 @@ extern crate waveshape;
 extern crate dsp;
 use core::marker::PhantomData;
 use interpolation::interpolation::Interpolation;
-use waveshape::Waveshape;
+use waveshape::*;
 use dsp::signal::clamp;
 
-pub struct WaveTable<T, U> {
+pub struct WaveTable<T> {
   position: f32,
   table: Vec<f32>,
   table_size: usize,
   pub frequency: f32,
   samplerate: f32,
-  interpolation: PhantomData<T>,
-  shape: PhantomData<U>
+  interpolation: PhantomData<T>
 }
   
-impl<T: Waveshape, U: Interpolation> WaveTable<T, U> {
-  pub fn new(samplerate: f32, table_size: usize) -> WaveTable<T, U> {
-    let mut table: Vec<f32> = Vec::with_capacity(table_size);
-    T::create(&mut table, table_size);
-    WaveTable { 
-      position: 0.0, 
-      table,
-      table_size,
-      frequency: 0.0,
-      samplerate, 
-      interpolation: PhantomData,
-      shape: PhantomData 
-    }
-  }
-  
-  pub fn from(table: &Vec<f32>, samplerate: f32) -> WaveTable<T, U> {
+impl<T: Interpolation> WaveTable<T> {
+  pub fn new(table: &Vec<f32>, samplerate: f32) -> WaveTable<T> {
     WaveTable { 
       position: 0.0, 
       table: table.to_vec(),
@@ -39,7 +24,6 @@ impl<T: Waveshape, U: Interpolation> WaveTable<T, U> {
       frequency: 0.0,
       samplerate,
       interpolation: PhantomData,
-      shape: PhantomData
     } 
   }
 
@@ -51,7 +35,7 @@ impl<T: Waveshape, U: Interpolation> WaveTable<T, U> {
     while self.position > self.table_size as f32 {
       self.position -= self.table_size as f32;
     }
-    U::interpolate(self.position, &self.table, self.table.len())
+    T::interpolate(self.position, &self.table, self.table.len())
   }
 
   #[allow(unused)]
@@ -66,11 +50,13 @@ impl<T: Waveshape, U: Interpolation> WaveTable<T, U> {
 mod tests {
   use super::*;
   use crate::tests::interpolation::interpolation::*;
-  use crate::tests::waveshape::{Triangle, Sine};
+  use crate::tests::waveshape::{Waveshape};
+
 
   #[test] 
   fn triangletest() {
-    let mut wt = WaveTable::<Triangle, Floor>::new(48000.0, 16);
+    let table = vec![0.0;16].triangle();
+    let mut wt = WaveTable::<Floor>::new(&table, 48000.0);
     let mut shape = vec!();
     // Check if it wraps
     for _ in 0..17 {
@@ -82,7 +68,8 @@ mod tests {
   
   #[test] 
   fn interptest() {
-    let mut wt = WaveTable::<Sine, Linear>::new(48000.0, 16);
+    let table = vec![0.0;16].sine();
+    let mut wt = WaveTable::< Linear>::new(&table, 48000.0);
     let mut shape = vec!();
     wt.frequency = 16.0;
     // Check if it wraps
@@ -95,7 +82,8 @@ mod tests {
 
   #[test]
   fn freq_test() {
-    let mut wt = WaveTable::<Triangle, Floor>::new(48000.0, 8);
+    let table = vec![0.0;8].triangle();
+    let mut wt = WaveTable::<Floor>::new(&table, 48000.0);
     wt.frequency = 20.0;
     let mut shape = vec!();
     for _ in 0..20 { 
@@ -108,7 +96,8 @@ mod tests {
 
   #[test]
   fn linear_test() {
-    let mut wt = WaveTable::<Triangle, Linear>::new(48000.0, 4);
+    let table = vec![0.0;4].triangle();
+    let mut wt = WaveTable::<Linear>::new(&table, 48000.0);
     wt.frequency = 1.0/92000.0;
     let _ = wt.play(1.0);
     let shape = wt.play(1.0);

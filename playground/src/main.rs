@@ -1,7 +1,12 @@
 use std::{thread, time, usize};
+use buffer::Buffer;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use envelope::Envelope;
+use grains::{Grain, Granulator};
+use wavetable::WaveTable;
 use std::sync::mpsc::{channel, Receiver, Sender};
-use interpolation::interpolation::Linear;
+use interpolation::interpolation::{Linear, Cubic};
+use waveshape::Waveshape;
 use delay::Delay;
 
 
@@ -31,13 +36,21 @@ fn main() -> anyhow::Result<()> {
     let f_sample_rate = config.sample_rate.0 as f32;
 
     // Calculate size of ringbuffer
-    let latency_frames = (150.0 / 1000.0) * f_sample_rate;
-    let latency_samples = latency_frames as usize * config.channels as usize;
+    // let latency_frames = (150.0 / 1000.0) * f_sample_rate;
+    // let latency_samples = latency_frames as usize * config.channels as usize;
 
 
     // SETUP YOUR AUDIO PROCESSING STRUCTS HERE !!!! <-------------------------
-    let mut del_l = Delay::new(0.2, 10.0, 5, f_sample_rate);
-    let mut del_r = Delay::new(0.5, 10.0, 5, f_sample_rate);
+    let buf_l = Buffer::<Linear>::new(4 * config.sample_rate.0 as usize, f_sample_rate);
+    let buf_r = Buffer::<Linear>::new(4 * config.sample_rate.0 as usize, f_sample_rate);
+    let env = Envelope::<Linear>::from(vec![0.0; 512].hanning().sine());
+
+    let t = vec![0.0; 512];
+    let wt = WaveTable::<Linear>::new(&t.hanning(), f_sample_rate);
+
+
+    let mut gl = Granulator::<Cubic, Linear, Linear>::new(buf_l, env.clone(), f_sample_rate, 16);
+    let mut gr = Granulator::<Cubic, Linear, Linear>::new(buf_r, env, f_sample_rate, 16);
 
     let time_at_start = std::time::Instant::now();
     
@@ -62,8 +75,6 @@ fn main() -> anyhow::Result<()> {
     let output_callback = move | data: &mut [f32], _: &cpal::OutputCallbackInfo | {
         // Process output data
         let t = time_at_start.elapsed().as_secs();
-        let mut l = true;
-
         let mut input_fell_behind = false;
         for sample in data {
           // Recieve sample from input stream
@@ -71,13 +82,7 @@ fn main() -> anyhow::Result<()> {
           *sample = match raw_sample { 
             Ok(sample) =>{
               // Stereo handling in interleaved stream
-              if l {
-                l = !l;
-                del_l.play(sample, 0.2) // PASSTHRU
-              } else {
-                l = !l;
-                del_r.play(sample, 0.2) // PASSTHRU
-              }
+              sample
             },
             Err(_) => {
               input_fell_behind = true;

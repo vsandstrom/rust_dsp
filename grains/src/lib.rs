@@ -17,7 +17,6 @@ pub struct Grain<T, U, V> {
   interpolation: PhantomData<T>,
   buf_interpolation: PhantomData<U>,
   env_interpolation: PhantomData<V>
-
 }
 
 #[allow(unused)]

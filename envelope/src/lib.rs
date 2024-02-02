@@ -1,6 +1,7 @@
 extern crate interpolation;
 extern crate buffer;
 use core::marker::PhantomData;
+use std::arch::global_asm;
 use interpolation::interpolation::Interpolation;
 use buffer::Buffer;
 
@@ -94,6 +95,13 @@ impl<T> From<&[f32]> for Envelope<T> {
   fn from(buffer: &[f32]) -> Self {
     Envelope{buffer: buffer.to_vec(), buf_position: 0.0, speed: 1.0, interpolation: PhantomData}
   }
+}
+
+impl<T> Clone for Envelope<T> {
+  fn clone(&self) -> Self {
+    Envelope { buffer: self.buffer.clone(), buf_position: self.buf_position, speed: self.speed, interpolation: PhantomData }
+  }
+
 }
 
 #[cfg(test)]
