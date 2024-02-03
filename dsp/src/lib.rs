@@ -197,21 +197,21 @@ mod tests {
         let sample:f32 = -1.0;
         assert_eq!(0.0f32, clamp(sample, 0.0, 1.0));
     }
+    
+    #[test]
+    fn clamp_test2() {
+        let sample:f32 = 2.0;
+        assert_eq!(1.0f32, clamp(sample, 0.0, 1.0));
+    }
 
     #[test]
     fn clamp_trait_test() {
         let sample:f32 = -1.0;
         assert_eq!(0.0f32, sample.clamp(0.0, 1.0));
     }
-    
-    #[test]
-    fn clamp2_test() {
-        let sample:f32 = 2.0;
-        assert_eq!(1.0f32, clamp(sample, 0.0, 1.0));
-    }
 
     #[test]
-    fn clamp_trait2_test() {
+    fn clamp_trait_test2() {
         let sample:f32 = 2.0;
         assert_eq!(1.0f32, sample.clamp(0.0, 1.0));
     }
@@ -308,18 +308,18 @@ mod tests {
     }
     
     #[test]
-    fn scale_trait_test() {
-      let vec = vec![0.0, 3.0, 18.0].normalize().scale(0.0, 1.0);
-      assert_eq!(1.0, vec[2])
-    }
-
-    #[test]
     fn scale_test2() {
       let mut vec = vec![0.0, 3.0, 18.0];
       scale(&mut vec, 0.5, 1.0);
       assert_eq!(0.5, vec[0])
     }
     
+    #[test]
+    fn scale_trait_test() {
+      let vec = vec![0.0, 3.0, 18.0].normalize().scale(0.0, 1.0);
+      assert_eq!(1.0, vec[2])
+    }
+
     #[test]
     fn scale_trait_test2() {
       let vec = vec![0.0, 3.0, 18.0].normalize().scale(0.5, 1.0);
