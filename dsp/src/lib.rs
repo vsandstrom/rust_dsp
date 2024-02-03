@@ -1,12 +1,14 @@
 
 pub mod signal {
+
   pub fn clamp(signal: f32, bottom: f32, top: f32 ) -> f32 {
       f32::max(bottom, f32::min(signal, top))
   }
 
   /// Map a signal of range m -> n into new range, x -> y
-  pub fn map(signal: f32, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> f32 {
-      (out_max - out_min) * (signal - in_min) / (in_max - in_min) + out_min
+  pub fn map(signal: &mut f32, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> f32 {
+    *signal = (out_max - out_min) * (*signal - in_min) / (in_max - in_min) + out_min;
+    *signal
   }
 
   pub fn dcblock(signal: f32, xm1: f32, ym1: f32 ) -> f32 {
@@ -14,8 +16,8 @@ pub mod signal {
   }
   
   /// Convenience for normalizing a signal to be only positive.
-  pub fn unipolar(sample: f32) -> f32{
-      map(sample, -1.0, 1.0, 0.0, 1.0)
+  pub fn unipolar(mut sample: f32) -> f32 {
+    map(&mut sample, -1.0, 1.0, 0.0, 1.0)
   }
 
 
@@ -26,17 +28,19 @@ pub mod signal {
       fn unipolar(self) -> Self;
       fn dcblock(self, xm1: f32, ym1: f32 ) -> Self;
       fn map(self, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> Self;
-      fn clamp(self, bottom: f32, top: f32 ) -> Self; 
+      // fn clamp(self, bottom: f32, top: f32 ) -> Self; 
     }
 
     impl SignalFloat for f32 {
-      fn clamp(self, bottom: f32, top: f32 ) -> f32 {
-          f32::max(bottom, f32::min(self, top))
-      }
+      // clamp exists for f32 already
+      // fn clamp(self, bottom: f32, top: f32 ) -> f32 {
+      //     f32::max(bottom, f32::min(self, top))
+      // }
 
       /// Map a signal of range m -> n into new range, x -> y
-      fn map(self, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> f32 {
-          (out_max - out_min) * (self - in_min) / (in_max - in_min) + out_min
+      fn map(mut self, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> f32 {
+          self = (out_max - out_min) * (self - in_min) / (in_max - in_min) + out_min;
+          self
       }
 
       fn dcblock(self, xm1: f32, ym1: f32 ) -> f32 {
@@ -44,8 +48,9 @@ pub mod signal {
       }
       
       /// Convenience for normalizing a signal to be only positive.
-      fn unipolar(self) -> f32{
-          map(self, -1.0, 1.0, 0.0, 1.0)
+      fn unipolar(mut self) -> f32 {
+          map(&mut self, -1.0, 1.0, 0.0, 1.0);
+          self
       }
     }
   }
@@ -55,10 +60,11 @@ pub mod buffer {
   use crate::signal::{map};
 
   /// Same as map, but for entire buffers. Suitable for normalizing Wavetable buffers.
-  pub fn range(values: &mut Vec<f32>, in_min: f32, in_max: f32, out_min: f32, out_max: f32) {
+  pub fn range(values: &mut Vec<f32>, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> &Vec<f32> {
     for i in 0..values.len() {
-      map(values[i], in_min, in_max, out_min, out_max);
+      map(&mut values[i], in_min, in_max, out_min, out_max);
     }
+    values
   }
 
   pub fn sum(values: &Vec<f32>) -> f32 {
@@ -69,6 +75,7 @@ pub mod buffer {
     sum
   }
     
+  /// Normalizes contents of vec, sum of contents == 1.0
   pub fn normalize(values: &mut Vec<f32>) {
     let x = 1.0 / sum(values);
     for i in 0..values.len() {
@@ -76,7 +83,8 @@ pub mod buffer {
     }
   }
 
-  pub fn scale(values: &mut Vec<f32>, outmin: f32, outmax: f32) {
+  // Scales the contents of a Vec to be between outmin -> outmax
+  pub fn scale(values: &mut Vec<f32>, outmin: f32, outmax: f32) -> &Vec<f32> {
     let mut min = 0.0f32;
     let mut max = 0.0f32;
     for i in 0..values.len() {
@@ -88,7 +96,7 @@ pub mod buffer {
 
 
   pub mod traits {
-    use crate::buffer::{range, sum, map};
+    use crate::{buffer::{range, sum, map}, signal::traits::SignalFloat};
     /// DSP specific trait for manipulating arrays/vectors. 
     /// For chaining method calls Vec<f32>
     pub trait SignalVector {
@@ -99,9 +107,11 @@ pub mod buffer {
     }
 
     impl SignalVector for Vec<f32> {
-      fn range(self, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> Self {
-        for x in &self {
-          map(*x, in_min, in_max, out_min, out_max);
+
+      fn range(mut self, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> Self {
+        for i in 0..self.len() {
+          let temp = self[i].map(in_min, in_max, out_min, out_max);
+          self[i] = temp;
         }
         self
       }
@@ -114,14 +124,16 @@ pub mod buffer {
         sum
       }
         
-      fn normalize(self) -> Self {
+      /// Sum of values in vec == 1
+      fn normalize(mut self) -> Self {
         let y = 1.0 / sum(&self);
-        for mut x in &self {
-          x = &(x * y);
+        for i in 0..self.len() {
+          self[i] *= y;
         }
         self
       }
 
+      // Scales the contents of a Vec to be between outmin -> outmax
       fn scale(mut self, outmin: f32, outmax: f32) -> Self{
         let mut min = 0.0f32;
         let mut max = 0.0f32;
@@ -168,53 +180,174 @@ pub mod math {
 
 #[cfg(test)]
 mod tests {
-    use crate::signal::traits::SignalFloat;
-    use crate::buffer::traits::SignalVector;
-    use crate::signal::{unipolar, map};
+    use crate::buffer::{normalize, sum};
+    use crate::signal::{ 
+      unipolar, map, clamp,
+      traits::SignalFloat 
+    };
+    use crate::buffer::{
+      range, scale,
+      traits::SignalVector
+    };
     use crate::math::mtof;
     use crate::math::ftom;
 
     #[test]
-    fn test_unipolar() {
+    fn clamp_test() {
+        let sample:f32 = -1.0;
+        assert_eq!(0.0f32, clamp(sample, 0.0, 1.0));
+    }
+
+    #[test]
+    fn clamp_trait_test() {
+        let sample:f32 = -1.0;
+        assert_eq!(0.0f32, sample.clamp(0.0, 1.0));
+    }
+    
+    #[test]
+    fn clamp2_test() {
+        let sample:f32 = 2.0;
+        assert_eq!(1.0f32, clamp(sample, 0.0, 1.0));
+    }
+
+    #[test]
+    fn clamp_trait2_test() {
+        let sample:f32 = 2.0;
+        assert_eq!(1.0f32, sample.clamp(0.0, 1.0));
+    }
+
+    #[test]
+    fn unipolar_test() {
+        let sample:f32 = 0.0;
+        assert_eq!(0.5f32, unipolar(sample));
+    }
+
+    #[test]
+    fn unipolar_trait_test() {
         let sample:f32 = 0.0;
         assert_eq!(0.5f32, sample.unipolar());
     }
 
     #[test]
-    fn test_map() {
-        let signal: f32 = 0.0;
-        assert_eq!(0.5f32, map(signal, -1.0, 1.0, 0.0, 1.0))
+    fn map_test() {
+        let mut signal: f32 = 0.0;
+        assert_eq!(0.5f32, map(&mut signal, -1.0, 1.0, 0.0, 1.0))
     }
     
     #[test]
-    fn test_map2() {
+    fn map_trait_test() {
         let signal: f32 = 0.0;
         assert_eq!(0.25f32, signal.map(-1.0, 1.0, -0.5, 1.0))
     }
 
     #[test]
-    fn test_midi_to_frequency() {
+    fn range_test() {
+      let mut vec = vec![0.0, 1.0, 0.0];
+      vec = range(&mut vec, 0.0, 1.0, 0.0, 0.5).to_vec();
+      println!("{:?}", vec);
+      assert_eq!(0.5, vec[1]);
+    }
+
+    #[test]
+    fn range_trait_test() {
+      let vec = vec![0.0, 1.0, 0.0].range(0.0, 1.0, 0.0, 0.5);
+      assert_eq!(0.5, vec[1]);
+    }
+    
+    #[test]
+    fn normalize_test() {
+      let mut vec = vec![0.0, 1.0, 8.0];
+      normalize(&mut vec);
+      println!("{:?}", vec);
+      assert_eq!(1.0/9.0 * 1.0 , vec[1]);
+      assert_eq!(1.0/9.0 * 8.0, vec[2]);
+    }
+    
+    #[test]
+    fn normalize_test2() {
+      let mut vec = vec![0.0, 3.0, 18.0];
+      normalize(&mut vec);
+      println!("{:?}", vec);
+      assert_eq!(1.0/21.0 * 3.0, vec[1]);
+      assert_eq!(1.0/21.0 * 18.0, vec[2]);
+    }
+
+    #[test]
+    fn normalize_trait_test() {
+      let vec = vec![0.0, 1.0, 8.0].normalize();
+      assert_eq!(1.0/9.0 * 8.0, vec[2]);
+    }
+
+    #[test]
+    fn normalize_trait_test2() {
+      let vec = vec![-2.0, 4.0, 20.0].normalize();
+      println!("{:?}", vec);
+      assert_eq!(1.0/22.0 * 20.0, vec[2]);
+    }
+
+    #[test]
+    fn normalize_sum_test() {
+      let mut vec = vec![0.0, 3.0, 18.0];
+      normalize(&mut vec);
+      let sum = sum(&vec);
+      assert_eq!(1.0, sum)
+    }
+    
+    #[test]
+    fn normalize_sum_trait_test() {
+      let vec = vec![0.0, 3.0, 18.0].normalize();
+      let sum = &vec.sum();
+      assert_eq!(1.0, *sum)
+    }
+    
+    #[test]
+    fn scale_test() {
+      let mut vec = vec![0.0, 3.0, 18.0];
+      scale(&mut vec, 0.0, 1.0);
+      assert_eq!(1.0, vec[2])
+    }
+    
+    #[test]
+    fn scale_trait_test() {
+      let vec = vec![0.0, 3.0, 18.0].normalize().scale(0.0, 1.0);
+      assert_eq!(1.0, vec[2])
+    }
+
+    #[test]
+    fn scale_test2() {
+      let mut vec = vec![0.0, 3.0, 18.0];
+      scale(&mut vec, 0.5, 1.0);
+      assert_eq!(0.5, vec[0])
+    }
+    
+    #[test]
+    fn scale_trait_test2() {
+      let vec = vec![0.0, 3.0, 18.0].normalize().scale(0.5, 1.0);
+      assert_eq!(0.5, vec[0])
+    }
+
+    #[test]
+    fn midi_to_frequency_test() {
         let midi = 12;
         assert_eq!(880f32, mtof(midi, 440f32))
     }
     
     #[test]
     /// frequencies are a bit skewed, towards equal temperment
-    fn test_midi_to_frequency2() {
+    fn midi_to_frequency2_test() {
         let midi = 19;
         assert_eq!(1318.5103f32, mtof(midi, 440f32))
     }
 
     #[test]
-    fn test_frequency_to_midi() {
+    fn frequency_to_midi_test() {
         let freq = 880f32;
         assert_eq!(12, ftom(freq, 440f32))
     }
     
     #[test]
     /// frequencies are a bit skewed, towards equal temperment
-    fn test_frequency_to_midi2() {
-        let freq = 1318.5103f32;
+    fn frequency_to_midi2_test() { let freq = 1318.5103f32;
         assert_eq!(19, ftom(freq, 440f32))
     }
 }

@@ -10,7 +10,6 @@ pub struct WaveTable<T> {
   position: f32,
   table: Vec<f32>,
   table_size: usize,
-  pub frequency: f32,
   samplerate: f32,
   interpolation: PhantomData<T>
 }
@@ -21,17 +20,16 @@ impl<T: Interpolation> WaveTable<T> {
       position: 0.0, 
       table: table.to_vec(),
       table_size: table.len(),
-      frequency: 0.0,
       samplerate,
       interpolation: PhantomData,
     } 
   }
 
-  pub fn play(&mut self, phase: f32) -> f32 {
-    if self.frequency > (self.samplerate / 2.0) { return 0.0; }
+  pub fn play(&mut self, frequency: f32, phase: f32) -> f32 {
+    if frequency > (self.samplerate / 2.0) { return 0.0; }
     let norm_ph = clamp((phase+1.0)*0.5, 0.0, 1.0);
     let len = self.table_size;
-    self.position += len as f32 / (self.samplerate /  (self.frequency * norm_ph));
+    self.position += len as f32 / (self.samplerate /  (frequency * norm_ph));
     while self.position > self.table_size as f32 {
       self.position -= self.table_size as f32;
     }
@@ -50,7 +48,7 @@ impl<T: Interpolation> WaveTable<T> {
 mod tests {
   use super::*;
   use crate::tests::interpolation::interpolation::*;
-  use crate::tests::waveshape::{Waveshape};
+  use crate::tests::waveshape::traits::Waveshape;
 
 
   #[test] 

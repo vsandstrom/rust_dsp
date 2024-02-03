@@ -11,8 +11,6 @@ pub struct Grain<T, U, V> {
   env_position: f32,
   rate: f32,
   duration: f32,
-  jitter: f32,
-  random: f32,
   pub active: bool,
   interpolation: PhantomData<T>,
   buf_interpolation: PhantomData<U>,
@@ -34,6 +32,7 @@ pub struct Granulator<T, U, V>
   num_grains: usize,
   max_grains: usize,
   grain_size: f32,
+  jitter: f32,
   interpolation: PhantomData<T>,
   buf_interpolation: PhantomData<U>,
   env_interpolation: PhantomData<V>,
@@ -60,8 +59,6 @@ impl<T, U, V> Granulator<T, U, V>
           env_position: 0.0,
           rate: 1.0,
           duration: 0.0533333,
-          jitter: 0.0,
-          random: 0.0,
           active: false,
           interpolation: PhantomData,
           buf_interpolation: PhantomData,
@@ -80,6 +77,7 @@ impl<T, U, V> Granulator<T, U, V>
       num_grains: max_grains,
       max_grains,
       grain_size: 0.2,
+      jitter: 0.0,
       interpolation: PhantomData,
       buf_interpolation: PhantomData,
       env_interpolation: PhantomData
@@ -93,12 +91,11 @@ impl<T, U, V> Granulator<T, U, V>
       if self.grains[i].active {
         out += self.grains[i].play(&self.envelope, &self.buffer);
         // update values in grains. 
-        self.grains[i].incr_ptrs(self.buffer.len() as f32);
-        if self.grains[i].buf_position >= self.buffer.len() as f32 {
+        self.grains[i].incr_ptrs();
+        if self.grains[i].env_position as usize >= self.envelope.len() {
           self.grains[i].env_position = 0.0;
           self.grains[i].buf_position = 0.0;
           self.grains[i].active = false;
-          println!("grain: {} set to inactive", i);
         }
       }
     }
@@ -106,7 +103,7 @@ impl<T, U, V> Granulator<T, U, V>
   }
 
   /// takes a trigger generator ( trigger >= 1.0 ) and a buffer position ( 0.0..=1.0 )
-  pub fn play(&mut self, duration: f32, position: f32, trigger: f32) -> f32 {
+  pub fn play(&mut self, rate: f32, duration: f32, position: f32, trigger: f32) -> f32 {
     if trigger < 1.0 {return self.idle_play()}
     let mut out: f32 = 0.0;
     let mut triggered = false;
@@ -118,15 +115,17 @@ impl<T, U, V> Granulator<T, U, V>
       }
       // activate new grain and set to active
       if !triggered && !self.grains[i].active {
-        self.grains[i].buf_position = position;
+        let random = rand::thread_rng().gen_range(0.0..=1.0) * self.jitter;
+        self.grains[i].buf_position = (f32::fract(position + random)) * self.buffer.len() as f32;
+        self.grains[i].env_position = 0.0;
+        self.grains[i].rate = rate;
         self.grains[i].active = true;
         self.grains[i].set_duration(duration, self.envelope.len() as f32);
         out += self.grains[i].play(&self.envelope, &self.buffer);
         triggered = true;
       }
-      self.grains[i].incr_ptrs(self.buffer.len() as f32);
-      if self.grains[i].buf_position >= self.buffer.len() as f32 {
-        self.grains[i].env_position = 0.0;
+      self.grains[i].incr_ptrs();
+      if self.grains[i].env_position as usize >= self.envelope.len() {
         self.grains[i].active = false;
       }
     }
@@ -136,6 +135,10 @@ impl<T, U, V> Granulator<T, U, V>
   pub fn record(&mut self, sample: f32) {
     self.buffer.buffer.push(sample);
   }
+  
+  pub fn set_jitter(&mut self, jitter: f32) {
+    self.jitter = jitter;
+  }
 
 }
 
@@ -144,8 +147,8 @@ impl<T, U, V> Grain<T, U, V>
         U: Interpolation,
         V: Interpolation 
 {
-  pub fn incr_ptrs(&mut self, buffer_length: f32) {
-    self.buf_position += self.rate + self.random * buffer_length;
+  pub fn incr_ptrs(&mut self) {
+    self.buf_position += self.rate;
     self.env_position += self.duration;
   }
 
@@ -155,21 +158,15 @@ impl<T, U, V> Grain<T, U, V>
     out
   }
 
-  pub fn set_jitter(&mut self, jitter: f32) {
-    self.jitter = jitter;
-  }
   
   pub fn set_duration(&mut self, duration: f32, envelope_length: f32) {
-    self.duration = envelope_length / (self.samplerate) * duration;
+    self.duration = envelope_length / ((self.samplerate) * duration);
   }
 
   pub fn set_rate(&mut self, rate: f32) {
     self.rate = rate;
   }
 
-  pub fn set_random(&mut self) {
-    self.random = rand::thread_rng().gen_range(0.0..=1.0)
-  }
 }
 
 #[cfg(test)]

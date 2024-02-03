@@ -1,14 +1,14 @@
 use std::{thread, time, usize};
 use buffer::Buffer;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use dsp::buffer::traits::SignalVector;
 use envelope::Envelope;
 use grains::{Grain, Granulator};
 use trig::{Trigger, Impulse};
 use wavetable::WaveTable;
 use std::sync::mpsc::{channel, Receiver, Sender};
-use interpolation::interpolation::{Linear, Cubic};
+use interpolation::interpolation::{Floor, Linear, Cubic};
 use waveshape::traits::Waveshape;
-use delay::Delay;
 
 
 fn main() -> anyhow::Result<()> {
@@ -46,14 +46,18 @@ fn main() -> anyhow::Result<()> {
     let buf_r = Buffer::new(4 * config.sample_rate.0 as usize, f_sample_rate);
     let env = Envelope::from(vec![0.0; 512].hanning());
 
-    let t = vec![0.0; 512];
-    let mut ph = WaveTable::<Linear>::new(&t.sawtooth(), f_sample_rate);
+    let t: Vec<f32> = vec![0.0; 512].sawtooth().iter().map(|x| (x+1.0) / 2.0).collect();
+    let mut phl = WaveTable::<Floor>::new(&t.clone(), f_sample_rate);
+    let mut phr = WaveTable::<Floor>::new(&t, f_sample_rate);
 
     let mut tl = Impulse::new(0.15, f_sample_rate);
     let mut tr = Impulse::new(0.19, f_sample_rate);
 
     let mut gl = Granulator::<Cubic, Linear, Cubic>::new(buf_l, env.clone(), f_sample_rate, 16);
     let mut gr = Granulator::<Cubic, Linear, Cubic>::new(buf_r, env, f_sample_rate, 16);
+
+    gl.set_jitter(0.3);
+    gr.set_jitter(0.3);
 
     let time_at_start = std::time::Instant::now();
     
@@ -85,7 +89,7 @@ fn main() -> anyhow::Result<()> {
           let raw_sample = rx.recv();
           *sample = match raw_sample { 
             Ok(sample) =>{
-              if t < 4 {
+              if t < 5 {
                 if ch % 2 == 0 {
                   ch+=1;
                   gl.record(sample);
@@ -95,13 +99,14 @@ fn main() -> anyhow::Result<()> {
                 }
                 sample
               } else {
-                let p = ph.play(1.0/20.0);
+                let pl = phl.play(1.0/10.0, 0.0);
+                let pr = phr.play(1.0/6.0, 0.0);
                 if ch % 2 == 0 {
                   ch += 1;
-                  gl.play(0.1, p, tl.play(0.05))
+                  gl.play(0.5, 5.0/4.0, pl, tl.play(0.45))
                 } else {
                   ch += 1;
-                  gr.play(1.4, p, tr.play(2.5))
+                  gr.play(1.4, 3.0/2.0, pr, tr.play(1.0))
                 }
               }
               // Stereo handling in interleaved stream
