@@ -82,35 +82,31 @@ fn main() -> anyhow::Result<()> {
     let output_callback = move | data: &mut [f32], _: &cpal::OutputCallbackInfo | {
         // Process output data
         let mut ch = 0;
-        let t = time_at_start.elapsed().as_secs();
         let mut input_fell_behind = false;
         for sample in data {
           // Recieve sample from input stream
           let raw_sample = rx.recv();
           *sample = match raw_sample { 
             Ok(sample) =>{
-              if t < 5 {
-                if ch % 2 == 0 {
-                  ch+=1;
-                  gl.record(sample);
+              // hacky handler of interleaved stereo
+              if ch % 2 == 0 {
+                ch+=1;
+                if let Some(sample) = gl.record(sample) {
+                  sample
                 } else {
-                  ch+=1;
-                  gr.record(sample);
+                  let pl = phl.play(1.0/10.0, 0.0);
+                  gl.play(1.5, 0.5, pl, tl.play(0.45))
                 }
-                sample
               } else {
-                let pl = phl.play(1.0/10.0, 0.0);
-                let pr = phr.play(1.0/6.0, 0.0);
-                if ch % 2 == 0 {
-                  ch += 1;
-                  gl.play(0.5, 5.0/4.0, pl, tl.play(0.45))
+                ch+=1;
+                if let Some(sample) = gr.record(sample) {
+                  sample
                 } else {
-                  ch += 1;
-                  gr.play(1.4, 3.0/2.0, pr, tr.play(1.0))
+                  let pr = phr.play(1.0/6.0, 0.0);
+                  gr.play(1.0, 1.5, pr, tr.play(1.5))
+
                 }
               }
-              // Stereo handling in interleaved stream
-              // sample
             },
             Err(_) => {
               input_fell_behind = true;

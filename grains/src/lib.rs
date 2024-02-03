@@ -1,5 +1,6 @@
 extern crate envelope; extern crate buffer;
 use core::marker::PhantomData;
+use std::error::Error;
 use envelope::Envelope;
 use interpolation::interpolation::Interpolation;
 use buffer::Buffer;
@@ -118,7 +119,7 @@ impl<T, U, V> Granulator<T, U, V>
         let random = rand::thread_rng().gen_range(0.0..=1.0) * self.jitter;
         self.grains[i].buf_position = (f32::fract(position + random)) * self.buffer.len() as f32;
         self.grains[i].env_position = 0.0;
-        self.grains[i].rate = rate;
+        self.grains[i].set_rate(rate);
         self.grains[i].active = true;
         self.grains[i].set_duration(duration, self.envelope.len() as f32);
         out += self.grains[i].play(&self.envelope, &self.buffer);
@@ -132,14 +133,25 @@ impl<T, U, V> Granulator<T, U, V>
     out
   }
 
-  pub fn record(&mut self, sample: f32) {
+  pub fn record(&mut self, sample: f32) -> Option<f32> {
+    if self.buffer.size == self.buffer.len() {
+      return None;
+    }
     self.buffer.buffer.push(sample);
+    Some(sample)
+  }
+
+  pub fn clear(&mut self) {
+    self.buffer.buffer.clear();
   }
   
   pub fn set_jitter(&mut self, jitter: f32) {
     self.jitter = jitter;
   }
 
+  pub fn buffer_len(&self) -> f32 {
+    self.buffer.len() as f32 / self.samplerate
+  }
 }
 
 impl<T, U, V> Grain<T, U, V> 
@@ -166,7 +178,6 @@ impl<T, U, V> Grain<T, U, V>
   pub fn set_rate(&mut self, rate: f32) {
     self.rate = rate;
   }
-
 }
 
 #[cfg(test)]
