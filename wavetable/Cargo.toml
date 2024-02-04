@@ -10,3 +10,4 @@ interpolation = {path = '../interpolation/'}
 buffer = {path = '../buffer/'}
 waveshape = {path = '../waveshape/'}
 dsp = {path = '../dsp/'}
+assert_float_eq = "1.1.3"

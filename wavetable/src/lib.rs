@@ -10,6 +10,7 @@ pub struct WaveTable<T> {
   position: f32,
   table: Vec<f32>,
   table_size: usize,
+  frequency: f32,
   samplerate: f32,
   interpolation: PhantomData<T>
 }
@@ -20,6 +21,7 @@ impl<T: Interpolation> WaveTable<T> {
       position: 0.0, 
       table: table.to_vec(),
       table_size: table.len(),
+      frequency: 0.0,
       samplerate,
       interpolation: PhantomData,
     } 
@@ -27,6 +29,7 @@ impl<T: Interpolation> WaveTable<T> {
 
   pub fn play(&mut self, frequency: f32, phase: f32) -> f32 {
     if frequency > (self.samplerate / 2.0) { return 0.0; }
+    self.frequency = frequency;
     let norm_ph = clamp((phase+1.0)*0.5, 0.0, 1.0);
     let len = self.table_size;
     self.position += len as f32 / (self.samplerate /  (frequency * norm_ph));
@@ -50,6 +53,7 @@ mod tests {
   use crate::tests::interpolation::interpolation::*;
   use crate::tests::waveshape::traits::Waveshape;
 
+  const SAMPLERATE: f32 = 48000.0;
 
   #[test] 
   fn triangletest() {
@@ -66,16 +70,17 @@ mod tests {
   
   #[test] 
   fn interptest() {
-    let table = vec![0.0;16].sine();
+    let table_size = 16;
+    let table = vec![0.0;table_size].triangle();
     let mut wt = WaveTable::< Linear>::new(&table, 48000.0);
     let mut shape = vec!();
     wt.frequency = 16.0;
     // Check if it wraps
-    for _ in 0..17 {
-      let out = wt.play(1.0);
+    for _ in 0..16 {
+      let out = wt.play(SAMPLERATE / table_size as f32, 1.0);
       shape.push(out);
     }
-    assert_eq!(vec![0.0, 0.25, 0.5, 0.75, 1.0, 0.75, 0.5, 0.25, 0.0, -0.25, -0.5, -0.75, -1.0, -0.75, -0.5, -0.25, 0.0], shape)
+    assert_eq!(vec![0.25, 0.5, 0.75, 1.0, 0.75, 0.5, 0.25, 0.0, -0.25, -0.5, -0.75, -1.0, -0.75, -0.5, -0.25, 0.0], shape)
   }
 
   #[test]
@@ -85,21 +90,36 @@ mod tests {
     wt.frequency = 20.0;
     let mut shape = vec!();
     for _ in 0..20 { 
-      let out = wt.play(1.0);
+      let out = wt.play(1.0, 1.0);
       shape.push(out) 
     } 
     println!("{:?}", shape);
   }
 
-
   #[test]
   fn linear_test() {
-    let table = vec![0.0;4].triangle();
+    let table_size = 4;
+    let dilude = 2;
+    let table = vec![0.0;table_size].triangle();
     let mut wt = WaveTable::<Linear>::new(&table, 48000.0);
-    wt.frequency = 1.0/92000.0;
-    let _ = wt.play(1.0);
-    let shape = wt.play(1.0);
-    assert_eq!(0.5, shape);
-
+    let mut shape = vec!();
+    for _ in 0..(table_size * dilude) {
+      shape.push(wt.play(SAMPLERATE / (table_size * dilude) as f32, 1.0));
+    }
+    println!("{:?}", shape);
+    assert_eq!(vec![0.5, 1.0, 0.5, 0.0, -0.5, -1.0, -0.5, 0.0], shape);
   }
+  
+  // #[test]
+  // fn cubic_test() {
+  //   let table_size = 9;
+  //   let table = vec![0.0;table_size].sine();
+  //   let mut wt = WaveTable::<Linear>::new(&table, 48000.0);
+  //   let mut shape = vec!();
+  //   for _ in 0..16 {
+  //     shape.push(wt.play(SAMPLERATE / 16.0, 1.0));
+  //   }
+  //   println!("{:?}", shape);
+  //   assert_eq!(0.707, shape[3]);
+  // }
 }

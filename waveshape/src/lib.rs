@@ -189,16 +189,5 @@ pub mod traits {
 
 #[cfg(test)]
 mod tests {
-  use crate::traits::Waveshape;
-    use simple_plot::_plotly::Plot;
-
-    use super::*;
-
-
-    #[test]
-    fn plot_complex() {
-      let cs = vec![0.0; 16].complex_sine(&mut vec![1.0, 0.2, 0.3], &vec![0.0, 0.5, 0.2]);
-      plot!("complex_sine", 0..16, cs);
-    }
 
 }

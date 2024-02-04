@@ -25,15 +25,16 @@ pub mod interpolation {
   /// Cubic interpolation - read position is interpolated between 4 points
   impl Interpolation for Cubic {
     fn interpolate(position: f32, buffer: &Vec<f32>, buffer_size: usize) -> f32 {
-      let diff = position - position.floor();
-      let a2 = position as usize % buffer_size;
-      let a1 = match a2 == 0 {true => buffer_size-1, false => a2-1}; 
-      let b1 = match (a2+1) >= buffer_size {true => (a2+1) % buffer_size, false => a2+1};
-      let b2 = match (a2+2) >= buffer_size {true => (a2+2) % buffer_size, false => a2+2};
-      let c1 = buffer[b2] - buffer[b1] - buffer[a1] + buffer[a2];
-      let c2 = buffer[a1] - buffer[a2] - c1;
-      let c3 = buffer[b1] - buffer[a1];
-      (c1 * f32::powf(diff, 3.0)) + (c2 * f32::powf(diff, 2.0)) + (c3 * diff) + buffer[a2]
+      let a2 = position.floor() as usize;
+      let diff = position - a2 as f32;
+      let a1 = if a2 == 0 { buffer_size-1 } else { a2 - 1 };
+      let b1 = if a2 + 1 >= buffer_size { a2 + 1 - buffer_size } else { a2 + 1 };
+      let b2 = if b1 + 1 >= buffer_size { b1 + 1 - buffer_size } else { b1 + 1 };
+
+      let c0 = buffer[b2] - buffer[b1] - buffer[a1] + buffer[a2];
+      let c1 = buffer[a1] - buffer[a2] - c0;
+      let c2 = buffer[b1] - buffer[a1];
+      (c0 * f32::powf(diff, 3.0)) + (c1 * f32::powf(diff, 2.0)) + (c2 * diff) + buffer[a2]
     }
   }
 
@@ -130,11 +131,11 @@ mod tests {
     }
 
     #[test] fn cubic_vs_linear() {
-      let mut buf = Vec::with_capacity(16);
-      sine(&mut buf, 16);
+      let mut buf = vec![0.0; 512];
+      sine(&mut buf);
       let pos = 4.5;
-      let lin = Linear::interpolate(pos, &buf, 16);
-      let cub = Cubic::interpolate(pos, &buf, 16);
+      let lin = Linear::interpolate(pos, &buf, 512);
+      let cub = Cubic::interpolate(pos, &buf, 512);
       assert_ne!(lin, cub, "Linear: {} should not be equal Cubic: {}", lin, cub)
     }
 }

@@ -11,5 +11,5 @@ members = [
   "reverb",
   "trig",
   "waveshape",
-  "wavetable"
+  "wavetable",
 ]

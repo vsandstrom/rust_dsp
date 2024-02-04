@@ -2,6 +2,7 @@
 /*/Cargo.lock
 /fb_skiss
 /dsp_test
+/interp_test
 Cargo.lock
 .DS_Store
 target
