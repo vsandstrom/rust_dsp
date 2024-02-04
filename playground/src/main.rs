@@ -53,8 +53,8 @@ fn main() -> anyhow::Result<()> {
     let mut tl = Impulse::new(0.15, f_sample_rate);
     let mut tr = Impulse::new(0.19, f_sample_rate);
 
-    let mut gl = Granulator::<Cubic, Linear, Cubic>::new(buf_l, env.clone(), f_sample_rate, 16);
-    let mut gr = Granulator::<Cubic, Linear, Cubic>::new(buf_r, env, f_sample_rate, 16);
+    let mut gl = Granulator::<Cubic, Linear, Cubic>::new(buf_l, env.clone(), f_sample_rate, 32);
+    let mut gr = Granulator::<Cubic, Linear, Cubic>::new(buf_r, env, f_sample_rate, 32);
 
     gl.set_jitter(0.3);
     gr.set_jitter(0.3);

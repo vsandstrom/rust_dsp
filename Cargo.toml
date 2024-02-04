@@ -1,0 +1,15 @@
+[workspace]
+members = [
+  "playground",
+  "buffer",
+  "delay",
+  "dsp",
+  "envelope",
+  "filter",
+  "grains",
+  "interpolation",
+  "reverb",
+  "trig",
+  "waveshape",
+  "wavetable"
+]

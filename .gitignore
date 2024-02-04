@@ -2,3 +2,6 @@
 /*/Cargo.lock
 /fb_skiss
 /dsp_test
+Cargo.lock
+.DS_Store
+target
