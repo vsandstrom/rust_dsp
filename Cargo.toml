@@ -13,3 +13,6 @@ members = [
   "waveshape",
   "wavetable",
 ]
+exclude = [
+  "interp_test"
+]

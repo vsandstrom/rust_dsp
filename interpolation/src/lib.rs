@@ -25,11 +25,11 @@ pub mod interpolation {
   /// Cubic interpolation - read position is interpolated between 4 points
   impl Interpolation for Cubic {
     fn interpolate(position: f32, buffer: &Vec<f32>, buffer_size: usize) -> f32 {
-      let a2 = position.floor() as usize;
-      let diff = position - a2 as f32;
-      let a1 = if a2 == 0 { buffer_size-1 } else { a2 - 1 };
-      let b1 = if a2 + 1 >= buffer_size { a2 + 1 - buffer_size } else { a2 + 1 };
-      let b2 = if b1 + 1 >= buffer_size { b1 + 1 - buffer_size } else { b1 + 1 };
+      let a2 = (position.floor() as usize) % buffer_size;
+      let diff = position.fract();
+      let a1 = {if a2 == 0 { buffer_size-1 } else { a2 - 1 }};
+      let b1 = {if a2 + 1 >= buffer_size { a2 + 1 - buffer_size } else { a2 + 1 }};
+      let b2 = {if b1 + 1 >= buffer_size { b1 + 1 - buffer_size } else { b1 + 1 }};
 
       let c0 = buffer[b2] - buffer[b1] - buffer[a1] + buffer[a2];
       let c1 = buffer[a1] - buffer[a2] - c0;
@@ -51,15 +51,15 @@ pub mod interpolation {
 
   impl Interpolation for Hermetic {
     fn interpolate(position: f32, buffer: &Vec<f32>, buffer_size: usize) -> f32 {
-      let diff = position - position.floor();
+      let diff = position.fract();
       let a2 = position as usize % buffer_size;
-      let a1 = match a2 == 0 {true => buffer_size-1, false => a2-1}; 
-      let b1 = match (a2+1) >= buffer_size {true => (a2+1) % buffer_size, false => a2+1};
-      let b2 = match (a2+2) >= buffer_size {true => (a2+2) % buffer_size, false => a2+2};
+      let a1 = {if a2 == 0 { buffer_size-1 } else { a2 - 1 }};
+      let b1 = {if a2 + 1 >= buffer_size { a2 + 1 - buffer_size } else { a2 + 1 }};
+      let b2 = {if b1 + 1 >= buffer_size { b1 + 1 - buffer_size } else { b1 + 1 }};
       let sub = buffer[a2] - buffer[b1];
       let c1 = buffer[b1] - buffer[a1];
       let c3 = buffer[b2] - buffer[a2] + 3.0 * sub;
-      let c2 = -2.0 * sub + c1 + c3;
+      let c2 = -(2.0 * sub + c1 + c3);
       0.5 * ((c3*diff+c2) * diff + c1) * diff + buffer[a2]
       
     }
@@ -120,14 +120,14 @@ mod tests {
     fn linear_wrap_test() {
       let buffer = vec![0.0, 1.0];
       let pos = 2.5;
-      assert_eq!(0.5, Linear::interpolate(pos, &buffer, 2), "wrapping around buffer works")
+      assert_eq!(0.5, Linear::interpolate(pos, &buffer, 2), "wrapping around linear")
     }
 
     #[test]
     fn cubic_wrap_test() {
       let buffer = vec![0.0, 4.0, 4.2, 2.0, 1.0];
       let pos = 7.25;
-      assert_eq!(3.725, Cubic::interpolate(pos, &buffer, 5), "wrapping around buffer works")
+      assert_eq!(3.725, Cubic::interpolate(pos, &buffer, 5), "wrapping around cubic")
     }
 
     #[test] fn cubic_vs_linear() {
