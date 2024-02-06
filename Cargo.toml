@@ -11,7 +11,7 @@ members = [
   "reverb",
   "trig",
   "waveshape",
-  "wavetable",
+  "wavetable", "vector", "fdn",
 ]
 exclude = [
   "interp_test"
