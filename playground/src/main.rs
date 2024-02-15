@@ -1,14 +1,9 @@
 use std::{thread, time, usize};
 use buffer::Buffer;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use dsp::buffer::traits::SignalVector;
-use envelope::Envelope;
-use grains::{Grain, Granulator};
-use trig::{Trigger, Impulse};
-use wavetable::WaveTable;
+use delay::{ Delay, IDelay, DelayTrait };
 use std::sync::mpsc::{channel, Receiver, Sender};
 use interpolation::interpolation::{Floor, Linear, Cubic};
-use waveshape::traits::Waveshape;
 
 
 fn main() -> anyhow::Result<()> {
@@ -40,26 +35,14 @@ fn main() -> anyhow::Result<()> {
     // let latency_frames = (150.0 / 1000.0) * f_sample_rate;
     // let latency_samples = latency_frames as usize * config.channels as usize;
 
-
     // SETUP YOUR AUDIO PROCESSING STRUCTS HERE !!!! <-------------------------
-    let buf_l = Buffer::new(4 * config.sample_rate.0 as usize, f_sample_rate);
-    let buf_r = Buffer::new(4 * config.sample_rate.0 as usize, f_sample_rate);
-    let env = Envelope::from(vec![0.0; 512].hanning());
+    // let mut dll = IDelay::<Linear>::new(1.6, 1.6, 20, f_sample_rate);
+    // let mut dlr = IDelay::<Linear>::new(1.6, 1.6, 20, f_sample_rate);
+    
+    let mut dll = Delay::new(1.6, 1.6, 20, f_sample_rate);
+    let mut dlr = Delay::new(1.6, 1.6, 20, f_sample_rate);
 
-    let t: Vec<f32> = vec![0.0; 512].sawtooth().iter().map(|x| (x+1.0) / 2.0).collect();
-    let mut phl = WaveTable::<Floor>::new(&t.clone(), f_sample_rate);
-    let mut phr = WaveTable::<Floor>::new(&t, f_sample_rate);
-
-    let mut tl = Impulse::new(0.15, f_sample_rate);
-    let mut tr = Impulse::new(0.19, f_sample_rate);
-
-    let mut gl = Granulator::<Cubic, Linear, Cubic>::new(buf_l, env.clone(), f_sample_rate, 32);
-    let mut gr = Granulator::<Cubic, Linear, Cubic>::new(buf_r, env, f_sample_rate, 32);
-
-    gl.set_jitter(0.3);
-    gr.set_jitter(0.3);
-
-    let time_at_start = std::time::Instant::now();
+    // let time_at_start = std::time::Instant::now();
     
     // Create a channel to send and receive samples
     let (tx, rx): (Sender<f32>, Receiver<f32>) = channel();
@@ -91,21 +74,10 @@ fn main() -> anyhow::Result<()> {
               // hacky handler of interleaved stereo
               if ch % 2 == 0 {
                 ch+=1;
-                if let Some(sample) = gl.record(sample) {
-                  sample
-                } else {
-                  let pl = phl.play(1.0/10.0, 0.0);
-                  gl.play(1.5, 0.5, pl, tl.play(0.45))
-                }
+                dll.play(sample, 0.2) * 0.1
               } else {
                 ch+=1;
-                if let Some(sample) = gr.record(sample) {
-                  sample
-                } else {
-                  let pr = phr.play(1.0/6.0, 0.0);
-                  gr.play(1.0, 1.5, pr, tr.play(1.5))
-
-                }
+                dlr.play(sample, 0.2) * 0.1
               }
             },
             Err(_) => {

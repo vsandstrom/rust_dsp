@@ -1,5 +1,5 @@
 pub mod interpolation {
-    use std::{f32::consts::PI, io::BufRead};
+    use std::{f32::consts::PI, usize};
 
   pub struct Linear { }
   pub struct Cubic { }
@@ -14,10 +14,10 @@ pub mod interpolation {
   /// Linear interpolation - read position is interpolated between 2 points
   impl Interpolation for Linear {
     fn interpolate(position: f32, buffer: &Vec<f32>, buffer_size: usize) -> f32 {
-      let prev = position.floor();
-      let next = position.ceil();
-      let x = position - prev;
-      buffer[prev as usize % buffer_size] * (1.0-x) + buffer[next as usize % buffer_size] * x 
+      let prev = position as usize;
+      let x = position.fract();
+      let next = {if prev + 1 >= buffer_size { prev + 1 - buffer_size } else { prev + 1 }};
+      buffer[prev % buffer_size] * (1.0-x) + buffer[next % buffer_size] * x 
     }
   }
 
@@ -27,9 +27,9 @@ pub mod interpolation {
     fn interpolate(position: f32, buffer: &Vec<f32>, buffer_size: usize) -> f32 {
       let a2 = (position.floor() as usize) % buffer_size;
       let diff = position.fract();
-      let a1 = {if a2 == 0 { buffer_size-1 } else { a2 - 1 }};
-      let b1 = {if a2 + 1 >= buffer_size { a2 + 1 - buffer_size } else { a2 + 1 }};
-      let b2 = {if b1 + 1 >= buffer_size { b1 + 1 - buffer_size } else { b1 + 1 }};
+      let a1 = {if a2 == 0 { buffer_size - 1 } else { a2 - 1 }};
+      let b1 = {if a2 + 1 >= buffer_size { a2 - (buffer_size - 1) } else { a2 + 1 }};
+      let b2 = {if b1 + 1 >= buffer_size { b1 - (buffer_size - 1) } else { b1 + 1 }};
 
       let c0 = buffer[b2] - buffer[b1] - buffer[a1] + buffer[a2];
       let c1 = buffer[a1] - buffer[a2] - c0;
@@ -73,6 +73,7 @@ pub mod interpolation {
     }
   }
 }
+
  
 #[cfg(test)]
 mod tests {

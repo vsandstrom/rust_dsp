@@ -1,7 +1,8 @@
 extern crate interpolation;
 extern crate filter;
 
-use filter::Comb;
+use filter::{Comb, Filter};
+
 use interpolation::interpolation::Floor;
 
 pub struct SchroederVerb {
