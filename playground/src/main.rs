@@ -38,9 +38,26 @@ fn main() -> anyhow::Result<()> {
     // SETUP YOUR AUDIO PROCESSING STRUCTS HERE !!!! <-------------------------
     // let mut dll = IDelay::<Linear>::new(1.6, 1.6, 20, f_sample_rate);
     // let mut dlr = IDelay::<Linear>::new(1.6, 1.6, 20, f_sample_rate);
+    let dtl = [0.034, 0.068, 0.136, 0.272];
+    let mut ldll = dtl.map(|dt| Delay::new(dt, dt, 1, f_sample_rate));
+    let mut ldlr = dtl.map(|dt| Delay::new(dt, dt, 1, f_sample_rate));
     
-    let mut dll = Delay::new(1.6, 1.6, 20, f_sample_rate);
-    let mut dlr = Delay::new(1.6, 1.6, 20, f_sample_rate);
+    let dtl = [8.3, 15.1, 37.953, 77.98, 24.9, 33.21, 55.4, 127.45];
+    let mut dll = dtl.map(|dt| IDelay::<Linear>::new(dt / f_sample_rate, dt / f_sample_rate, 1, f_sample_rate));
+    let mut dlr = dtl.map(|dt| IDelay::<Linear>::new(dt / f_sample_rate, dt / f_sample_rate, 1, f_sample_rate));
+
+    let mx1 = [1.0, -1.0, 1.0, -1.0];
+    let mx2 = [
+      1.0, -1.0, 1.0, -1.0,
+      1.0, -1.0, 1.0, -1.0
+    ];
+    // let mxr = [1.0, -1.0, -1.0, 1.0];
+
+    let mut prl = 0.0;
+    let mut prr = 0.0;
+    
+    // let mut dll = Delay::new(1.6, 1.6, 1, f_sample_rate);
+    // let mut dlr = Delay::new(1.6, 1.6, 1, f_sample_rate);
 
     // let time_at_start = std::time::Instant::now();
     
@@ -74,10 +91,24 @@ fn main() -> anyhow::Result<()> {
               // hacky handler of interleaved stereo
               if ch % 2 == 0 {
                 ch+=1;
-                dll.play(sample, 0.2) * 0.1
+                let mut out = 0.0;
+                for i in 0..8 { out += dll[i].play(sample, 0.44) * mx2[i]; }
+                for i in 0..4 { out += (ldll[i].play(out, 0.0) * mx1[i]) / (i as f32 + 1.0); }
+                // lowpass
+                // let temp = prl + out;
+                // prl = out;
+                // temp * 0.1
+                out * 0.1
               } else {
                 ch+=1;
-                dlr.play(sample, 0.2) * 0.1
+                let mut out = 0.0;
+                for i in 0..8 { out += dlr[i].play(sample, 0.44) * mx2[i]; }
+                for i in 0..4 { out += (ldlr[i].play(out, 0.0) * mx1[i]) / (i as f32 + 1.0); }
+                // lowpass
+                // let temp = prr + out;
+                // prr = out;
+                // temp * 0.1
+                out * 0.1
               }
             },
             Err(_) => {
