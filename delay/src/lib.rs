@@ -86,6 +86,7 @@ impl DelayTrait for Delay {
   fn set_time(&mut self, delay_time: f32) {
     if (delay_time * self.samplerate) as usize >= self.buffer_size {
       self.delay_time = self.buffer_size as f32 / self.samplerate;
+      return;
     }
     self.delay_time = delay_time
   }
@@ -167,7 +168,11 @@ impl<T> DelayTrait for IDelay<T> where T: Interpolation {
   }
 
   fn set_time(&mut self, delay_time: f32) {
-    self.delay_time = delay_time;
+    if (delay_time * self.samplerate) as usize >= self.buffer_size {
+      self.delay_time = self.buffer_size as f32 / self.samplerate;
+      return;
+    }
+    self.delay_time = delay_time
   }
 
 }
