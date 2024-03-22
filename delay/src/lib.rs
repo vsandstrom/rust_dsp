@@ -30,7 +30,6 @@ fn pow_two(x: usize) -> usize {
   y
 }
 
-
 impl DelayTrait for Delay {
   /// Create new Delay
   /// max_delay_time >= delay_time * delay_taps,
