@@ -60,14 +60,14 @@ pub mod buffer {
   use crate::signal::map;
 
   /// Same as map, but for entire buffers. Suitable for normalizing Wavetable buffers.
-  pub fn range(values: &mut Vec<f32>, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> &Vec<f32> {
+  pub fn range(values: &mut [f32], in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> &[f32] {
     for i in 0..values.len() {
       map(&mut values[i], in_min, in_max, out_min, out_max);
     }
     values
   }
 
-  pub fn sum(values: &Vec<f32>) -> f32 {
+  pub fn sum(values: &[f32]) -> f32 {
     let mut sum = 0.0;
     for i in 0..values.len() {
       sum += values[i];
@@ -76,7 +76,7 @@ pub mod buffer {
   }
     
   /// Normalizes contents of vec, sum of contents == 1.0
-  pub fn normalize(values: &mut Vec<f32>) {
+  pub fn normalize(values: &mut [f32]) {
     let x = 1.0 / sum(values);
     for i in 0..values.len() {
       values[i] *= x;
@@ -84,7 +84,7 @@ pub mod buffer {
   }
 
   // Scales the contents of a Vec to be between outmin -> outmax
-  pub fn scale(values: &mut Vec<f32>, outmin: f32, outmax: f32) -> &Vec<f32> {
+  pub fn scale(values: &mut [f32], outmin: f32, outmax: f32) -> &[f32] {
     let mut min = 0.0f32;
     let mut max = 0.0f32;
     for i in 0..values.len() {
@@ -107,7 +107,45 @@ pub mod buffer {
     }
 
     impl SignalVector for Vec<f32> {
+      fn range(mut self, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> Self {
+        for i in 0..self.len() {
+          let temp = self[i].map(in_min, in_max, out_min, out_max);
+          self[i] = temp;
+        }
+        self
+      }
 
+      fn sum(&self) -> f32 {
+        let mut sum = 0.0;
+        for x in self {
+          sum += x;
+        }
+        sum
+      }
+        
+      /// Sum of values in vec == 1
+      fn normalize(mut self) -> Self {
+        let y = 1.0 / sum(&self);
+        for i in 0..self.len() {
+          self[i] *= y;
+        }
+        self
+      }
+
+      // Scales the contents of a Vec to be between outmin -> outmax
+      fn scale(mut self, outmin: f32, outmax: f32) -> Self{
+        let mut min = 0.0f32;
+        let mut max = 0.0f32;
+        for x in &self {
+          if x < &min { min = *x };
+          if x > &max { max = *x };
+        }
+        range(&mut self, min, max, outmin, outmax);
+        self
+      }
+    }
+    
+    impl<const N:usize> SignalVector for [f32; N] {
       fn range(mut self, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> Self {
         for i in 0..self.len() {
           let temp = self[i].map(in_min, in_max, out_min, out_max);

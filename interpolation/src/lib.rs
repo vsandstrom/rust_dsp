@@ -11,9 +11,24 @@ pub mod interpolation {
     fn interpolate(position: f32, buffer: &Vec<f32>, buffer_size: usize) -> f32;
   }
 
+  pub trait InterpolationConst {
+    fn interpolate(position: f32, buffer: &[f32], buffer_size: usize) -> f32;
+  }
+
+
+
   /// Linear interpolation - read position is interpolated between 2 points
   impl Interpolation for Linear {
     fn interpolate(position: f32, buffer: &Vec<f32>, buffer_size: usize) -> f32 {
+      let prev = position as usize;
+      let x = position.fract();
+      let next = {if prev + 1 >= buffer_size { prev + 1 - buffer_size } else { prev + 1 }};
+      buffer[prev % buffer_size] * (1.0-x) + buffer[next % buffer_size] * x 
+    }
+  }
+
+  impl InterpolationConst for Linear {
+    fn interpolate(position: f32, buffer: &[f32], buffer_size: usize) -> f32 {
       let prev = position as usize;
       let x = position.fract();
       let next = {if prev + 1 >= buffer_size { prev + 1 - buffer_size } else { prev + 1 }};
@@ -37,9 +52,35 @@ pub mod interpolation {
       (c0 * f32::powf(diff, 3.0)) + (c1 * f32::powf(diff, 2.0)) + (c2 * diff) + buffer[a2]
     }
   }
+  
+  impl InterpolationConst for Cubic {
+    fn interpolate(position: f32, buffer: &[f32], buffer_size: usize) -> f32 {
+      let a2 = (position.floor() as usize) % buffer_size;
+      let diff = position.fract();
+      let a1 = {if a2 == 0 { buffer_size - 1 } else { a2 - 1 }};
+      let b1 = {if a2 + 1 >= buffer_size { a2 - (buffer_size - 1) } else { a2 + 1 }};
+      let b2 = {if b1 + 1 >= buffer_size { b1 - (buffer_size - 1) } else { b1 + 1 }};
+
+      let c0 = buffer[b2] - buffer[b1] - buffer[a1] + buffer[a2];
+      let c1 = buffer[a1] - buffer[a2] - c0;
+      let c2 = buffer[b1] - buffer[a1];
+      (c0 * f32::powf(diff, 3.0)) + (c1 * f32::powf(diff, 2.0)) + (c2 * diff) + buffer[a2]
+    }
+  }
 
   impl Interpolation for Cosine {
     fn interpolate(position: f32, buffer: &Vec<f32>, buffer_size: usize) -> f32 {
+      let diff = position - position.floor();
+      let a1 = position as usize;
+      let b1 = match a1 + 1 >= buffer_size {true => (a1+1) % buffer_size, false => a1+1};
+      let bw = (1.0 - f32::cos(diff*PI)) / 2.0;
+      let aw = 1.0 - bw;
+      buffer[a1] * aw + buffer[b1] * bw
+    } 
+  }
+  
+  impl InterpolationConst for Cosine {
+    fn interpolate(position: f32, buffer: &[f32], buffer_size: usize) -> f32 {
       let diff = position - position.floor();
       let a1 = position as usize;
       let b1 = match a1 + 1 >= buffer_size {true => (a1+1) % buffer_size, false => a1+1};
@@ -64,10 +105,32 @@ pub mod interpolation {
       
     }
   }
+  
+  impl InterpolationConst for Hermetic {
+    fn interpolate(position: f32, buffer: &[f32], buffer_size: usize) -> f32 {
+      let diff = position.fract();
+      let a2 = position as usize % buffer_size;
+      let a1 = {if a2 == 0 { buffer_size-1 } else { a2 - 1 }};
+      let b1 = {if a2 + 1 >= buffer_size { a2 + 1 - buffer_size } else { a2 + 1 }};
+      let b2 = {if b1 + 1 >= buffer_size { b1 + 1 - buffer_size } else { b1 + 1 }};
+      let sub = buffer[a2] - buffer[b1];
+      let c1 = buffer[b1] - buffer[a1];
+      let c3 = buffer[b2] - buffer[a2] + 3.0 * sub;
+      let c2 = -(2.0 * sub + c1 + c3);
+      0.5 * ((c3*diff+c2) * diff + c1) * diff + buffer[a2]
+    }
+  }
 
   /// No interpolation - read position is floored.
   impl Interpolation for Floor {
     fn interpolate(position: f32, buffer: &Vec<f32>, buffer_size: usize) -> f32 {
+      let i: usize = position as usize % buffer_size;
+      buffer[i]
+    }
+  }
+  
+  impl InterpolationConst for Floor {
+    fn interpolate(position: f32, buffer: &[f32], buffer_size: usize) -> f32 {
       let i: usize = position as usize % buffer_size;
       buffer[i]
     }

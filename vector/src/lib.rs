@@ -1,17 +1,17 @@
 use core::marker::PhantomData;
 use wavetable::WaveTable;
-use interpolation::interpolation::Interpolation;
+use interpolation::interpolation::InterpolationConst;
 
-pub struct VectorOscillator<'a, T> {
-  tables: &'a mut Vec<WaveTable<T>>,
+pub struct VectorOscillator<'a, T, const N: usize> {
+  tables: &'a mut [WaveTable<T, N>],
   _interpolation: PhantomData<T>,
 }
 
-impl<'a, T> VectorOscillator<'a, T> 
-  where T: Interpolation {
+impl<'a, T, const N:usize> VectorOscillator<'a, T, N> 
+  where T: InterpolationConst {
 
   /// Create a 1D Vector Oscillator
-  pub fn new(tables: &'a mut Vec<WaveTable<T>>) -> Self {
+  pub fn new(tables: &'a mut [WaveTable<T, N>]) -> Self {
     VectorOscillator { tables, _interpolation: PhantomData }
   }
 
@@ -27,7 +27,7 @@ impl<'a, T> VectorOscillator<'a, T>
       &[
         self.tables[table_1].play(frequency, phase),
         self.tables[table_2].play(frequency, phase)
-      ].to_vec(),
+      ],
       2
     )
   }
