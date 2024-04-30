@@ -128,7 +128,6 @@ impl<T> DelayTrait for IDelay<T> where T: Interpolation {
   fn from_samples(buffer_size: usize, delay_taps: usize, samplerate: f32) -> Self {
     let bsize = pow_two(buffer_size);
     let buffer = vec![0.0; pow_two(buffer_size)];
-    println!("{}", buffer.len());
 
     IDelay{
       buffer,
