@@ -2,11 +2,11 @@ extern crate envelope; extern crate buffer;
 use core::marker::PhantomData;
 use std::error::Error;
 use envelope::Envelope;
-use interpolation::interpolation::Interpolation;
+use interpolation::interpolation::{Interpolation, InterpolationConst};
 use buffer::Buffer;
 use rand::Rng;
 
-pub struct Grain<T, U, V> {
+pub struct Grain<T, U, V, const N:usize> {
   samplerate: f32,
   buf_position: f32,
   env_position: f32,
@@ -19,15 +19,15 @@ pub struct Grain<T, U, V> {
 }
 
 #[allow(unused)]
-pub struct Granulator<T, U, V> 
+pub struct Granulator<T, U, V, const N: usize> 
   where T: Interpolation,
-        U: Interpolation,
+        U: InterpolationConst,
         V: Interpolation
 {
-  buffer: Buffer<U>,
+  buffer: Buffer<U, N>,
   envelope: Envelope<V>,
   samplerate: f32,
-  grains: Vec<Grain<T, U, V>>,
+  grains: Vec<Grain<T, U, V, N>>,
   position: f32,
   playback_rate: f32,
   num_grains: usize,
@@ -39,9 +39,9 @@ pub struct Granulator<T, U, V>
   env_interpolation: PhantomData<V>,
 }
 
-impl<T, U, V> Granulator<T, U, V> 
+impl<T, U, V, const N: usize> Granulator<T, U, V, N> 
   where T: Interpolation,
-        U: Interpolation,
+        U: InterpolationConst,
         V: Interpolation
 {
   // Interpolation trait allows Buffer, Envelope and Granulator to use different interpolation
@@ -50,8 +50,8 @@ impl<T, U, V> Granulator<T, U, V>
   /// T = Interpolation for Grains, 
   /// U = Interpolation for Buffer, 
   /// V = Interpolation for Envelope
-  pub fn new(buffer: Buffer<U>, grain_env: Envelope<V>, samplerate: f32, max_grains: usize) -> Self {
-    let mut grains: Vec<Grain<T, U, V>> = Vec::with_capacity(max_grains);
+  pub fn new(buffer: Buffer<U, N>, grain_env: Envelope<V>, samplerate: f32, max_grains: usize) -> Self {
+    let mut grains: Vec<Grain<T, U, V, N>> = Vec::with_capacity(max_grains);
     for _ in 0..max_grains {
       grains.push(
         Grain { 
@@ -117,7 +117,7 @@ impl<T, U, V> Granulator<T, U, V>
       // activate new grain and set to active
       if !triggered && !self.grains[i].active {
         let random = rand::thread_rng().gen_range(0.0..=1.0) * self.jitter;
-        self.grains[i].buf_position = (f32::fract(position + random)) * self.buffer.len() as f32;
+        self.grains[i].buf_position = (f32::fract(position + random)) * self.buffer.size as f32;
         self.grains[i].env_position = 0.0;
         self.grains[i].set_rate(rate);
         self.grains[i].active = true;
@@ -134,15 +134,17 @@ impl<T, U, V> Granulator<T, U, V>
   }
 
   pub fn record(&mut self, sample: f32) -> Option<f32> {
-    if self.buffer.size == self.buffer.len() {
+    if f32::abs(self.buffer.position - self.buffer.size as f32) > 0.0001 {
       return None;
     }
-    self.buffer.buffer.push(sample);
+    self.buffer.record(sample);
     Some(sample)
   }
 
   pub fn clear(&mut self) {
-    self.buffer.buffer.clear();
+    for i in 0..self.buffer.size {
+      self.buffer.buffer[i] = 0.0;
+    }
   }
   
   pub fn set_jitter(&mut self, jitter: f32) {
@@ -150,13 +152,13 @@ impl<T, U, V> Granulator<T, U, V>
   }
 
   pub fn buffer_len(&self) -> f32 {
-    self.buffer.len() as f32 / self.samplerate
+    self.buffer.size as f32 / self.samplerate
   }
 }
 
-impl<T, U, V> Grain<T, U, V> 
+impl<T, U, V, const N:usize> Grain<T, U, V, N> 
   where T: Interpolation,
-        U: Interpolation,
+        U: InterpolationConst,
         V: Interpolation 
 {
   pub fn incr_ptrs(&mut self) {
@@ -164,7 +166,7 @@ impl<T, U, V> Grain<T, U, V>
     self.env_position += self.duration;
   }
 
-  pub fn play(&self, env: &Envelope<V>, buffer: &Buffer<U>) -> f32 {
+  pub fn play(&self, env: &Envelope<V>, buffer: &Buffer<U, N>) -> f32 {
     let mut out = buffer.read(self.buf_position);
     out *= env.read(self.env_position);
     out

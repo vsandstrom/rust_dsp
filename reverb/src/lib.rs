@@ -6,48 +6,54 @@ use filter::{Comb, Filter};
 use interpolation::interpolation::Floor;
 
 pub struct SchroederVerb {
-  cvec: [Comb<Floor>; 4],
-  avec: [Comb<Floor>; 3],
+  c1: Comb<Floor, 1116>,
+  c2: Comb<Floor, 1188>,
+  c3: Comb<Floor, 1277>,
+  c4: Comb<Floor, 1356>,
+  a1: Comb<Floor, 125>,
+  a2: Comb<Floor, 42>,
+  a3: Comb<Floor, 13>,
 }
 
 impl Verb for SchroederVerb {
   fn new(samplerate: f32) -> Self {
-    let mut cvec = [
-      Comb::<Floor>::new(1116, samplerate, 0.95, 0.0),
-      Comb::<Floor>::new(1188, samplerate, 0.95, 0.0),
-      Comb::<Floor>::new(1277, samplerate, 0.95, 0.0),
-      Comb::<Floor>::new(1356, samplerate, 0.95, 0.0),
-    ];
+    let mut c1 = Comb::<Floor, 1116>::new(samplerate, 0.95, 0.0);
+    let mut c2 = Comb::<Floor, 1188>::new(samplerate, 0.95, 0.0);
+    let mut c3 = Comb::<Floor, 1277>::new(samplerate, 0.95, 0.0);
+    let mut c4 = Comb::<Floor, 1356>::new(samplerate, 0.95, 0.0);
 
-    for i in 0..4 { cvec[i].set_damp(0.3); }
+    c1.set_damp(0.3);
+    c2.set_damp(0.3);
+    c3.set_damp(0.3);
+    c4.set_damp(0.3);
 
-    let avec = [
-      Comb::<Floor>::new(125, samplerate, 0.7, 0.7),
-      Comb::<Floor>::new(42, samplerate, 0.7, 0.7),
-      Comb::<Floor>::new(13, samplerate, 0.7, 0.7),
-    ];
+    let a1 = Comb::<Floor, 125>::new(samplerate, 0.7, 0.7);
+    let a2 = Comb::<Floor, 42>::new(samplerate, 0.7, 0.7);
+    let a3 = Comb::<Floor, 13>::new(samplerate, 0.7, 0.7);
 
-    SchroederVerb{cvec, avec}
+    SchroederVerb{
+      c1, c2, c3, c4, 
+      a1, a2, a3
+    }
   }
 
   fn process(&mut self, sample: f32) -> f32 {
     let mut out = 0.0;
-    for i in 0..4 { out += self.cvec[i].process(sample); }
-    for i in 0..3 { out = self.avec[i].process(out); }
-    out
-  }
+    out += self.c1.process(sample);
+    out += self.c2.process(sample);
+    out += self.c3.process(sample);
+    out += self.c4.process(sample);
 
-  fn set_damp(&mut self, damp: f32) {
-    for comb in self.cvec.iter_mut() {
-      comb.set_damp(damp);
-    }
+    out = self.a1.process(out);
+    out = self.a2.process(out);
+    out = self.a3.process(out);
+    out
   }
 }
 
 pub trait Verb {
   fn new(samplerate: f32) -> Self;
   fn process(&mut self, sample: f32) -> f32;
-  fn set_damp(&mut self, damp: f32);
 }
 
 #[cfg(test)]
