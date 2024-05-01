@@ -1,15 +1,14 @@
-use std::f32::consts::PI;
-use dsp::buffer::{normalize, scale};
-
+use std::f32::consts::{PI, TAU};
+use dsp::buffer::scale;
 
 /// Create a complex waveform from amplitudes and phases of sine partials
 /// (tip: normalize amplitudes to get waveform within -1.0 - 1.0)
-pub fn complex_sine<'a>(table: &'a mut Vec<f32>, amps: &'a Vec<f32>, phases: &'a Vec<f32>) -> &'a Vec<f32> {
+pub fn complex_sine<'a, const N:usize>(table: &'a mut [f32], amps: &'a [f32; N], phases: &'a [f32; N]) -> &'a [f32] {
   let len = table.len();
   let mut n: f32 = 1.0;
   if amps.len() == phases.len() {
     for i in 0..amps.len() {
-      let inc = PI * 2.0f32 * n / len as f32;
+      let inc = TAU * n / len as f32;
       let mut angle = inc * len as f32 * phases[i];
       for j in 0..len {
         table[j] += angle.sin() * amps[i];
@@ -22,9 +21,9 @@ pub fn complex_sine<'a>(table: &'a mut Vec<f32>, amps: &'a Vec<f32>, phases: &'a
   table
 }
 /// Sine: sin(2pi / table.len() * n)
-pub fn sine(table: &mut Vec<f32>) -> &Vec<f32> {
+pub fn sine(table: &mut [f32]) -> &[f32] {
   let mut angle: f32 = 0.0;
-  let inc: f32 = PI * 2.0 / table.len() as f32;
+  let inc: f32 = TAU / table.len() as f32;
   for i in 0..table.len() {
     table[i] = angle.sin();
     angle += inc;
@@ -34,7 +33,7 @@ pub fn sine(table: &mut Vec<f32>) -> &Vec<f32> {
 
 
 /// Squared sinewave, positive bellcurve. Useful as envelope
-pub fn hanning(table: &mut Vec<f32>) -> &Vec<f32> {
+pub fn hanning(table: &mut [f32]) -> &[f32] {
   let mut angle: f32 = 0.0;
   let inc: f32 = PI / (table.len() as f32);
   for i in 0..table.len() {
@@ -45,7 +44,7 @@ pub fn hanning(table: &mut Vec<f32>) -> &Vec<f32> {
 }
 
 /// Square
-pub fn square(table: &mut Vec<f32>) -> &Vec<f32> {
+pub fn square(table: &mut [f32]) -> &[f32] {
   let mut val = -1.0;
   for i in 0..table.len() {
     table[i] = val;
@@ -55,7 +54,7 @@ pub fn square(table: &mut Vec<f32>) -> &Vec<f32> {
 }
 
 /// Triangle 
-pub fn triangle(table: &mut Vec<f32>) -> &Vec<f32> {
+pub fn triangle(table: &mut [f32]) -> &[f32] {
   let mut angle = 0.0;
   let mut inc: f32 = 2.0 / (table.len() as f32 / 2.0);
   for i in 0..table.len() {
@@ -67,7 +66,7 @@ pub fn triangle(table: &mut Vec<f32>) -> &Vec<f32> {
 }
 
 /// Sawtooth: -1.0 -> 1.0
-pub fn sawtooth(table: &mut Vec<f32>) -> &Vec<f32> {
+pub fn sawtooth(table: &mut [f32]) -> &[f32] {
   let mut angle: f32 = 0.0;
   let inc: f32 = 2.0 / (table.len() as f32 - 1.0);
   for i in 0..table.len() {
@@ -78,7 +77,7 @@ pub fn sawtooth(table: &mut Vec<f32>) -> &Vec<f32> {
 }
 
 /// Reverse sawtooth: 1.0 -> -1.0
-pub fn reverse_sawtooth(table: &mut Vec<f32>) -> &Vec<f32> {
+pub fn reverse_sawtooth(table: &mut [f32]) -> &[f32] {
   let mut angle: f32 = 0.0;
   let inc: f32 = 2.0 / (table.len() as f32 - 1.0);
   for i in 0..table.len() {
@@ -90,21 +89,27 @@ pub fn reverse_sawtooth(table: &mut Vec<f32>) -> &Vec<f32> {
 
 pub mod traits {
   use super::*;
-  pub trait Waveshape {
-    fn sine(self) -> Self;
-    fn hanning(self) -> Self;
-    fn triangle(self) -> Self;
-    fn square(self) -> Self;
-    fn sawtooth(self) -> Self;
-    fn reverse_sawtooth(self) -> Self;
-    fn complex_sine(self, amps: &Vec<f32>, phases: &Vec<f32>) -> Self;
+  pub trait Waveshape<const N: usize> {
+    type Output;
+
+    fn sine(&mut self) -> &mut Self::Output;
+    fn hanning(&mut self) -> &mut Self::Output;
+    fn triangle(&mut self) -> &mut Self::Output;
+    fn square(&mut self) -> &mut Self::Output;
+    fn sawtooth(&mut self) -> &mut Self::Output;
+    fn reverse_sawtooth(&mut self) -> &mut Self::Output;
+    fn complex_sine<const M:usize>( 
+      &mut self, amps: [f32; M], phases: [f32; M]
+    ) -> &mut Self::Output;
   }
 
-  impl<const N:usize> Waveshape for [f32; N] {
-    fn hanning(mut self) -> Self {
+  impl<const N: usize> Waveshape<N> for [f32; N] {
+    type Output = [f32; N];
+
+    fn hanning(&mut self) -> &mut Self::Output{
       let mut angle: f32 = 0.0;
       let inc: f32 = PI / (self.len() as f32);
-      for i in 0..self.len() {
+      for i in 0..N {
         self[i] = angle.sin().powf(2.0);
         angle += inc;
       }
@@ -112,9 +117,9 @@ pub mod traits {
     }
 
     /// Sine: sin(2pi / table.len() * n)
-    fn sine(mut self) -> Self {
+    fn sine(&mut self) -> &mut Self::Output{
       let mut angle: f32 = 0.0;
-      let inc: f32 = PI * 2.0 / self.len() as f32;
+      let inc: f32 = TAU / self.len() as f32;
       for i in 0..self.len() {
         self[i] = angle.sin();
         angle += inc;
@@ -122,8 +127,8 @@ pub mod traits {
       self
     }
 
-    /// Square
-    fn square(mut self) -> Self {
+    ///Square
+    fn square(&mut self) -> &mut Self::Output{
       let mut val = -1.0;
       for i in 0..self.len() {
         self[i] = val;
@@ -133,7 +138,7 @@ pub mod traits {
     }
 
     /// Triangle
-    fn triangle(mut self) -> Self {
+    fn triangle(&mut self) -> &mut Self::Output {
       let mut angle = 0.0;
       let mut inc: f32 = 2.0 / (self.len() as f32 / 2.0);
       for i in 0..self.len() {
@@ -145,7 +150,7 @@ pub mod traits {
     }
 
     /// Sawtooth: -1.0 -> 1.0
-    fn sawtooth(mut self) -> Self {
+    fn sawtooth(&mut self) -> &mut Self::Output {
       let mut angle: f32 = 0.0;
       let inc: f32 = 2.0 / (self.len() as f32 - 1.0);
       for i in 0..self.len() {
@@ -156,7 +161,7 @@ pub mod traits {
     }
 
     /// Reverse sawtooth: 1.0 -> -1.0
-    fn reverse_sawtooth(mut self) -> Self {
+    fn reverse_sawtooth(&mut self) -> &mut Self::Output {
       let mut angle: f32 = 0.0;
       let inc: f32 = 2.0 / (self.len() as f32 - 1.0);
       for i in 0..self.len() {
@@ -167,11 +172,11 @@ pub mod traits {
     }
 
     /// Create a complex waveform from amplitudes and phases of sine partials
-    fn complex_sine(mut self, amps: &Vec<f32>, phases: &Vec<f32>) -> Self {
+    fn complex_sine<const M:usize>(&mut self, amps: [f32; M], phases: [f32; M]) -> &mut Self::Output {
       let mut n: f32 = 1.0;
       if amps.len() == phases.len() {
         for i in 0..amps.len() {
-          let inc = PI * 2.0f32 * n / self.len() as f32;
+          let inc = TAU * n / self.len() as f32;
           let mut angle = inc * self.len() as f32 * phases[i];
           for j in 0..self.len() {
             self[j] += angle.sin() * amps[i];
@@ -179,16 +184,17 @@ pub mod traits {
           }
           n += 1.0;
         }
-        scale(&mut self, -1.0f32, 1.0f32);
+        scale(self, -1.0f32, 1.0f32);
       }
       self
     }
 
   }
 
-  impl Waveshape for Vec<f32>  {
+  impl<const N:usize> Waveshape<N> for Vec<f32>  {
+    type Output = Vec<f32>;
     /// Squared sinewave, positive bellcurve. Useful as envelope
-    fn hanning(mut self) -> Self {
+    fn hanning(&mut self) -> &mut Self::Output{
       let mut angle: f32 = 0.0;
       let inc: f32 = PI / (self.len() as f32);
       for i in 0..self.len() {
@@ -199,7 +205,7 @@ pub mod traits {
     }
 
     /// Sine: sin(2pi / table.len() * n)
-    fn sine(mut self) -> Self {
+    fn sine(&mut self) -> &mut Self::Output {
       let mut angle: f32 = 0.0;
       let inc: f32 = PI * 2.0 / self.len() as f32;
       for i in 0..self.len() {
@@ -210,7 +216,7 @@ pub mod traits {
     }
 
     /// Square
-    fn square(mut self) -> Self {
+    fn square(&mut self) -> &mut Self::Output {
       let mut val = -1.0;
       for i in 0..self.len() {
         self[i] = val;
@@ -220,7 +226,7 @@ pub mod traits {
     }
 
     /// Triangle
-    fn triangle(mut self) -> Self {
+    fn triangle(&mut self) -> &mut Self::Output {
       let mut angle = 0.0;
       let mut inc: f32 = 2.0 / (self.len() as f32 / 2.0);
       for i in 0..self.len() {
@@ -232,7 +238,7 @@ pub mod traits {
     }
 
     /// Sawtooth: -1.0 -> 1.0
-    fn sawtooth(mut self) -> Self {
+    fn sawtooth(&mut self) -> &mut Self::Output {
       let mut angle: f32 = 0.0;
       let inc: f32 = 2.0 / (self.len() as f32 - 1.0);
       for i in 0..self.len() {
@@ -243,7 +249,7 @@ pub mod traits {
     }
 
     /// Reverse sawtooth: 1.0 -> -1.0
-    fn reverse_sawtooth(mut self) -> Self {
+    fn reverse_sawtooth(&mut self) -> &mut Self::Output {
       let mut angle: f32 = 0.0;
       let inc: f32 = 2.0 / (self.len() as f32 - 1.0);
       for i in 0..self.len() {
@@ -254,7 +260,7 @@ pub mod traits {
     }
 
     /// Create a complex waveform from amplitudes and phases of sine partials
-    fn complex_sine(mut self, amps: &Vec<f32>, phases: &Vec<f32>) -> Self {
+    fn complex_sine<const M: usize> (&mut self, amps: [f32; M], phases: [f32; M]) -> &mut Self::Output {
       let mut n: f32 = 1.0;
       if amps.len() == phases.len() {
         for i in 0..amps.len() {
@@ -266,7 +272,7 @@ pub mod traits {
           }
           n += 1.0;
         }
-        scale(&mut self, -1.0f32, 1.0f32);
+        scale(self, -1.0f32, 1.0f32);
       }
       self
     }

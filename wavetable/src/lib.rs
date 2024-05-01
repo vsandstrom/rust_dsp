@@ -57,8 +57,10 @@ mod tests {
 
   #[test] 
   fn triangletest() {
-    let table = [0.0;16].triangle();
-    let mut wt = WaveTable::<Floor, 16>::new(&table, 48000.0);
+    const SIZE: usize = 16;
+    let mut table = [0.0; SIZE];
+    let table = table.triangle();
+    let mut wt = WaveTable::<Floor, SIZE>::new(&table, 48000.0);
     let mut shape = vec!();
     // Check if it wraps
     for _ in 0..17 {
@@ -70,14 +72,15 @@ mod tests {
   
   #[test] 
   fn interptest() {
-    const TABLE_SIZE: usize = 16;
-    let table = [0.0;TABLE_SIZE].triangle();
-    let mut wt = WaveTable::< Linear, TABLE_SIZE>::new(&table, 48000.0);
+    const SIZE: usize = 16;
+    let mut table = [0.0; SIZE];
+    let table = <[f32; SIZE] as Waveshape<SIZE>>::triangle(&mut table);
+    let mut wt = WaveTable::< Linear, SIZE>::new(&table, 48000.0);
     let mut shape = vec!();
     wt.frequency = 16.0;
     // Check if it wraps
     for _ in 0..16 {
-      let out = wt.play(SAMPLERATE / TABLE_SIZE as f32, 1.0);
+      let out = wt.play(SAMPLERATE / SIZE as f32, 1.0);
       shape.push(out);
     }
     assert_eq!(vec![0.25, 0.5, 0.75, 1.0, 0.75, 0.5, 0.25, 0.0, -0.25, -0.5, -0.75, -1.0, -0.75, -0.5, -0.25, 0.0], shape)
@@ -85,7 +88,9 @@ mod tests {
 
   #[test]
   fn freq_test() {
-    let table = [0.0;8].triangle();
+    const SIZE: usize = 8;
+    let mut table = [0.0; SIZE];
+    let table = <[f32; SIZE] as Waveshape<SIZE>>::triangle(&mut table);
     let mut wt = WaveTable::<Floor, 8>::new(&table, 48000.0);
     wt.frequency = 20.0;
     let mut shape = vec!();
@@ -98,13 +103,14 @@ mod tests {
 
   #[test]
   fn linear_test() {
-    const TABLE_SIZE: usize = 4;
+    const SIZE: usize = 4;
     let dilude = 2;
-    let table = [0.0;TABLE_SIZE].triangle();
-    let mut wt = WaveTable::<Linear, TABLE_SIZE>::new(&table, 48000.0);
+    let mut table = [0.0; SIZE];
+    let table = <[f32; SIZE] as Waveshape<SIZE>>::triangle(&mut table);
+    let mut wt = WaveTable::<Linear, SIZE>::new(&table, 48000.0);
     let mut shape = vec!();
-    for _ in 0..(TABLE_SIZE * dilude) {
-      shape.push(wt.play(SAMPLERATE / (TABLE_SIZE * dilude) as f32, 1.0));
+    for _ in 0..(SIZE * dilude) {
+      shape.push(wt.play(SAMPLERATE / (SIZE * dilude) as f32, 1.0));
     }
     println!("{:?}", shape);
     assert_eq!(vec![0.5, 1.0, 0.5, 0.0, -0.5, -1.0, -0.5, 0.0], shape);

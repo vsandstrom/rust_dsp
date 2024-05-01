@@ -1,9 +1,11 @@
-use std::{thread, time, usize};
+use std::{f32::consts::PI, thread, time, usize};
 use buffer::Buffer;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use delay::{ Delay, IDelay, DelayTrait };
+use wavetable::WaveTable;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use interpolation::interpolation::{Floor, Linear, Cubic};
+use waveshape::{traits::Waveshape, triangle};
 
 
 fn main() -> anyhow::Result<()> {
@@ -36,28 +38,21 @@ fn main() -> anyhow::Result<()> {
     // let latency_samples = latency_frames as usize * config.channels as usize;
 
     // SETUP YOUR AUDIO PROCESSING STRUCTS HERE !!!! <-------------------------
-    // let mut dll = IDelay::<Linear>::new(1.6, 1.6, 20, f_sample_rate);
-    // let mut dlr = IDelay::<Linear>::new(1.6, 1.6, 20, f_sample_rate);
-    let dtl = [0.034, 0.068, 0.136, 0.272];
-    let mut ldll = dtl.map(|dt| Delay::new(dt, dt, 1, f_sample_rate));
-    let mut ldlr = dtl.map(|dt| Delay::new(dt, dt, 1, f_sample_rate));
-    
-    let dtl = [8.3, 15.1, 37.953, 77.98, 24.9, 33.21, 55.4, 127.45];
-    let mut dll = dtl.map(|dt| IDelay::<Linear>::new(dt / f_sample_rate, dt / f_sample_rate, 1, f_sample_rate));
-    let mut dlr = dtl.map(|dt| IDelay::<Linear>::new(dt / f_sample_rate, dt / f_sample_rate, 1, f_sample_rate));
-
-    let mx1 = [1.0, -1.0, 1.0, -1.0];
-    let mx2 = [
-      1.0, -1.0, 1.0, -1.0,
-      1.0, -1.0, 1.0, -1.0
-    ];
-    // let mxr = [1.0, -1.0, -1.0, 1.0];
-
-    let mut prl = 0.0;
-    let mut prr = 0.0;
-    
-    // let mut dll = Delay::new(1.6, 1.6, 1, f_sample_rate);
-    // let mut dlr = Delay::new(1.6, 1.6, 1, f_sample_rate);
+  
+    const SIZE: usize = 512;
+    let mut table = [0.0; SIZE];
+    // let mut table = [0.0; 512];
+    // let table = table.complex_sine(&[1.0, 3.0, 0.4, 0.7], &[0.0, 0.0, 0.0, 0.0]);
+    let amps = [1.0, 3.0, 0.4, 0.7, 2.0];
+    let phas = [0.0, 0.33*PI, 0.0, 0.0, PI];
+    let mut wt1 = WaveTable::<Linear, SIZE>::new(
+      table.complex_sine(amps, phas),
+      f_sample_rate
+    );
+    let mut wt2 = WaveTable::<Linear, SIZE>::new(
+      table.complex_sine(amps, phas),
+      f_sample_rate
+    );
 
     // let time_at_start = std::time::Instant::now();
     
@@ -91,24 +86,10 @@ fn main() -> anyhow::Result<()> {
               // hacky handler of interleaved stereo
               if ch % 2 == 0 {
                 ch+=1;
-                let mut out = 0.0;
-                for i in 0..8 { out += dll[i].play(sample, 0.44) * mx2[i]; }
-                for i in 0..4 { out += (ldll[i].play(out, 0.0) * mx1[i]) / (i as f32 + 1.0); }
-                // lowpass
-                // let temp = prl + out;
-                // prl = out;
-                // temp * 0.1
-                out * 0.1
+                wt1.play(200.0, 0.0) * 0.1
               } else {
                 ch+=1;
-                let mut out = 0.0;
-                for i in 0..8 { out += dlr[i].play(sample, 0.44) * mx2[i]; }
-                for i in 0..4 { out += (ldlr[i].play(out, 0.0) * mx1[i]) / (i as f32 + 1.0); }
-                // lowpass
-                // let temp = prr + out;
-                // prr = out;
-                // temp * 0.1
-                out * 0.1
+                wt2.play(500.0, 0.0) * 0.1
               }
             },
             Err(_) => {
