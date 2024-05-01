@@ -188,7 +188,7 @@ pub mod buffer {
 
 pub mod math {
   /// Find next pow of two for quick wrap
-  pub fn next_pow2(size: usize) -> usize {
+  pub const fn next_pow2(size: usize) -> usize {
     let mut pow: usize = 1;
     while pow < size {pow = pow << 1;}
     pow

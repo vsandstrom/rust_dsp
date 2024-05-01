@@ -2,6 +2,7 @@ use std::{f32::consts::PI, thread, time, usize};
 use buffer::Buffer;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use delay::{ Delay, IDelay, DelayTrait };
+use dsp::math::next_pow2;
 use wavetable::WaveTable;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use interpolation::interpolation::{Linear, Cubic};
@@ -44,6 +45,15 @@ fn main() -> anyhow::Result<()> {
     let amps = [1.0, 3.0, 0.4, 0.7, 2.0];
     let phas = [0.0, 0.33*PI, 0.0, 0.0, PI];
 
+    const DSIZE: usize = next_pow2((2.0 * 48000.0) as usize);
+    
+    let mut dlyr = IDelay::<Linear, DSIZE>::new(4, f_sample_rate);
+    let mut dlyl = IDelay::<Linear, DSIZE>::new(4, f_sample_rate);
+
+    let mut envtable = [0.0; SIZE];
+    let mut env = WaveTable::<Linear, SIZE>::new(envtable.hanning(), f_sample_rate);
+
+
     let mut wt1 = WaveTable::<Cubic, SIZE>::new(
       table.complex_sine(amps, phas),
       f_sample_rate
@@ -81,10 +91,11 @@ fn main() -> anyhow::Result<()> {
               // hacky handler of interleaved stereo
               if ch % 2 == 0 {
                 ch+=1;
-                wt1.play(200.0, 0.0) * 0.1
+                wt1.play(200.0, 0.0) * 0.1 * env.play(4.0, 0.0) + dlyl.play(sample, 0.1) * 0.1
+
               } else {
                 ch+=1;
-                wt2.play(500.0, 0.0) * 0.1
+                wt2.play(500.0, 0.0) * 0.1 * env.play(5.0, 0.0) + dlyr.play(sample, 0.1) * 0.1
               }
             },
             Err(_) => {
