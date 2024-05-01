@@ -14,6 +14,19 @@ pub struct WaveTable<T, const N:usize> {
   samplerate: f32,
   interpolation: PhantomData<T>
 }
+
+impl<T:InterpolationConst, const N:usize> Clone for WaveTable<T, N> {
+  fn clone(&self) -> Self {
+    Self {
+      position: self.position,
+      table: self.table.clone(),
+      size: self.size,
+      frequency: self.frequency,
+      samplerate: self.samplerate,
+      interpolation: PhantomData,
+    }
+  }
+}
   
 impl<T: InterpolationConst, const N: usize> WaveTable<T, N> {
   pub fn new(table: &[f32; N], samplerate: f32) -> WaveTable<T, N> {

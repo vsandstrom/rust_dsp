@@ -4,8 +4,8 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use delay::{ Delay, IDelay, DelayTrait };
 use wavetable::WaveTable;
 use std::sync::mpsc::{channel, Receiver, Sender};
-use interpolation::interpolation::{Floor, Linear, Cubic};
-use waveshape::{traits::Waveshape, triangle};
+use interpolation::interpolation::{Linear, Cubic};
+use waveshape::traits::Waveshape;
 
 
 fn main() -> anyhow::Result<()> {
@@ -41,19 +41,14 @@ fn main() -> anyhow::Result<()> {
   
     const SIZE: usize = 512;
     let mut table = [0.0; SIZE];
-    // let mut table = [0.0; 512];
-    // let table = table.complex_sine(&[1.0, 3.0, 0.4, 0.7], &[0.0, 0.0, 0.0, 0.0]);
     let amps = [1.0, 3.0, 0.4, 0.7, 2.0];
     let phas = [0.0, 0.33*PI, 0.0, 0.0, PI];
-    let mut wt1 = WaveTable::<Linear, SIZE>::new(
-      table.complex_sine(amps, phas),
-      f_sample_rate
-    );
-    let mut wt2 = WaveTable::<Linear, SIZE>::new(
-      table.complex_sine(amps, phas),
-      f_sample_rate
-    );
 
+    let mut wt1 = WaveTable::<Cubic, SIZE>::new(
+      table.complex_sine(amps, phas),
+      f_sample_rate
+    );
+    let mut wt2 = wt1.clone();
     // let time_at_start = std::time::Instant::now();
     
     // Create a channel to send and receive samples
