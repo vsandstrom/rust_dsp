@@ -1,17 +1,15 @@
 extern crate interpolation;
 extern crate buffer;
-use core::marker::PhantomData;
 use interpolation::interpolation::Interpolation;
 use buffer::Buffer;
 
-pub struct Envelope<T> {
+pub struct Envelope {
   buffer: Vec<f32>,
   buf_position: f32,
   speed: f32,
-  interpolation: PhantomData<T>,
 }
 
-impl<T: Interpolation> Envelope<T> {
+impl Envelope {
   fn generate(points: Vec<f32>, times: Vec<f32>, curves: Vec<f32>, samplerate: f32) -> Vec<f32> {
     let mut times = times.into_iter();
     let mut curves = curves.into_iter();
@@ -44,12 +42,11 @@ impl<T: Interpolation> Envelope<T> {
   }
 
   pub fn new(points: Vec<f32>, times: Vec<f32>, curves: Vec<f32>, samplerate: f32) -> Self {
-    let buffer = Envelope::<T>::generate(points, times, curves, samplerate);
+    let buffer = Envelope::generate(points, times, curves, samplerate);
     Envelope {
       buffer,
       buf_position: 0.0,
       speed: 1.0,
-      interpolation: PhantomData
     }
   }
 
@@ -57,7 +54,7 @@ impl<T: Interpolation> Envelope<T> {
     self.buffer.len()
   }
 
-  pub fn read(&self, position: f32) -> f32 {
+  pub fn read<T: Interpolation>(&self, position: f32) -> f32 {
     T::interpolate(position, &self.buffer, self.buffer.len())
   }
 
@@ -65,15 +62,15 @@ impl<T: Interpolation> Envelope<T> {
     self.buf_position < self.buffer.len() as f32
   }
 
-  pub fn play(&mut self, trigger: f32) -> f32 {
+  pub fn play<T: Interpolation>(&mut self, trigger: f32) -> f32 {
     let mut out = 0.0;
     if trigger >= 1.0 {
       self.buf_position = 0.0;
-      out = self.read(self.buf_position);
+      out = self.read::<T>(self.buf_position);
       self.buf_position += self.speed;
     } else {
       if self.running() {
-        out = self.read(self.buf_position);
+        out = self.read::<T>(self.buf_position);
         self.buf_position += self.speed;
       }
     }
@@ -85,27 +82,27 @@ impl<T: Interpolation> Envelope<T> {
   }
 }
 
-impl<T, const N: usize> From<Buffer<T, N>> for Envelope<T> {
-  fn from(buffer: Buffer<T, N>) -> Self {
-    Envelope{buffer: buffer.buffer.to_vec(), buf_position: 0.0, speed: 1.0, interpolation: PhantomData}
+impl<const N: usize> From<Buffer<N>> for Envelope {
+  fn from(buffer: Buffer<N>) -> Self {
+    Envelope{buffer: buffer.buffer.to_vec(), buf_position: 0.0, speed: 1.0}
   }
 }
 
-impl<T> From<Vec<f32>> for Envelope<T> {
+impl From<Vec<f32>> for Envelope {
   fn from(buffer: Vec<f32>) -> Self {
-    Envelope{buffer, buf_position: 0.0, speed: 1.0, interpolation: PhantomData}
+    Envelope{buffer, buf_position: 0.0, speed: 1.0}
   }
 }
 
-impl<T> From<&[f32]> for Envelope<T> {
+impl From<&[f32]> for Envelope {
   fn from(buffer: &[f32]) -> Self {
-    Envelope{buffer: buffer.to_vec(), buf_position: 0.0, speed: 1.0, interpolation: PhantomData}
+    Envelope{buffer: buffer.to_vec(), buf_position: 0.0, speed: 1.0}
   }
 }
 
-impl<T> Clone for Envelope<T> {
+impl Clone for Envelope {
   fn clone(&self) -> Self {
-    Envelope { buffer: self.buffer.clone(), buf_position: self.buf_position, speed: self.speed, interpolation: PhantomData }
+    Envelope { buffer: self.buffer.clone(), buf_position: self.buf_position, speed: self.speed }
   }
 
 }

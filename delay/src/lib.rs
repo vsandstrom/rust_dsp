@@ -4,7 +4,7 @@ use dsp::math::is_pow2;
 
 pub trait DelayTrait {
   fn new(delay_taps: usize, samplerate: f32) -> Self;
-  fn play(&mut self, sample: f32, feedback: f32) -> f32;
+  // fn play(&mut self, sample: f32, feedback: f32) -> f32;
   fn set_taps(&mut self, delay_taps: usize);
   fn set_time(&mut self, delay_time: f32);
 }
@@ -26,26 +26,8 @@ pub struct Delay<const N: usize> {
   pos_mask: usize,
 }
 
-impl<const N: usize> DelayTrait for Delay<N> {
-  /// Create new Delay
-  /// max_delay_time >= delay_time * delay_taps,
-  /// ex: max_delay_time = 1.0, delay_time = 0.2, delay_taps = 5
-  fn new(delay_taps: usize, samplerate: f32) -> Self {
-    let buffer = [0.0; N];
-
-    Delay{
-      buffer,
-      size: N,
-      delay_time: N as f32 / samplerate,
-      delay_taps,
-      samplerate,
-      position: 0,
-      pow2: is_pow2(N),
-      pos_mask: N - 1,
-    }
-  }
-
-  fn play(&mut self, sample: f32, feedback: f32) -> f32 {
+impl<const N: usize> Delay<N> {
+  pub fn play(&mut self, sample: f32, feedback: f32) -> f32 {
     let out = self.buffer[self.position];
     self.buffer[self.position] = 0.0;
     for i in 1..=self.delay_taps {
@@ -65,6 +47,27 @@ impl<const N: usize> DelayTrait for Delay<N> {
     }
     out
   }
+}
+
+impl<const N: usize> DelayTrait for Delay<N> {
+  /// Create new Delay
+  /// max_delay_time >= delay_time * delay_taps,
+  /// ex: max_delay_time = 1.0, delay_time = 0.2, delay_taps = 5
+  fn new(delay_taps: usize, samplerate: f32) -> Self {
+    let buffer = [0.0; N];
+
+    Delay{
+      buffer,
+      size: N,
+      delay_time: N as f32 / samplerate,
+      delay_taps,
+      samplerate,
+      position: 0,
+      pow2: is_pow2(N),
+      pos_mask: N - 1,
+    }
+  }
+
 
   fn set_taps(&mut self, delay_taps: usize) {
     self.delay_taps = delay_taps
@@ -86,7 +89,7 @@ impl<const N: usize> DelayTrait for Delay<N> {
 /// Interpolating delay. 
 ///
 /// Single write-, multiple read heads
-pub struct IDelay<T, const N: usize> {
+pub struct IDelay<const N: usize> {
   buffer: [f32; N],
   size: usize,
   samplerate: f32,
@@ -95,29 +98,10 @@ pub struct IDelay<T, const N: usize> {
   position: usize,
   pow2: bool,
   pos_mask: usize,
-  _interpolation: PhantomData<T>
 }
 
-impl<T: InterpolationConst, const N: usize> DelayTrait for IDelay<T, N> {
-  fn new(delay_taps: usize, samplerate: f32) -> Self {
-    let buffer = [0.0; N];
-
-    println!("{}", buffer.len());
-
-    IDelay{
-      buffer,
-      size: N,
-      delay_time: N as f32 / samplerate,
-      delay_taps,
-      samplerate,
-      position: 0,
-      pow2: is_pow2(N),
-      pos_mask: N - 1,
-      _interpolation: PhantomData
-    }
-  }
-
-  fn play(&mut self, sample: f32, feedback: f32) -> f32 {
+impl<const N: usize> IDelay<N> {
+  pub fn play<T: InterpolationConst>(&mut self, sample: f32, feedback: f32) -> f32 {
     let mut out = 0.0;
 
     let del_time = self.delay_time * self.samplerate;
@@ -136,6 +120,26 @@ impl<T: InterpolationConst, const N: usize> DelayTrait for IDelay<T, N> {
     self.position = (self.position+1) & self.pos_mask;
     out
   }
+}
+
+impl<const N: usize> DelayTrait for IDelay<N> {
+  fn new(delay_taps: usize, samplerate: f32) -> Self {
+    let buffer = [0.0; N];
+
+    println!("{}", buffer.len());
+
+    IDelay{
+      buffer,
+      size: N,
+      delay_time: N as f32 / samplerate,
+      delay_taps,
+      samplerate,
+      position: 0,
+      pow2: is_pow2(N),
+      pos_mask: N - 1,
+    }
+  }
+
 
   fn set_taps(&mut self, delay_taps: usize) {
     self.delay_taps = delay_taps;
@@ -151,7 +155,6 @@ impl<T: InterpolationConst, const N: usize> DelayTrait for IDelay<T, N> {
       self.delay_time = delay_time;
     }
   }
-  
 }
 
 

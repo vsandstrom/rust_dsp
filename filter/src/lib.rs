@@ -1,31 +1,29 @@
 extern crate buffer;
 extern crate interpolation;
-use std::marker::PhantomData;
 
 use buffer::Buffer;
 use interpolation::interpolation::InterpolationConst;
 
 
 
-pub struct Comb<T, const N: usize> {
-  buffer: Buffer<T, N>,
+pub struct Comb<const N: usize> {
+  buffer: Buffer<N>,
   previous: f32,
   damp: f32,
   feedforward: f32,
   feedback: f32,
   position: usize,
   delay: usize,
-  interpolation: PhantomData<T>
 }
 
 pub trait Filter {
   fn set_damp(&mut self, damp: f32);
-  fn process(&mut self, sample: f32) -> f32;
+  fn process<T: InterpolationConst>(&mut self, sample: f32) -> f32;
 }
 
-impl<T: InterpolationConst, const N: usize> Comb<T, N> {
+impl<const N: usize> Comb<N> {
   pub fn new(samplerate: f32, feedforward: f32, feedback: f32) -> Self {
-    let buffer = Buffer::<T, N>::new(samplerate);
+    let buffer = Buffer::<N>::new(samplerate);
     Comb{
       buffer,
       previous: 0.0,
@@ -34,13 +32,12 @@ impl<T: InterpolationConst, const N: usize> Comb<T, N> {
       feedforward,
       feedback,
       delay: N,
-      interpolation: PhantomData
     }
   }
     
 }
 
-impl<T: InterpolationConst, const N:usize> Filter for Comb<T, N> {
+impl<const N:usize> Filter for Comb<N> {
 
   /// Set optional LowPass damping, [0.0 - 1.0], 0.0 is off
   fn set_damp(&mut self, damp: f32) {
@@ -50,8 +47,8 @@ impl<T: InterpolationConst, const N:usize> Filter for Comb<T, N> {
   /// IIR: feedback > 0.0, feedforward == 0.0
   /// FIR: feedback == 0.0, feedforward > 0.0
   /// AP:  feedback == feedforward > 0.0
-  fn process(&mut self, sample: f32) -> f32 {
-    let delayed = self.buffer.read(self.position as f32);
+  fn process<T: InterpolationConst>(&mut self, sample: f32) -> f32 {
+    let delayed = self.buffer.read::<T>(self.position as f32);
     self.previous = delayed * (1.0 * self.damp) + self.previous * self.damp;
     let fb = sample - self.feedback * self.previous;
     self.buffer.write(fb, self.position);
@@ -93,8 +90,8 @@ impl<T: InterpolationConst, const N:usize> Filter for Comb<T, N> {
   //       where: b0 == aM
 
 #[allow(unused)]
-pub struct VComb<T, const N:usize> {
-  buffer: Buffer<T, N>,
+pub struct VComb<const N:usize> {
+  buffer: Buffer<N>,
   previous: f32,
   write_pos: usize,
   read_pos: f32,
@@ -102,7 +99,7 @@ pub struct VComb<T, const N:usize> {
 }
 
 #[allow(unused)]
-impl<T: InterpolationConst, const N:usize> VComb<T, N> {
+impl<const N:usize> VComb<N> {
   fn new(delay: usize, samplerate: f32, feedforward: f32, feedback: f32) -> Self {
     todo!();
   }

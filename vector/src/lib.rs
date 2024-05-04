@@ -1,4 +1,3 @@
-use core::marker::PhantomData;
 use wavetable::WaveTable;
 use interpolation::interpolation::InterpolationConst;
 
