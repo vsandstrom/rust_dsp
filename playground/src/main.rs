@@ -51,10 +51,10 @@ fn main() -> anyhow::Result<()> {
     let mut dlyl = IDelay::<Linear, DSIZE>::new(4, f_sample_rate);
 
     let mut envtable = [0.0; SIZE];
-    let mut env = WaveTable::<Linear, SIZE>::new(envtable.hanning(), f_sample_rate);
+    let mut env = WaveTable::<SIZE>::new(envtable.hanning(), f_sample_rate);
 
 
-    let mut wt1 = WaveTable::<Cubic, SIZE>::new(
+    let mut wt1 = WaveTable::<SIZE>::new(
       table.complex_sine(amps, phas),
       f_sample_rate
     );
@@ -91,11 +91,11 @@ fn main() -> anyhow::Result<()> {
               // hacky handler of interleaved stereo
               if ch % 2 == 0 {
                 ch+=1;
-                wt1.play(200.0, 0.0) * 0.1 * env.play(4.0, 0.0) + dlyl.play(sample, 0.1) * 0.1
+                wt1.play::<Cubic>(200.0, 0.0) * 0.1 * env.play::<Linear>(4.0, 0.0) + dlyl.play(sample, 0.1) * 0.1
 
               } else {
                 ch+=1;
-                wt2.play(500.0, 0.0) * 0.1 * env.play(5.0, 0.0) + dlyr.play(sample, 0.1) * 0.1
+                wt2.play::<Cubic>(500.0, 0.0) * 0.1 * env.play::<Linear>(5.0, 0.0) + dlyr.play(sample, 0.1) * 0.1
               }
             },
             Err(_) => {

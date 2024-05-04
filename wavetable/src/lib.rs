@@ -6,16 +6,15 @@ use interpolation::interpolation::InterpolationConst;
 use waveshape::*;
 use dsp::signal::clamp;
 
-pub struct WaveTable<T, const N:usize> {
+pub struct WaveTable<const N:usize> {
   position: f32,
   table: [f32; N],
   size: usize,
   frequency: f32,
   samplerate: f32,
-  interpolation: PhantomData<T>
 }
 
-impl<T:InterpolationConst, const N:usize> Clone for WaveTable<T, N> {
+impl<const N:usize> Clone for WaveTable<N> {
   fn clone(&self) -> Self {
     Self {
       position: self.position,
@@ -23,24 +22,22 @@ impl<T:InterpolationConst, const N:usize> Clone for WaveTable<T, N> {
       size: self.size,
       frequency: self.frequency,
       samplerate: self.samplerate,
-      interpolation: PhantomData,
     }
   }
 }
   
-impl<T: InterpolationConst, const N: usize> WaveTable<T, N> {
-  pub fn new(table: &[f32; N], samplerate: f32) -> WaveTable<T, N> {
+impl<const N: usize> WaveTable<N> {
+  pub fn new(table: &[f32; N], samplerate: f32) -> WaveTable<N> {
     WaveTable { 
       position: 0.0, 
       table: *table,
       size: table.len(),
       frequency: 0.0,
       samplerate,
-      interpolation: PhantomData,
     } 
   }
 
-  pub fn play(&mut self, frequency: f32, phase: f32) -> f32 {
+  pub fn play<T: InterpolationConst>(&mut self, frequency: f32, phase: f32) -> f32 {
     if frequency > (self.samplerate / 2.0) { return 0.0; }
     self.frequency = frequency;
     let norm_ph = clamp((phase+1.0)*0.5, 0.0, 1.0);
@@ -73,14 +70,14 @@ mod tests {
     const SIZE: usize = 16;
     let mut table = [0.0; SIZE];
     let table = table.triangle();
-    let mut wt = WaveTable::<Floor, SIZE>::new(&table, 48000.0);
+    let mut wt = WaveTable::<SIZE>::new(&table, 48000.0);
     let mut shape = vec!();
     // Check if it wraps
-    for _ in 0..17 {
-      let out = wt.read();
+    for _ in 0..16 {
+      let out = wt.play::<Floor>(SAMPLERATE/8.0, 0.0);
       shape.push(out);
     }
-    assert_eq!(vec![0.0, 0.25, 0.5, 0.75, 1.0, 0.75, 0.5, 0.25, 0.0, -0.25, -0.5, -0.75, -1.0, -0.75, -0.5, -0.25, 0.0], shape)
+    assert_eq!(vec![0.25, 0.5, 0.75, 1.0, 0.75, 0.5, 0.25, 0.0, -0.25, -0.5, -0.75, -1.0, -0.75, -0.5, -0.25, 0.0], shape)
   }
   
   #[test] 
@@ -88,12 +85,12 @@ mod tests {
     const SIZE: usize = 16;
     let mut table = [0.0; SIZE];
     let table = <[f32; SIZE] as Waveshape<SIZE>>::triangle(&mut table);
-    let mut wt = WaveTable::< Linear, SIZE>::new(&table, 48000.0);
+    let mut wt = WaveTable::<SIZE>::new(&table, 48000.0);
     let mut shape = vec!();
     wt.frequency = 16.0;
     // Check if it wraps
     for _ in 0..16 {
-      let out = wt.play(SAMPLERATE / SIZE as f32, 1.0);
+      let out = wt.play::<Linear>(SAMPLERATE / SIZE as f32, 1.0);
       shape.push(out);
     }
     assert_eq!(vec![0.25, 0.5, 0.75, 1.0, 0.75, 0.5, 0.25, 0.0, -0.25, -0.5, -0.75, -1.0, -0.75, -0.5, -0.25, 0.0], shape)
@@ -104,11 +101,11 @@ mod tests {
     const SIZE: usize = 8;
     let mut table = [0.0; SIZE];
     let table = <[f32; SIZE] as Waveshape<SIZE>>::triangle(&mut table);
-    let mut wt = WaveTable::<Floor, 8>::new(&table, 48000.0);
+    let mut wt = WaveTable::<8>::new(&table, 48000.0);
     wt.frequency = 20.0;
     let mut shape = vec!();
     for _ in 0..20 { 
-      let out = wt.play(1.0, 1.0);
+      let out = wt.play::<Floor>(1.0, 1.0);
       shape.push(out) 
     } 
     println!("{:?}", shape);
@@ -120,10 +117,10 @@ mod tests {
     let dilude = 2;
     let mut table = [0.0; SIZE];
     let table = <[f32; SIZE] as Waveshape<SIZE>>::triangle(&mut table);
-    let mut wt = WaveTable::<Linear, SIZE>::new(&table, 48000.0);
+    let mut wt = WaveTable::<SIZE>::new(&table, 48000.0);
     let mut shape = vec!();
     for _ in 0..(SIZE * dilude) {
-      shape.push(wt.play(SAMPLERATE / (SIZE * dilude) as f32, 1.0));
+      shape.push(wt.play::<Linear>(SAMPLERATE / (SIZE * dilude) as f32, 1.0));
     }
     println!("{:?}", shape);
     assert_eq!(vec![0.5, 1.0, 0.5, 0.0, -0.5, -1.0, -0.5, 0.0], shape);
