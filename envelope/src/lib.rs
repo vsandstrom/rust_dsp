@@ -3,6 +3,12 @@ extern crate buffer;
 use interpolation::interpolation::Interpolation;
 use buffer::Buffer;
 
+pub struct BreakPoints<const N: usize, const M: usize> {
+  pub values: [f32; N],
+  pub durations: [f32; M],
+  pub curves: Option<[f32; M]>
+}
+
 pub struct Envelope {
   buffer: Vec<f32>,
   buf_position: f32,
@@ -10,29 +16,37 @@ pub struct Envelope {
 }
 
 impl Envelope {
-  fn generate(points: Vec<f32>, times: Vec<f32>, curves: Vec<f32>, samplerate: f32) -> Vec<f32> {
-    let mut times = times.into_iter();
-    let mut curves = curves.into_iter();
+  fn generate<const N: usize, const M: usize>(breakpoints: BreakPoints<N, M>, samplerate: f32) -> Vec<f32> {
+    let mut durations = breakpoints.durations.into_iter();
+    // let mut curves = curves.into_iter();
     let mut buffer = vec!();
 
-    for p in points.windows(2) {
+    for p in breakpoints.values.windows(2) {
       let q = f32::abs(p[1] - p[0]);
 
-      if let Some(time) = times.next() {
+      if let Some(time) = durations.next() {
         let num_samples = time * samplerate;
         let m = 1.0 / num_samples;
 
         for i in 0..(num_samples as usize) {
 
-          if let Some(curve) = curves.next() {
+          if let Some(curves) = breakpoints.curves {
+            let mut curves = curves.into_iter();
+            if let Some(curve) = curves.next() {
+              let slope = q * f32::powf(m * i as f32, curve);
+              if p[0] > p[1] {
+                buffer.push(p[0] - slope);
+              } else {
+                buffer.push(p[0] + slope);
+              }
+            }
+          } else {
+            let curve = 1.0;
             let slope = q * f32::powf(m * i as f32, curve);
-
             if p[0] > p[1] {
               buffer.push(p[0] - slope);
-
             } else {
               buffer.push(p[0] + slope);
-
             }
           }
         }
@@ -41,14 +55,56 @@ impl Envelope {
     buffer
   }
 
-  pub fn new(points: Vec<f32>, times: Vec<f32>, curves: Vec<f32>, samplerate: f32) -> Self {
-    let buffer = Envelope::generate(points, times, curves, samplerate);
+
+  // fn generate(points: Vec<f32>, durations: Vec<f32>, curves: Vec<f32>, samplerate: f32) -> Vec<f32> {
+  //   let mut durations = durations.into_iter();
+  //   let mut curves = curves.into_iter();
+  //   let mut buffer = vec!();
+  //
+  //   for p in points.windows(2) {
+  //     let q = f32::abs(p[1] - p[0]);
+  //
+  //     if let Some(time) = durations.next() {
+  //       let num_samples = time * samplerate;
+  //       let m = 1.0 / num_samples;
+  //
+  //       for i in 0..(num_samples as usize) {
+  //
+  //         if let Some(curve) = curves.next() {
+  //           let slope = q * f32::powf(m * i as f32, curve);
+  //
+  //           if p[0] > p[1] {
+  //             buffer.push(p[0] - slope);
+  //
+  //           } else {
+  //             buffer.push(p[0] + slope);
+  //
+  //           }
+  //         }
+  //       }
+  //     }
+  //   }
+  //   buffer
+  // }
+
+  pub fn new<const N: usize, const M: usize>(breakpoints: BreakPoints<N, M>, samplerate: f32) -> Self {
+    let buffer = Envelope::generate(breakpoints, samplerate);
     Envelope {
       buffer,
       buf_position: 0.0,
       speed: 1.0,
     }
   }
+
+  // pub fn new(points: Vec<f32>, durations: Vec<f32>, curves: Vec<f32>, samplerate: f32) -> Self {
+  //   let buffer = Envelope::generate(points, durations, curves, samplerate);
+  //   Envelope {
+  //     buffer,
+  //     buf_position: 0.0,
+  //     speed: 1.0,
+  //   }
+  // }
+
 
   pub fn len(&self) -> usize {
     self.buffer.len()

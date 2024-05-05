@@ -3,7 +3,9 @@ use buffer::Buffer;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use delay::{ Delay, IDelay, DelayTrait };
 use dsp::math::next_pow2;
+use grains::Granulator;
 use wavetable::WaveTable;
+use envelope::{Envelope, BreakPoints};
 use std::sync::mpsc::{channel, Receiver, Sender};
 use interpolation::interpolation::{Linear, Cubic};
 use waveshape::traits::Waveshape;
@@ -39,6 +41,18 @@ fn main() -> anyhow::Result<()> {
     // let latency_samples = latency_frames as usize * config.channels as usize;
 
     // SETUP YOUR AUDIO PROCESSING STRUCTS HERE !!!! <-------------------------
+    let bkr = BreakPoints::<3, 2>{
+      values: [0.0, 1.0, 0.0], 
+      durations: [0.2, 0.45], 
+      curves: None
+    };
+
+    let mut gr = Granulator::new(
+      Buffer::new(f_sample_rate), 
+      Envelope::new(bkr, f_sample_rate),
+      f_sample_rate,
+      8
+    );
   
     const SIZE: usize = 512;
     let mut table = [0.0; SIZE];
@@ -52,7 +66,6 @@ fn main() -> anyhow::Result<()> {
 
     let mut envtable = [0.0; SIZE];
     let mut env = WaveTable::<SIZE>::new(envtable.hanning(), f_sample_rate);
-
 
     let mut wt1 = WaveTable::<SIZE>::new(
       table.complex_sine(amps, phas),
@@ -68,8 +81,11 @@ fn main() -> anyhow::Result<()> {
     let input_callback = move | data: &[f32], _: &cpal::InputCallbackInfo | {
         // Process input data
         let mut output_fell_behind = false;
-        for &sample in data {
+        let mut c = 0;
+        for (i, &sample) in data.into_iter().enumerate() {
           // Send input data to the output callback, or do any processing
+
+          
           match tx.send(sample) {
             Err(_) => output_fell_behind = true,
             _ => ()
@@ -91,11 +107,14 @@ fn main() -> anyhow::Result<()> {
               // hacky handler of interleaved stereo
               if ch % 2 == 0 {
                 ch+=1;
-                wt1.play::<Cubic>(200.0, 0.0) * 0.1 * env.play::<Linear>(4.0, 0.0) + dlyl.play::<Linear>(sample, 0.1) * 0.1
-
+                // wt1.play::<Cubic>(200.0, 0.0) * 0.1 
+                //   * env.play::<Linear>(4.0, 0.0) 
+                //   + dlyl.play::<Linear>(sample, 0.1) * 0.1
               } else {
                 ch+=1;
-                wt2.play::<Cubic>(500.0, 0.0) * 0.1 * env.play::<Linear>(5.0, 0.0) + dlyr.play::<Linear>(sample, 0.1) * 0.1
+                // wt2.play::<Cubic>(500.0, 0.0) * 0.1 
+                //   * env.play::<Linear>(5.0, 0.0) 
+                //   + dlyr.play::<Linear>(sample, 0.1) * 0.1
               }
             },
             Err(_) => {
