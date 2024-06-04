@@ -101,6 +101,7 @@ mod tests {
     const SIZE: usize = 8;
     let mut table = [0.0; SIZE];
     let table = <[f32; SIZE] as Waveshape<SIZE>>::triangle(&mut table);
+
     let mut wt = WaveTable::<8>::new(&table, 48000.0);
     wt.frequency = 20.0;
     let mut shape = vec!();

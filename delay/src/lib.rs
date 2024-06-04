@@ -1,6 +1,6 @@
-use core::marker::PhantomData;
 use interpolation::interpolation::InterpolationConst;
 use dsp::math::is_pow2;
+
 
 pub trait DelayTrait {
   fn new(delay_taps: usize, samplerate: f32) -> Self;
@@ -161,3 +161,4 @@ impl<const N: usize> DelayTrait for IDelay<N> {
 #[cfg(test)]
 mod tests {
 }
+

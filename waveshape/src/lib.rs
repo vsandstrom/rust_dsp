@@ -97,6 +97,7 @@ pub mod traits {
     fn triangle(&mut self) -> &mut Self::Output;
     fn square(&mut self) -> &mut Self::Output;
     fn sawtooth(&mut self) -> &mut Self::Output;
+    fn phasor(&mut self) -> &mut Self::Output;
     fn reverse_sawtooth(&mut self) -> &mut Self::Output;
     fn complex_sine<const M:usize>( 
       &mut self, amps: [f32; M], phases: [f32; M]
@@ -159,6 +160,17 @@ pub mod traits {
       }
       self
     }
+    
+    /// Sawtooth: -1.0 -> 1.0
+    fn phasor(&mut self) -> &mut Self::Output {
+      let mut angle: f32 = 0.0;
+      let inc: f32 = 1.0 / (self.len() as f32 - 1.0);
+      for i in 0..self.len() {
+        self[i] = angle;
+        angle += inc;
+      }
+      self
+    }
 
     /// Reverse sawtooth: 1.0 -> -1.0
     fn reverse_sawtooth(&mut self) -> &mut Self::Output {
@@ -188,8 +200,8 @@ pub mod traits {
       }
       self
     }
-
   }
+
 
   impl<const N:usize> Waveshape<N> for Vec<f32>  {
     type Output = Vec<f32>;
@@ -199,6 +211,18 @@ pub mod traits {
       let inc: f32 = PI / (self.len() as f32);
       for i in 0..self.len() {
         self[i] = angle.sin().powf(2.0);
+        angle += inc;
+      }
+      self
+    }
+    
+    /// Phasor: 0.0 -> 1.0
+    /// Useful for looping through buffers
+    fn phasor(&mut self) -> &mut Self::Output {
+      let mut angle: f32 = 0.0;
+      let inc: f32 = 1.0 / (self.len() as f32 - 1.0);
+      for i in 0..self.len() {
+        self[i] = angle;
         angle += inc;
       }
       self
@@ -247,6 +271,7 @@ pub mod traits {
       }
       self
     }
+    
 
     /// Reverse sawtooth: 1.0 -> -1.0
     fn reverse_sawtooth(&mut self) -> &mut Self::Output {

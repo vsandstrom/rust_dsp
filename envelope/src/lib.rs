@@ -3,6 +3,8 @@ extern crate buffer;
 use interpolation::interpolation::Interpolation;
 use buffer::Buffer;
 
+
+
 pub struct BreakPoints<const N: usize, const M: usize> {
   pub values: [f32; N],
   pub durations: [f32; M],
@@ -15,8 +17,18 @@ pub struct Envelope {
   speed: f32,
 }
 
+impl Default for BreakPoints<3, 2> {
+  fn default() -> Self {
+    Self{
+      values: [0.0, 1.0, 0.0],
+      durations: [0.1, 0.8],
+      curves: None
+    }
+  }
+}
+
 impl Envelope {
-  fn generate<const N: usize, const M: usize>(breakpoints: BreakPoints<N, M>, samplerate: f32) -> Vec<f32> {
+  fn generate<const N: usize, const M: usize>(breakpoints: &BreakPoints<N, M>, samplerate: f32) -> Vec<f32> {
     let mut durations = breakpoints.durations.into_iter();
     // let mut curves = curves.into_iter();
     let mut buffer = vec!();
@@ -87,7 +99,7 @@ impl Envelope {
   //   buffer
   // }
 
-  pub fn new<const N: usize, const M: usize>(breakpoints: BreakPoints<N, M>, samplerate: f32) -> Self {
+  pub fn new<const N: usize, const M: usize>(breakpoints: &BreakPoints<N, M>, samplerate: f32) -> Self {
     let buffer = Envelope::generate(breakpoints, samplerate);
     Envelope {
       buffer,
@@ -135,6 +147,19 @@ impl Envelope {
 
   pub fn set_speed(&mut self, speed: f32) {
     self.speed = speed;
+  }
+}
+
+impl Default for Envelope {
+  /// Assumes the samplerate is 48kHz, and uses the BreakPoints default values.
+  fn default() -> Self {
+    let breakpoints = BreakPoints::default();
+    let buffer = Envelope::generate(&breakpoints, 48000.0);
+    Self {
+      buffer,
+      buf_position: 0.0,
+      speed: 1.0,
+    }
   }
 }
 

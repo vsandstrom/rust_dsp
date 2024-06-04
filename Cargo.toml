@@ -7,12 +7,14 @@ members = [
   "envelope",
   "filter",
   "grains",
+  "grains2",
   "interpolation",
   "reverb",
   "trig",
   "waveshape",
-  "wavetable", "vector", "fdn",
+  "wavetable", "vector", "fdn", "grains2",
 ]
 exclude = [
   "interp_test"
 ]
+resolver = "1"

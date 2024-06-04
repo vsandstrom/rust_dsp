@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 buffer = {path = "../buffer/"}
 interpolation = {path = "../interpolation/"}
+dsp = {path = "../dsp/"}

@@ -1,6 +1,5 @@
 extern crate interpolation;
-use interpolation::interpolation::{InterpolationConst, Floor};
-use core::marker::PhantomData;
+use interpolation::interpolation::InterpolationConst;
 
 pub struct Buffer<const N: usize> {
   pub buffer: [f32; N],
@@ -50,7 +49,7 @@ impl<const N: usize> Buffer<N> {
 #[cfg(test)]
 mod tests {
   use crate::interpolation::interpolation::{Floor, Linear, Cubic};
-  use super::*;
+  use super::Buffer;
 
   #[test]
   fn none_test() {

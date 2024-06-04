@@ -1,5 +1,5 @@
 [package]
-name = "grains"
+name = "grains2"
 version = "0.1.0"
 edition = "2021"
 
@@ -11,4 +11,5 @@ envelope = {path = "../envelope/"}
 interpolation = {path = "../interpolation/"}
 buffer = {path = "../buffer/"}
 trig = {path = "../trig/"}
+waveshape = {path = "../waveshape/"}
 array-init = "2.1.0"

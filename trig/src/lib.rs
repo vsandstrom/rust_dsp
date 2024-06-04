@@ -17,7 +17,6 @@ impl Dust {
   }
 }
 
-
 impl Trigger for Impulse {
   fn play(&mut self, duration: f32) -> f32 {
     if self.counter >= (self.duration * self.samplerate) as u32 {
