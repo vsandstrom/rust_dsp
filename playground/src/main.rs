@@ -10,7 +10,7 @@ use envelope::{Envelope, BreakPoints};
 use std::sync::mpsc::{channel, Receiver, Sender};
 use interpolation::interpolation::{Linear, Cubic, Floor};
 use waveshape::traits::Waveshape;
-use filter::biquad;
+use filter::biquad::{Biquad, calc_bpf};
 
 
 fn main() -> anyhow::Result<()> {

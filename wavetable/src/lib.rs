@@ -1,7 +1,8 @@
 extern crate interpolation;
 extern crate waveshape;
 extern crate dsp;
-use core::marker::PhantomData;
+use std::{error::Error, thread::AccessError};
+
 use interpolation::interpolation::InterpolationConst;
 use waveshape::*;
 use dsp::signal::clamp;
@@ -35,6 +36,13 @@ impl<const N: usize> WaveTable<N> {
       frequency: 0.0,
       samplerate,
     } 
+  }
+
+  pub fn update_table(&mut self, value: f32, index: usize) -> std::result::Result<(), &'static str> {
+    match self.table.get_mut(index) {
+      Some(x) => {*x = value; Ok(())},
+      None => Err("table out of bounds")
+    }
   }
 
   pub fn play<T: InterpolationConst>(&mut self, frequency: f32, phase: f32) -> f32 {
