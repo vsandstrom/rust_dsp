@@ -1,3 +1,6 @@
+[package]
+name = "rust_dsp"
+
 [workspace]
 members = [
   "playground",
