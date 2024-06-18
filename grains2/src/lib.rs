@@ -1,6 +1,6 @@
 use array_init::array_init;
 use rand::Rng;
-use envelope::{Envelope};
+use envelope::Envelope;
 use waveshape::hanning;
 use interpolation::interpolation::{InterpolationConst, Interpolation};
 
@@ -40,8 +40,8 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator2<NUMGRAINS, BUFSIZE
     // Buffer to hold recorded audio
     let buffer = [0.0; BUFSIZE];
     // Default Envelope shape
-    let mut envbug = [0.0; 1024];
-    let envshape = hanning(&mut envbug);
+    let mut envbuf = [0.0; 1024];
+    let envshape = hanning(&mut envbuf);
     let envelope = Envelope::from(envshape);
     let active = [false; NUMGRAINS];
 
@@ -61,10 +61,22 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator2<NUMGRAINS, BUFSIZE
         EnvInterpolation: Interpolation {
     let mut out = 0.0;
     for i in 0..NUMGRAINS {
-      let sig = BufInterpolation::interpolate(self.grains[i].position, &self.buffer, BUFSIZE);
-      let env = self.envelope.read::<EnvInterpolation>(self.grains[i].env_position);
+      let sig = BufInterpolation::interpolate(
+        self.grains[i].position,
+        &self.buffer,
+        BUFSIZE
+      );
+
+      let env = self.envelope.read::<EnvInterpolation>(
+        self.grains[i].env_position
+      );
+
       self.grains[i].position += self.grains[i].rate;
       self.grains[i].env_position += self.grains[i].duration;
+
+      while self.grains[i].position >= BUFSIZE as f32 {
+        self.grains[i].position -= BUFSIZE as f32;
+      }
 
       if self.grains[i].env_position as usize >= self.envelope.len() {
         self.grains[i].position = 0.0;
@@ -102,20 +114,19 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator2<NUMGRAINS, BUFSIZE
         },
 
         false => {
-          if !triggered {
-            let random = rand::thread_rng().gen_range(0.0..=1.0) * self.jitter;
-            self.grains[i].position = (f32::fract(position + random)) * BUFSIZE as f32;
-            self.grains[i].env_position = 0.0;
-            self.grains[i].rate = rate;
-            self.grains[i].duration = self.envelope.len() as f32 / ((self.samplerate) * duration);
-            self.active[i] = true;
+          if triggered { continue; }
+          let random = rand::thread_rng().gen_range(0.0..=1.0) * self.jitter;
+          self.grains[i].position = (f32::fract(position + random)) * BUFSIZE as f32;
+          self.grains[i].env_position = 0.0;
+          self.grains[i].rate = rate;
+          self.grains[i].duration = self.envelope.len() as f32 / ((self.samplerate) * duration);
+          self.active[i] = true;
 
-            let sig = BufInterpolation::interpolate(self.grains[i].position, &self.buffer, BUFSIZE);
-            let env = self.envelope.read::<EnvInterpolation>(self.grains[i].env_position);
+          let sig = BufInterpolation::interpolate(self.grains[i].position, &self.buffer, BUFSIZE);
+          let env = self.envelope.read::<EnvInterpolation>(self.grains[i].env_position);
 
-            triggered = true;
-            out += sig * env;
-          }
+          triggered = true;
+          out += sig * env;
         },
       }
     }
@@ -123,7 +134,8 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator2<NUMGRAINS, BUFSIZE
   }
 
   pub fn record(&mut self, sample: f32) -> Option<f32> {
-    if self.rec_pos >= BUFSIZE { return None; }
+    println!("Hello {}", self.rec_pos);
+    if self.rec_pos == BUFSIZE { return None; }
     self.buffer[self.rec_pos] = sample;
     self.rec_pos += 1;
     Some(sample)

@@ -3,7 +3,6 @@ use interpolation::interpolation::InterpolationConst;
 
 pub struct Buffer<const N: usize> {
   pub buffer: [f32; N],
-  #[allow(unused)]
   pub size: usize,
   pub samplerate: f32,
   pub position: f32,
@@ -32,7 +31,7 @@ impl<const N: usize> Buffer<N> {
   /// Writes and updates buffer at position
   pub fn write(&mut self, sample: f32, position: usize) {
     let mut pos = position;
-    while pos >= self.buffer.len() { pos %= N; }
+    while pos >= N { pos -= N; }
     self.buffer[pos] = sample;
   }
 
