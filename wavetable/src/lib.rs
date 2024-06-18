@@ -134,17 +134,4 @@ mod tests {
     println!("{:?}", shape);
     assert_eq!(vec![0.5, 1.0, 0.5, 0.0, -0.5, -1.0, -0.5, 0.0], shape);
   }
-  
-  // #[test]
-  // fn cubic_test() {
-  //   let TABLE_SIZE = 9;
-  //   let table = vec![0.0;TABLE_SIZE].sine();
-  //   let mut wt = WaveTable::<Linear>::new(&table, 48000.0);
-  //   let mut shape = vec!();
-  //   for _ in 0..16 {
-  //     shape.push(wt.play(SAMPLERATE / 16.0, 1.0));
-  //   }
-  //   println!("{:?}", shape);
-  //   assert_eq!(0.707, shape[3]);
-  // }
 }
