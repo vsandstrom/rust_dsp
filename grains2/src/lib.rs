@@ -1,7 +1,7 @@
 use array_init::array_init;
 use rand::Rng;
 use envelope::{Envelope, BreakPoints};
-use waveshape::hanning;
+use waveshape::{hanning, traits::Waveshape};
 use interpolation::interpolation::{InterpolationConst, Interpolation};
 
 pub struct Grain2 {
@@ -15,9 +15,8 @@ pub struct Granulator2<const NUMGRAINS: usize, const BUFSIZE:usize> {
   buffer: Vec<f32>,
   envelope: Envelope,
   samplerate: f32,
-  grains: Vec<Grain2>,
+  grains: [Grain2; NUMGRAINS],
   rec_pos: usize,
-  jitter: f32,
   active: [bool; NUMGRAINS]
 }
 
@@ -34,27 +33,19 @@ impl Default for Grain2 {
 
 impl<const NUMGRAINS:usize, const BUFSIZE: usize> Default for Granulator2<NUMGRAINS, BUFSIZE> {
   fn default() -> Self {
-    let grains = {
-      let mut v = vec!();
-      for _ in 0..NUMGRAINS {
-        v.push(Grain2::default());
-      }
-      v
-    };
-
+    let grains: [Grain2; NUMGRAINS] = array_init(|_| Grain2::default());
     // Buffer to hold recorded audio
     let buffer = vec![0.0; BUFSIZE];
     // Default Envelope shape
-    let mut envbuf = [0.0; 1024];
-    let envshape = hanning(&mut envbuf);
-    let envelope = Envelope::from(envshape);
+    let mut envbuf: [f32; 1024] = [0.0; 1024];
+    let envbuf = hanning(&mut envbuf);
+    let envelope = Envelope::from(envbuf.as_ref());
     let active = [false; NUMGRAINS];
 
     Self {
       buffer,
       grains,
       envelope,
-      jitter: 0.0,
       rec_pos: 0,
       samplerate: 48000.0,
       active
@@ -65,13 +56,7 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Default for Granulator2<NUMGRA
 
 impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator2<NUMGRAINS, BUFSIZE> {
   pub fn new<const N:usize, const M: usize>(env_shape: BreakPoints<N, M>, samplerate: f32) -> Self {
-    let grains = {
-      let mut v = vec!();
-      for _ in 0..NUMGRAINS {
-        v.push(Grain2::default());
-      }
-      v
-    };
+    let grains = array_init(|_| Grain2::default());
 
     // Buffer to hold recorded audio
     let buffer = vec![0.0; BUFSIZE];
@@ -85,7 +70,6 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator2<NUMGRAINS, BUFSIZE
       buffer,
       grains,
       envelope,
-      jitter: 0.0,
       rec_pos: 0,
       samplerate,
       active
@@ -124,7 +108,13 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator2<NUMGRAINS, BUFSIZE
     out
   }
 
-  pub fn play<BufInterpolation, EnvInterpolation>(&mut self, position: f32, duration: f32, rate: f32, jitter: f32, trigger:f32) -> f32
+  pub fn play<BufInterpolation, EnvInterpolation>( &mut self,
+    position: f32,
+    duration: f32,
+    rate: f32,
+    jitter: f32,
+    trigger:f32
+  ) -> f32
   where BufInterpolation: InterpolationConst,
         EnvInterpolation: Interpolation {
     if trigger < 1.0 { return self.idle_play::<BufInterpolation, EnvInterpolation>(); }

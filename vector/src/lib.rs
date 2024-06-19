@@ -1,4 +1,4 @@
-use wavetable::WaveTable;
+use wavetable::single::WaveTable;
 use interpolation::interpolation::InterpolationConst;
 
 pub struct VectorOscillator<'a, const N: usize> {

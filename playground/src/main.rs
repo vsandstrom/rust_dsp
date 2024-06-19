@@ -1,11 +1,15 @@
-use std::{thread, time, usize};
+use std::{
+  sync::{
+    mpsc::channel, Arc, RwLock
+  }, thread, time, usize
+};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use grains2::Granulator2;
 use trig::{Dust, Trigger};
-use wavetable::WaveTable;
-use std::sync::mpsc::channel;
+use wavetable::{single, shared};
+// use wavetable2::WaveTable2;
 use interpolation::interpolation::{Linear, Cubic};
-use waveshape::traits::Waveshape;
+use waveshape::{sine, traits::Waveshape};
 use envelope::BreakPoints;
 
 fn main() -> anyhow::Result<()> {
@@ -52,12 +56,26 @@ fn main() -> anyhow::Result<()> {
       curves: Some([0.2, 1.8])
     };
 
+    let mut arr = [0.0; 512];
+    let table = arr.sine().to_vec();
+    let xtable = Arc::new(RwLock::new(table));
+    let mut wt1 = shared::WaveTable::new(xtable.clone(), f_sample_rate);
+    let mut wt2 = shared::WaveTable::new(xtable.clone(), f_sample_rate);
+    let mut wt3 = shared::WaveTable::new(xtable.clone(), f_sample_rate);
+    let mut wt4 = shared::WaveTable::new(xtable.clone(), f_sample_rate);
+    let mut wt5 = shared::WaveTable::new(xtable.clone(), f_sample_rate);
+    let mut wt6 = shared::WaveTable::new(xtable.clone(), f_sample_rate);
+
+
+    let mut pos = 0;
+    let mut started = false;
+    let freq = 100.0;
     let mut phasor = [0.0f32; SIZE];
     let mut lfo1 = [0.0f32; SIZE];
-    let table = phasor.phasor();
+    let phase = phasor.phasor();
     let lfo1_t = lfo1.sine();
-    let mut ph = WaveTable::new(&table, f_sample_rate);
-    let mut lfo1_ph = WaveTable::new(&lfo1_t, f_sample_rate);
+    let mut ph = single::WaveTable::new(&phase, f_sample_rate);
+    let mut lfo1_ph = single::WaveTable::new(&lfo1_t, f_sample_rate);
     let mut imp = Dust::new(f_sample_rate);
     let mut out = 0.0;
 
@@ -89,6 +107,14 @@ fn main() -> anyhow::Result<()> {
         // Process output data
         let mut ch = 0;
         let mut input_fell_behind = false;
+
+        if pos < SIZE && started {
+          if let Ok(mut table) = xtable.write() {
+            table[pos] = 0.0;
+          }
+          pos+=1;
+        }
+        
         for sample in data {
           // Recieve sample from input stream
           *sample = match rx.try_recv() {
@@ -97,13 +123,20 @@ fn main() -> anyhow::Result<()> {
                 if let Some(_) = gr.record(s) {
                   out = 0.0;
                 } else {
-                    out = gr.play::<Linear, Linear>(
-                      ph.play::<Linear>(1.0/8.0, 1.0),
-                      0.8,
-                      (lfo1_ph.play::<Cubic>(0.05, 1.0) + 1.1) * 0.6,
-                      0.51,
-                      imp.play(0.1)
-                    )
+                  started = true;
+                    // out = gr.play::<Linear, Linear>(
+                    //   ph.play::<Linear>(1.0/8.0, 1.0),
+                    //   0.8,
+                    //   (lfo1_ph.play::<Cubic>(0.05, 1.0) + 1.1) * 0.6,
+                    //   0.51,
+                    //   imp.play(0.1)
+                    // );
+                    out = wt1.play::<Linear>(freq, 1.0) * 0.2;
+                    out += wt2.play::<Linear>(freq*3.0, 1.0) * 0.2;
+                    out += wt3.play::<Linear>(freq*5.0, 1.0) * 0.2;
+                    out += wt4.play::<Linear>(freq*9.0, 1.0) * 0.2;
+                    out += wt5.play::<Linear>(freq*11.0*0.5, 1.0) * 0.2;
+                    out += wt6.play::<Linear>(freq*7.0, 1.0) * 0.16;
                   }
                 }
               ch = (ch + 1) % 2;

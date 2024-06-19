@@ -16,7 +16,7 @@ pub trait DelayTrait {
 ///
 /// Single read-, multiple write heads
 pub struct Delay<const N: usize> {
-  buffer: [f32; N],
+  buffer: Vec<f32>,
   size: usize,
   samplerate: f32,
   delay_time: f32,
@@ -54,7 +54,7 @@ impl<const N: usize> DelayTrait for Delay<N> {
   /// max_delay_time >= delay_time * delay_taps,
   /// ex: max_delay_time = 1.0, delay_time = 0.2, delay_taps = 5
   fn new(delay_taps: usize, samplerate: f32) -> Self {
-    let buffer = [0.0; N];
+    let buffer = vec![0.0; N];
 
     Delay{
       buffer,
@@ -90,7 +90,7 @@ impl<const N: usize> DelayTrait for Delay<N> {
 ///
 /// Single write-, multiple read heads
 pub struct IDelay<const N: usize> {
-  buffer: [f32; N],
+  buffer: Vec<f32>,
   size: usize,
   samplerate: f32,
   delay_taps: usize,
@@ -124,7 +124,7 @@ impl<const N: usize> IDelay<N> {
 
 impl<const N: usize> DelayTrait for IDelay<N> {
   fn new(delay_taps: usize, samplerate: f32) -> Self {
-    let buffer = [0.0; N];
+    let buffer = vec![0.0; N];
 
     println!("{}", buffer.len());
 
