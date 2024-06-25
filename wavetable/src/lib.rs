@@ -5,10 +5,11 @@ extern crate dsp;
 use interpolation::interpolation::InterpolationConst;
 use dsp::signal::clamp;
 
-pub mod single {
+pub mod owned {
   /// Single refers to the ownership of the underlying wavetable structure.
   /// In the `single` module, the table is always owned by the instance of 
-  /// the WaveTable struct.
+  /// the WaveTable struct. This is useful when designing a VectorSynth with 
+  /// the ability to scroll between different wavetables seamlessly.
 
 
   use super::*;
@@ -18,7 +19,7 @@ pub mod single {
     table: [f32; N],
     size: usize,
     pub frequency: f32,
-    samplerate: f32,
+    pub samplerate: f32,
   }
 
   impl<const N:usize> Clone for WaveTable<N> {
@@ -44,6 +45,7 @@ pub mod single {
       } 
     }
 
+    /// Update the underlying wavetable array owned by struct
     pub fn update_table(&mut self, value: f32, index: usize) -> std::result::Result<(), &'static str> {
       match self.table.get_mut(index) {
         Some(x) => {*x = value; Ok(())},
@@ -86,7 +88,7 @@ pub mod shared {
     table: Arc<RwLock<Vec<f32>>>,
     size: usize,
     pub frequency: f32,
-    samplerate: f32
+    pub samplerate: f32
   }
 
   impl WaveTable {
@@ -126,6 +128,5 @@ pub mod shared {
       out
     }
   }
-
 }
 

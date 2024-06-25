@@ -1,5 +1,5 @@
 [package]
-name = "wavetable"
+name = "polytable"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,6 +7,9 @@ edition = "2021"
 
 [dependencies]
 interpolation = {path = '../interpolation/'}
+envelope = {path = '../envelope/'}
 waveshape = {path = '../waveshape/'}
+wavetable = {path = '../wavetable'}
+vector = {path = '../vector'}
 dsp = {path = '../dsp/'}
 assert_float_eq = "1.1.3"

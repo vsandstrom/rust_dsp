@@ -4,13 +4,14 @@ use std::{
   }, thread, time, usize
 };
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use grains::Granulator;
 use grains2::Granulator2;
 use trig::{Dust, Trigger};
-use wavetable::{single, shared};
+use wavetable::{owned, shared};
 // use wavetable2::WaveTable2;
 use interpolation::interpolation::{Linear, Cubic};
 use waveshape::{sine, traits::Waveshape};
-use envelope::BreakPoints;
+use envelope::{BreakPoints, Envelope};
 
 fn main() -> anyhow::Result<()> {
     // List all audio devices
@@ -56,34 +57,49 @@ fn main() -> anyhow::Result<()> {
       curves: Some([0.2, 1.8])
     };
 
-    let mut arr = [0.0; 512];
-    let table = arr.sine().to_vec();
-    let xtable = Arc::new(RwLock::new(table));
-    let mut wt1 = shared::WaveTable::new(xtable.clone(), f_sample_rate);
-    let mut wt2 = shared::WaveTable::new(xtable.clone(), f_sample_rate);
-    let mut wt3 = shared::WaveTable::new(xtable.clone(), f_sample_rate);
-    let mut wt4 = shared::WaveTable::new(xtable.clone(), f_sample_rate);
-    let mut wt5 = shared::WaveTable::new(xtable.clone(), f_sample_rate);
-    let mut wt6 = shared::WaveTable::new(xtable.clone(), f_sample_rate);
+    // let mut pos = 0;
+    // let mut started = false;
+    // let freq = 100.0;
+    // let mut arr = [0.0; 512];
+    // let table = arr.sine().to_vec();
+    // let xtable = Arc::new(RwLock::new(table));
+    // let mut wt1 = shared::WaveTable::new(xtable.clone(), f_sample_rate);
+    // let mut wt2 = shared::WaveTable::new(xtable.clone(), f_sample_rate);
+    // let mut wt3 = shared::WaveTable::new(xtable.clone(), f_sample_rate);
+    // let mut wt4 = shared::WaveTable::new(xtable.clone(), f_sample_rate);
+    // let mut wt5 = shared::WaveTable::new(xtable.clone(), f_sample_rate);
+    // let mut wt6 = shared::WaveTable::new(xtable.clone(), f_sample_rate);
 
 
-    let mut pos = 0;
-    let mut started = false;
-    let freq = 100.0;
     let mut phasor = [0.0f32; SIZE];
     let mut lfo1 = [0.0f32; SIZE];
     let phase = phasor.phasor();
     let lfo1_t = lfo1.sine();
-    let mut ph = single::WaveTable::new(&phase, f_sample_rate);
-    let mut lfo1_ph = single::WaveTable::new(&lfo1_t, f_sample_rate);
+    let mut ph = owned::WaveTable::new(&phase, f_sample_rate);
+    let mut lfo1_ph = owned::WaveTable::new(&lfo1_t, f_sample_rate);
     let mut imp = Dust::new(f_sample_rate);
     let mut out = 0.0;
 
-    let mut gr: Granulator2<16, {8*48000}> = Granulator2::new(
+    let mut gr1: Granulator2<16, {8*48000}> = Granulator2::new(
       // Buffer::new(f_sample_rate), 
       // Envelope::new(&bkr, f_sample_rate),
       brk,
       f_sample_rate,
+    );
+
+    let brk = BreakPoints::<3, 2>{
+      values: [0.0, 1.0, 0.0], 
+      durations: [0.2, 1.45], 
+      curves: Some([0.2, 1.8])
+    };
+
+    let env = Envelope::new(&brk, f_sample_rate);
+    let buf = buffer::Buffer::<{8*48000}>::new(f_sample_rate);
+    
+    let mut gr2: Granulator<16, {8*48000}> = Granulator::new(
+      buf,
+      env,
+      f_sample_rate
     );
     
     // Create a channel to send and receive samples
@@ -108,37 +124,54 @@ fn main() -> anyhow::Result<()> {
         let mut ch = 0;
         let mut input_fell_behind = false;
 
-        if pos < SIZE && started {
-          if let Ok(mut table) = xtable.write() {
-            table[pos] = 0.0;
-          }
-          pos+=1;
-        }
+        // if pos < SIZE && started {
+        //   if let Ok(mut table) = xtable.write() {
+        //     table[pos] = 0.0;
+        //   }
+        //   pos+=1;
+        // }
         
         for sample in data {
           // Recieve sample from input stream
           *sample = match rx.try_recv() {
             Ok(s) => {
               if ch == 0 {
-                if let Some(_) = gr.record(s) {
+                if let Some(_) = gr1.record(s) {
                   out = 0.0;
                 } else {
-                  started = true;
-                    // out = gr.play::<Linear, Linear>(
-                    //   ph.play::<Linear>(1.0/8.0, 1.0),
-                    //   0.8,
-                    //   (lfo1_ph.play::<Cubic>(0.05, 1.0) + 1.1) * 0.6,
-                    //   0.51,
-                    //   imp.play(0.1)
-                    // );
-                    out = wt1.play::<Linear>(freq, 1.0) * 0.2;
-                    out += wt2.play::<Linear>(freq*3.0, 1.0) * 0.2;
-                    out += wt3.play::<Linear>(freq*5.0, 1.0) * 0.2;
-                    out += wt4.play::<Linear>(freq*9.0, 1.0) * 0.2;
-                    out += wt5.play::<Linear>(freq*11.0*0.5, 1.0) * 0.2;
-                    out += wt6.play::<Linear>(freq*7.0, 1.0) * 0.16;
+                    out = gr1.play::<Linear, Linear>(
+                      ph.play::<Linear>(1.0/8.0, 1.0),
+                      0.8,
+                      (lfo1_ph.play::<Cubic>(0.05, 1.0) + 1.1) * 0.6,
+                      0.51,
+                      imp.play(0.1)
+                    );
+                    // out = wt1.play::<Linear>(freq, 1.0) * 0.2;
+                    // out += wt2.play::<Linear>(freq*3.0, 1.0) * 0.2;
+                    // out += wt3.play::<Linear>(freq*5.0, 1.0) * 0.2;
+                    // out += wt4.play::<Linear>(freq*9.0, 1.0) * 0.2;
+                    // out += wt5.play::<Linear>(freq*11.0*0.5, 1.0) * 0.2;
+                    // out += wt6.play::<Linear>(freq*7.0, 1.0) * 0.16;
                   }
-                }
+              } else {
+                if let Some(_) = gr2.record(s) {
+                  out = 0.0;
+                } else {
+                    out = gr2.play::<Linear, Linear>(
+                      ph.play::<Linear>(1.0/8.0, 1.0),
+                      0.8,
+                      (lfo1_ph.play::<Cubic>(0.05, 1.0) + 1.1) * 0.6,
+                      imp.play(0.1)
+                    );
+                    // out = wt1.play::<Linear>(freq, 1.0) * 0.2;
+                    // out += wt2.play::<Linear>(freq*3.0, 1.0) * 0.2;
+                    // out += wt3.play::<Linear>(freq*5.0, 1.0) * 0.2;
+                    // out += wt4.play::<Linear>(freq*9.0, 1.0) * 0.2;
+                    // out += wt5.play::<Linear>(freq*11.0*0.5, 1.0) * 0.2;
+                    // out += wt6.play::<Linear>(freq*7.0, 1.0) * 0.16;
+                  }
+
+              }
               ch = (ch + 1) % 2;
               out
             },

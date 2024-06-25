@@ -7,7 +7,6 @@ edition = "2021"
 
 [dependencies]
 wavetable = {path = "../wavetable"}
-wavetable2 = {path = "../wavetable2"}
 interpolation = {path= "../interpolation"}
 buffer = {path= "../buffer"}
 waveshape = {path= "../waveshape"}

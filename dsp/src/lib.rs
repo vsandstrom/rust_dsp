@@ -194,24 +194,25 @@ pub mod math {
     pow
   }
 
-  pub fn is_pow2(size: usize) -> bool {
+  pub const fn is_pow2(size: usize) -> bool {
     size != 0 && (size & size-1) == 0 
   }
 
   /// Translate midi-number to frequency
-  pub fn mtof(midi: u32, tuning: f32) -> f32 {
-      tuning * f32::powf(2.0, midi as f32/12.0)
+  pub fn mtof(midi: i32, tuning: f32) -> f32 {
+    let exp: f32 = (midi - 69) as f32 / 12.0;
+    tuning * f32::powf(2.0, exp)
   }
 
   /// Translate frequency to midi-number
-  pub fn ftom(freq: f32, tuning: f32) -> i32 {
-      (12f32 * f32::log10(freq / tuning) / f32::log10(2f32)) as i32
+  pub fn ftom(freq: f32, tuning: f32) -> u8 {
+    ((12.0 * f32::log10(freq / tuning) / f32::log10(2f32)) + 69.0).round() as u8
   }
 
   // Translate decibel to linear volume
   #[allow(non_snake_case)]
   pub fn db_to_volume(dB: f32) -> f32 {
-      f32::powf(10.0, 0.05*dB)
+    f32::powf(10.0, 0.05*dB)
   }
 
   // Translate  linear volume to decibel

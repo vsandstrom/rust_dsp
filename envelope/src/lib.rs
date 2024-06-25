@@ -33,7 +33,6 @@ impl Envelope {
     let mut durations = breakpoints.durations.into_iter();
     // let mut curves = curves.into_iter();
     let mut buffer = vec!();
-
     for p in breakpoints.values.windows(2) {
       let q = f32::abs(p[1] - p[0]);
 

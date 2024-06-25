@@ -1,7 +1,7 @@
 use array_init::array_init;
 use rand::Rng;
 use envelope::{Envelope, BreakPoints};
-use waveshape::{hanning, traits::Waveshape};
+use waveshape::hanning;
 use interpolation::interpolation::{InterpolationConst, Interpolation};
 
 pub struct Grain2 {

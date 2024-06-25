@@ -55,7 +55,7 @@ impl<const N: usize, const M:usize> Granulator<N, M> {
   /// Internal play method when no trigger has been detected.
   fn idle_play<T: InterpolationConst, U: Interpolation>(&mut self) -> f32 {
     let mut out = 0.0;
-    for i in 0..M {
+    for i in 0..N {
       if self.grains[i].active {
         out += self.grains[i].play::<T, U>(&self.envelope, &self.buffer);
         // update values in grains. 

@@ -13,10 +13,10 @@ members = [
   "trig",
   "waveshape",
   "wavetable", 
-  "wavetable2", 
   "vector", 
   "fdn", 
   "grains2",
+  "polytable"
 ]
 exclude = [
   "interp_test"

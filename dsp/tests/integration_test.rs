@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    use float_eq::assert_float_eq;
     use dsp::buffer::{normalize, sum};
     use dsp::signal::{ 
       unipolar, map, clamp,
@@ -12,6 +13,8 @@ mod tests {
     use dsp::math::mtof;
     use dsp::math::ftom;
     use dsp::math::{is_pow2, next_pow2};
+
+    const TOL: f32 = 0.000_366_210_94;
 
     #[test]
     fn clamp_test() {
@@ -149,27 +152,28 @@ mod tests {
 
     #[test]
     fn midi_to_frequency_test() {
-        let midi = 12;
-        assert_eq!(880f32, mtof(midi, 440f32))
+      let midi = 12;
+      assert_float_eq!(16.351597831287414, mtof(midi, 440.0), r2nd <= TOL);
     }
     
     #[test]
     /// frequencies are a bit skewed, towards equal temperment
     fn midi_to_frequency2_test() {
         let midi = 19;
-        assert_eq!(1318.5103f32, mtof(midi, 440f32))
+        assert_float_eq!(24.499714748859326, mtof(midi, 440f32), r2nd <= TOL);
     }
 
     #[test]
     fn frequency_to_midi_test() {
-        let freq = 880f32;
-        assert_eq!(12, ftom(freq, 440f32))
+        let freq = 16.351597831287414;
+        assert_eq!(12, ftom(freq, 440.0))
     }
     
     #[test]
     /// frequencies are a bit skewed, towards equal temperment
-    fn frequency_to_midi2_test() { let freq = 1318.5103f32;
-        assert_eq!(19, ftom(freq, 440f32))
+    fn frequency_to_midi2_test() { 
+      let freq = 24.499714748859326;
+      assert_eq!(19, ftom(freq, 440.0))
     }
 
     #[test]

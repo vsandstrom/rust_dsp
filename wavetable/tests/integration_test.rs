@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-  use wavetable::{single, shared};
+  use wavetable::{owned, shared};
   use std::sync::{Arc, RwLock};
 
   use interpolation::interpolation::{Floor, Linear};
@@ -13,7 +13,7 @@ mod tests {
     const SIZE: usize = 16;
     let mut table = [0.0; SIZE];
     let table = table.triangle();
-    let mut wt = single::WaveTable::<SIZE>::new(&table, 48000.0);
+    let mut wt = owned::WaveTable::<SIZE>::new(&table, 48000.0);
     let mut shape = vec!();
     // Check if it wraps
     for _ in 0..16 {
@@ -31,7 +31,7 @@ mod tests {
     const SIZE: usize = 16;
     let mut table = [0.0; SIZE];
     let table = table.triangle();
-    let mut wt = single::WaveTable::<SIZE>::new(&table, 48000.0);
+    let mut wt = owned::WaveTable::<SIZE>::new(&table, 48000.0);
     let mut shape = vec!();
     wt.frequency = 16.0;
     // Check if it wraps
@@ -50,7 +50,7 @@ mod tests {
     const SIZE: usize = 8;
     let mut table = [0.0; SIZE];
     let table = table.triangle();
-    let mut wt = single::WaveTable::<8>::new(&table, 48000.0);
+    let mut wt = owned::WaveTable::<8>::new(&table, 48000.0);
     wt.frequency = 20.0;
     let mut shape = vec!();
     for _ in 0..20 { 
@@ -66,7 +66,7 @@ mod tests {
     let dilude = 2;
     let mut table = [0.0; SIZE];
     let table = table.triangle();
-    let mut wt = single::WaveTable::<SIZE>::new(&table, 48000.0);
+    let mut wt = owned::WaveTable::<SIZE>::new(&table, 48000.0);
     let mut shape = vec!();
     for _ in 0..(SIZE * dilude) {
       shape.push(wt.play::<Linear>(SAMPLERATE / (SIZE * dilude) as f32, 1.0));
