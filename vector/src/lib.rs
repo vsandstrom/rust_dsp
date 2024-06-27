@@ -11,6 +11,7 @@ pub struct VectorOscillator<const N: usize> {
   table_pos: f32,
   samplerate: f32,
   size: usize,
+  prev_phase: f32
 }
 
 impl<const N:usize> VectorOscillator<N> {
@@ -21,7 +22,9 @@ impl<const N:usize> VectorOscillator<N> {
       tables,
       table_pos: 0.0,
       samplerate,
-      size
+      size,
+      prev_phase: 0.0
+
     }
   }
 
@@ -38,9 +41,6 @@ impl<const N:usize> VectorOscillator<N> {
     let position = position * (self.size as f32 - 1.0);
     let table_1 = position.floor() as usize % self.size;
     let table_2 = position.ceil() as usize % self.size;
-    let phase = clamp((phase+1.0)*0.5, 0.0, 1.0);
-    let phase = if phase == 0.0 {0.00000001} else {phase};
-    
 
     let out = {
       if let Ok(tables) = self.tables.try_read() {
@@ -52,9 +52,14 @@ impl<const N:usize> VectorOscillator<N> {
       }
     };
 
-    self.table_pos += n_f32 / (self.samplerate / (frequency * phase));
+    self.table_pos += n_f32 / (self.samplerate / frequency) + phase * n_f32;
+
     while self.table_pos > n_f32 {
       self.table_pos -= n_f32;
+    }
+    
+    while self.table_pos < -n_f32 {
+      self.table_pos += n_f32;
     }
 
     out
