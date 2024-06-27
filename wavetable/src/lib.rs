@@ -11,7 +11,6 @@ pub mod owned {
   /// the WaveTable struct. This is useful when designing a VectorSynth with 
   /// the ability to scroll between different wavetables seamlessly.
 
-
   use super::*;
 
   pub struct WaveTable<const N:usize> {
@@ -56,9 +55,9 @@ pub mod owned {
     pub fn play<T: InterpolationConst>(&mut self, frequency: f32, phase: f32) -> f32 {
       if frequency > (self.samplerate / 2.0) { return 0.0; }
       self.frequency = frequency;
-      let norm_ph = clamp((phase+1.0)*0.5, 0.0, 1.0);
       let len = self.size;
-      self.position += len as f32 / (self.samplerate /  (frequency * norm_ph));
+
+      self.position += len as f32 / (self.samplerate /  frequency) + (phase * len as f32);
       while self.position > self.size as f32 {
         self.position -= self.size as f32;
       }
