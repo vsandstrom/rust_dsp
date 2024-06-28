@@ -25,6 +25,10 @@ impl<const TABLESIZE:usize> VectorOscillator<TABLESIZE> {
     }
   }
 
+  pub fn set_samplerate(&mut self, samplerate:f32) {
+    self.samplerate = samplerate;
+  }
+
   /// Position is a value between 0.0 -> 1.0, scrolls through wavetables
   /// Frequency and phase are passed to each of the wavetable objects.
   pub fn play<TableInterpolation>(&mut self, frequency: f32, position: f32, phase: f32) -> f32 
@@ -49,7 +53,7 @@ impl<const TABLESIZE:usize> VectorOscillator<TABLESIZE> {
       }
     };
 
-    self.table_pos += n_f32 / (self.samplerate / frequency) + phase * n_f32;
+    self.table_pos += n_f32 / (self.samplerate / frequency) + phase;
 
     while self.table_pos > n_f32 {
       self.table_pos -= n_f32;

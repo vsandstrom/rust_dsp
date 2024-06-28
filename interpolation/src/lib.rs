@@ -15,24 +15,20 @@ pub mod interpolation {
     fn interpolate(position: f32, buffer: &[f32], buffer_size: usize) -> f32;
   }
 
-
-
   /// Linear interpolation - read position is interpolated between 2 points
   impl Interpolation for Linear {
     fn interpolate(position: f32, buffer: &Vec<f32>, buffer_size: usize) -> f32 {
-      let prev = position as usize;
+      let pos = position as usize;
       let x = position.fract();
-      let next = {if prev + 1 >= buffer_size { prev + 1 - buffer_size } else { prev + 1 }};
-      buffer[prev % buffer_size] * (1.0-x) + buffer[next % buffer_size] * x 
+      buffer[pos % buffer_size] * (1.0-x) + buffer[(pos+1) % buffer_size] * x 
     }
   }
 
   impl InterpolationConst for Linear {
     fn interpolate(position: f32, buffer: &[f32], buffer_size: usize) -> f32 {
-      let prev = position as usize;
+      let pos = position as usize;
       let x = position.fract();
-      let next = {if prev + 1 >= buffer_size { prev + 1 - buffer_size } else { prev + 1 }};
-      buffer[prev % buffer_size] * (1.0-x) + buffer[next % buffer_size] * x 
+      buffer[pos % buffer_size] * (1.0-x) + buffer[(pos+1) % buffer_size] * x 
     }
   }
 
