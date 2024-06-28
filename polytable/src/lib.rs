@@ -30,6 +30,7 @@ pub mod table {
       }
     }
 
+    #[inline]
     pub fn play<T: InterpolationConst, U: Interpolation>(&mut self, note: Option<f32>, phases: &[f32;VOICES]) -> f32 {
       let mut sig = 0.0;
       let mut triggered = false;
@@ -119,6 +120,7 @@ pub mod vector {
       }
     }
 
+    #[inline]
     pub fn play<T, U>(&mut self, note: Option<f32>, positions: &[f32; VOICES], phases: &[f32;VOICES]) -> f32 
       where 
           T: InterpolationConst,
@@ -153,13 +155,21 @@ pub mod vector {
       sig
     }
 
+    #[inline]
+    pub fn set_samplerate(&mut self, samplerate: f32) {
+      self.samplerate = samplerate;
+      for v in self.voices.iter_mut() {
+        v.set_samplerate(samplerate)
+      }
+    }
+
     pub fn update_table(&mut self, sample: f32, voice_index: usize, table_index: usize) -> Result<(), &'static str>{
       todo!()
     }
 
+    #[inline]
     pub fn update_envelope<const N:usize, const M:usize>(&mut self, breakpoints: &BreakPoints<N, M>) {
       self.envelope.new_shape(breakpoints, self.samplerate)
-      
     }
   }
 }

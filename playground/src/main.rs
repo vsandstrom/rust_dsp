@@ -124,9 +124,9 @@ fn main() -> anyhow::Result<()> {
 
         if ch == 0 {
           out = {
-            let out = poly.play::<Linear, Cubic>(
+            let out = poly.play::<Linear, Linear>(
               note,
-              &[lfo.play::<Cubic>(0.15, 0.0); 8],
+              &[lfo.play::<Linear>(0.15, 0.0); 8],
               // &[0.5; 8],
               &[0.0; 8]
             ) * 0.2;
