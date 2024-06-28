@@ -2,7 +2,7 @@ extern crate interpolation;
 extern crate waveshape;
 extern crate dsp;
 
-use interpolation::interpolation::InterpolationConst;
+use interpolation::interpolation::Interpolation;
 use dsp::signal::clamp;
 
 pub mod owned {
@@ -52,7 +52,7 @@ pub mod owned {
       }
     }
 
-    pub fn play<T: InterpolationConst>(&mut self, frequency: f32, phase: f32) -> f32 {
+    pub fn play<T: Interpolation>(&mut self, frequency: f32, phase: f32) -> f32 {
       if frequency > (self.samplerate / 2.0) { return 0.0; }
       self.frequency = frequency;
       let len = self.size;
@@ -79,7 +79,7 @@ pub mod shared {
   /// of the WaveTable struct over threads. The changes to the underlying 
   /// wavetable propagates through the shared references.
 
-  use super::{interpolation::interpolation::InterpolationConst, clamp};
+  use super::{interpolation::interpolation::Interpolation, clamp};
   use std::sync::{Arc, RwLock};
 
   pub struct WaveTable{
@@ -102,7 +102,7 @@ pub mod shared {
       }
     }
 
-    pub fn play<T: InterpolationConst>(&mut self, frequency: f32, phase: f32) -> f32 {
+    pub fn play<T: Interpolation>(&mut self, frequency: f32, phase: f32) -> f32 {
       if frequency > (self.samplerate / 2.0) { return 0.0; }
       self.frequency = frequency;
       let norm_ph = clamp((phase+1.0)*0.5, 0.0, 1.0);

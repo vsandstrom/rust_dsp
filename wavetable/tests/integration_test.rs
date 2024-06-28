@@ -17,7 +17,7 @@ mod tests {
     let mut shape = vec!();
     // Check if it wraps
     for _ in 0..16 {
-      let out = wt.play::<Floor>(SAMPLERATE/8.0, 0.0);
+      let out = wt.play::<Floor>(SAMPLERATE/ SIZE as f32, 0.0);
       shape.push(out);
     }
     assert_eq!(vec![

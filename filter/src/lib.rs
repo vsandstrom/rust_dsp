@@ -3,7 +3,7 @@ extern crate interpolation;
 
 use dsp::signal::dcblock;
 use buffer::Buffer;
-use interpolation::interpolation::InterpolationConst;
+use interpolation::interpolation::Interpolation;
 
 pub struct Comb<const N: usize> {
   buffer: Buffer<N>,
@@ -18,7 +18,7 @@ pub struct Comb<const N: usize> {
 
 pub trait Filter {
   fn set_damp(&mut self, damp: f32);
-  fn process<T: InterpolationConst>(&mut self, sample: f32) -> f32;
+  fn process<T: Interpolation>(&mut self, sample: f32) -> f32;
 }
 
 impl<const N: usize> Comb<N> {
@@ -47,7 +47,7 @@ impl<const N:usize> Filter for Comb<N> {
   /// IIR: feedback > 0.0, feedforward == 0.0
   /// FIR: feedback == 0.0, feedforward > 0.0
   /// AP:  feedback == feedforward > 0.0
-  fn process<T: InterpolationConst>(&mut self, sample: f32) -> f32 {
+  fn process<T: Interpolation>(&mut self, sample: f32) -> f32 {
     let delayed = self.buffer.read::<T>(self.position as f32);
     self.previous = delayed * (1.0 * self.damp) + self.previous * self.damp;
     let fb = sample - self.feedback * self.previous;

@@ -1,4 +1,4 @@
-use interpolation::interpolation::InterpolationConst;
+use interpolation::interpolation::Interpolation;
 use dsp::math::is_pow2;
 
 
@@ -101,7 +101,7 @@ pub struct IDelay<const N: usize> {
 }
 
 impl<const N: usize> IDelay<N> {
-  pub fn play<T: InterpolationConst>(&mut self, sample: f32, feedback: f32) -> f32 {
+  pub fn play<T: Interpolation>(&mut self, sample: f32, feedback: f32) -> f32 {
     let mut out = 0.0;
 
     let del_time = self.delay_time * self.samplerate;

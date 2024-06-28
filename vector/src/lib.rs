@@ -1,4 +1,4 @@
-use interpolation::interpolation::InterpolationConst;
+use interpolation::interpolation::Interpolation;
 use std::{f32::consts::TAU, sync::{Arc, RwLock}};
 use dsp::signal::clamp;
 
@@ -33,7 +33,7 @@ impl<const TABLESIZE:usize> VectorOscillator<TABLESIZE> {
   /// Frequency and phase are passed to each of the wavetable objects.
   pub fn play<TableInterpolation>(&mut self, frequency: f32, position: f32, phase: f32) -> f32 
   where 
-      TableInterpolation: InterpolationConst
+      TableInterpolation: Interpolation
   {
     if frequency > (self.samplerate) { return 0.0; }
     let n_f32 = TABLESIZE as f32;
@@ -88,12 +88,4 @@ mod tests {
 
     assert_eq!(16, shape.len())
   }
-
-  #[test]
-  fn division_by_zero() {
-    assert!((0.0f32 / 0.0).is_infinite())
-  }
-
-
-
 }

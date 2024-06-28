@@ -1,10 +1,10 @@
 use std::sync::{Arc, RwLock};
-use interpolation::interpolation::{Interpolation, InterpolationConst};
+use interpolation::interpolation::Interpolation;
 use envelope::Envelope;
 
 pub mod table {
   use wavetable::shared::WaveTable;
-  use crate::{ Interpolation, InterpolationConst, Arc, RwLock, Envelope };
+  use crate::{ Interpolation, Arc, RwLock, Envelope };
   /// Polysynth using only wavetables 
   pub struct PolyTable<const VOICES: usize> {
     voices: [WaveTable; VOICES],
@@ -31,9 +31,8 @@ pub mod table {
     }
 
     #[inline]
-    pub fn play<T: InterpolationConst, U: Interpolation>(&mut self, note: Option<f32>, phases: &[f32;VOICES]) -> f32 {
+    pub fn play<T: Interpolation, U: Interpolation>(&mut self, note: Option<f32>, phases: &[f32;VOICES]) -> f32 {
       let mut sig = 0.0;
-      // let mut triggered = false;
       if let Some(freq) = note {
         self.frequencies[self.next_voice] = freq;
         self.env_positions[self.next_voice] = 0.0;
@@ -83,7 +82,7 @@ pub mod vector {
   use envelope::{BreakPoints, Envelope};
   use vector::VectorOscillator;
   use std::sync::{Arc, RwLock};
-  use crate::{InterpolationConst, Interpolation};
+  use crate::Interpolation;
 
   pub struct PolyVector<const VOICES: usize, const TABLESIZE: usize> {
     voices: [VectorOscillator<TABLESIZE>; VOICES],
@@ -112,11 +111,10 @@ pub mod vector {
     #[inline]
     pub fn play<T, U>(&mut self, note: Option<f32>, positions: &[f32; VOICES], phases: &[f32;VOICES]) -> f32 
       where 
-          T: InterpolationConst,
+          T: Interpolation,
           U: Interpolation
     {
       let mut sig = 0.0;
-      // let mut triggered = false;
       if let Some(freq) = note {
         self.frequencies[self.next_voice] = freq;
         self.env_positions[self.next_voice] = 0.0;
