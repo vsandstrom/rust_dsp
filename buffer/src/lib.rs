@@ -1,7 +1,7 @@
 extern crate interpolation;
 use std::usize;
 
-use interpolation::interpolation::InterpolationConst;
+use interpolation::interpolation::Interpolation;
 
 pub struct Buffer<const N: usize> {
   pub buffer: Vec<f32>,
@@ -37,7 +37,7 @@ impl<const N: usize> Buffer<N> {
     self.buffer[pos] = sample;
   }
 
-  pub fn read<T: InterpolationConst>(&self, position: f32) -> f32{
+  pub fn read<T: Interpolation>(&self, position: f32) -> f32{
     T::interpolate(position, &self.buffer, N)
   } 
 

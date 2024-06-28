@@ -2,7 +2,7 @@ use array_init::array_init;
 use rand::Rng;
 use envelope::{Envelope, BreakPoints};
 use waveshape::hanning;
-use interpolation::interpolation::{InterpolationConst, Interpolation};
+use interpolation::interpolation::Interpolation;
 
 pub struct Grain2 {
   position: f32,
@@ -76,18 +76,18 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator2<NUMGRAINS, BUFSIZE
     }
   }
 
-  fn idle_play<BufInterpolation, EnvInterpolation>(&mut self) -> f32 
-  where BufInterpolation: InterpolationConst,
-        EnvInterpolation: Interpolation {
+  fn idle_play<BufferInterpolation, EnvelopeInterpolation>(&mut self) -> f32 
+  where BufferInterpolation: Interpolation,
+        EnvelopeInterpolation: Interpolation {
     let mut out = 0.0;
     for i in 0..NUMGRAINS {
-      let sig = BufInterpolation::interpolate(
+      let sig = BufferInterpolation::interpolate(
         self.grains[i].position,
         &self.buffer,
         BUFSIZE
       );
 
-      let env = self.envelope.read::<EnvInterpolation>(
+      let env = self.envelope.read::<EnvelopeInterpolation>(
         self.grains[i].env_position
       );
 
@@ -108,16 +108,16 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator2<NUMGRAINS, BUFSIZE
     out
   }
 
-  pub fn play<BufInterpolation, EnvInterpolation>( &mut self,
+  pub fn play<BufferInterpolation, EnvelopeInterpolation>( &mut self,
     position: f32,
     duration: f32,
     rate: f32,
     jitter: f32,
     trigger:f32
   ) -> f32
-  where BufInterpolation: InterpolationConst,
-        EnvInterpolation: Interpolation {
-    if trigger < 1.0 { return self.idle_play::<BufInterpolation, EnvInterpolation>(); }
+  where BufferInterpolation: Interpolation,
+        EnvelopeInterpolation: Interpolation {
+    if trigger < 1.0 { return self.idle_play::<BufferInterpolation, EnvelopeInterpolation>(); }
 
     let mut out = 0.0;
     let mut  triggered = false;
@@ -125,8 +125,8 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator2<NUMGRAINS, BUFSIZE
     for i in 0..NUMGRAINS {
       match self.active[i] {
         true => {
-          let sig = BufInterpolation::interpolate(self.grains[i].position, &self.buffer, BUFSIZE);
-          let env = self.envelope.read::<EnvInterpolation>(self.grains[i].env_position);
+          let sig = BufferInterpolation::interpolate(self.grains[i].position, &self.buffer, BUFSIZE);
+          let env = self.envelope.read::<EnvelopeInterpolation>(self.grains[i].env_position);
 
           self.grains[i].position += self.grains[i].rate;
           self.grains[i].env_position += self.grains[i].duration;
@@ -149,8 +149,8 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator2<NUMGRAINS, BUFSIZE
           self.grains[i].duration = self.envelope.len() as f32 / ((self.samplerate) * duration);
           self.active[i] = true;
 
-          let sig = BufInterpolation::interpolate(self.grains[i].position, &self.buffer, BUFSIZE);
-          let env = self.envelope.read::<EnvInterpolation>(self.grains[i].env_position);
+          let sig = BufferInterpolation::interpolate(self.grains[i].position, &self.buffer, BUFSIZE);
+          let env = self.envelope.read::<EnvelopeInterpolation>(self.grains[i].env_position);
 
           triggered = true;
           out += sig * env;

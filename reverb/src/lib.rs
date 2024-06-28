@@ -1,7 +1,7 @@
 extern crate interpolation;
 extern crate filter;
 use filter::{Comb, Filter};
-use interpolation::interpolation::InterpolationConst;
+use interpolation::interpolation::Interpolation;
 
 pub struct SchroederVerb {
   c1: Comb<1116>,
@@ -35,7 +35,7 @@ impl Verb for SchroederVerb {
     }
   }
 
-  fn process<T:InterpolationConst>(&mut self, sample: f32) -> f32 {
+  fn process<T:Interpolation>(&mut self, sample: f32) -> f32 {
     let mut out = 0.0;
     out += self.c1.process::<T>(sample);
     out += self.c2.process::<T>(sample);
@@ -51,7 +51,7 @@ impl Verb for SchroederVerb {
 
 pub trait Verb {
   fn new(samplerate: f32) -> Self;
-  fn process<T: InterpolationConst>(&mut self, sample: f32) -> f32;
+  fn process<T: Interpolation>(&mut self, sample: f32) -> f32;
 }
 
 #[cfg(test)]
