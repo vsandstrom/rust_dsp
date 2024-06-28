@@ -116,29 +116,17 @@ pub mod vector {
           U: Interpolation
     {
       let mut sig = 0.0;
-      let mut triggered = false;
+      // let mut triggered = false;
+      if let Some(freq) = note {
+        self.frequencies[self.next_voice] = freq;
+        self.env_positions[self.next_voice] = 0.0;
+        self.next_voice = (self.next_voice+1) % VOICES;
+      }
       for i in 0..VOICES {
-        if let Some(freq) = note { 
-          if i == self.next_voice && !triggered  {
-            println!("voice {i}");
-            self.frequencies[i] = freq;
-            self.env_positions[i] = 0.0;
-            sig += self.voices[i].play::<T>(freq, positions[i], phases[i]) * self.envelope.read::<U>(0.0) ; 
-            self.next_voice = (self.next_voice + 1) % VOICES;
-            triggered = true;
-          } else {
-            if (self.env_positions[i] as usize) < self.envelope.len() {
-              sig += self.voices[i].play::<T>(self.frequencies[i], positions[i], phases[i]) * 
-                self.envelope.read::<U>(self.env_positions[i]);
-              self.env_positions[i] += 1.0;
-            } 
-          }
-        } else {
-          if (self.env_positions[i] as usize) < self.envelope.len() {
-            sig += self.voices[i].play::<T>(self.frequencies[i], positions[i], phases[i]) * 
-              self.envelope.read::<U>(self.env_positions[i]);
-            self.env_positions[i] += 1.0;
-          } 
+        if (self.env_positions[i] as usize) < self.envelope.len() {
+          sig += self.voices[i].play::<T>(self.frequencies[i], positions[i], phases[i]) * 
+            self.envelope.read::<U>(self.env_positions[i]);
+          self.env_positions[i] += 1.0;
         } 
       }
       sig
