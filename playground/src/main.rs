@@ -7,7 +7,7 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use dsp::buffer::traits::SignalVector;
 use grains::Granulator;
 use grains2::Granulator2;
-use trig::{Dust, Trigger};
+use trig::{Dust, Impulse, Trigger};
 use wavetable::{owned::{self, WaveTable}, shared};
 use interpolation::interpolation::{Linear, Cubic};
 use waveshape::{sine, complex_sine, triangle, hanning, sawtooth, traits::Waveshape};
@@ -63,6 +63,9 @@ fn main() -> anyhow::Result<()> {
     poly.update_envelope(&BreakPoints { values: [0.0, 1.0, 0.3, 0.0], durations: [0.2, 2.2, 4.0], curves: None });
     let mut lfo = WaveTable::new(&[0.0; 512].triangle().scale(0.0, 1.0), f_sample_rate);
     
+    let mut gr: Granulator2<16, {48000*8}> = Granulator2::default();
+    let mut trig = Impulse::new(f_sample_rate);
+
     // Create a channel to send and receive samples
     let (tx, rx) = channel::<f32>();
     let time = Instant::now();
@@ -123,14 +126,17 @@ fn main() -> anyhow::Result<()> {
         } 
 
         if ch == 0 {
-          out = {
-            let out = poly.play::<Linear, Linear>(
+          out += {
+            let mut out = poly.play::<Linear, Linear>(
               note,
               &[lfo.play::<Linear>(0.15, 0.0); 8],
               // &[0.5; 8],
               &[0.0; 8]
             ) * 0.2;
             note = None;
+            // if let None = gr.record(out) {
+            //   out += gr.play::<Linear, Linear>(0.5, 0.2, 1.0, 0.1, trig.play(0.4));
+            // }
             out
           }
             }
