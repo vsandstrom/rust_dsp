@@ -101,6 +101,11 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE>
     Some(sample)
   }
 
+  pub fn update_envelope<const N: usize, const M: usize>(&mut self, env_shape: &EnvType<N, M>) {
+    self.envelope.new_shape(&env_shape, self.samplerate);
+    self.env_size = self.envelope.len() as f32;
+  }
+
   #[inline]
   pub fn reset_record(&mut self) {
     self.rec_pos = 0;

@@ -60,7 +60,10 @@ fn main() -> anyhow::Result<()> {
 
     let mut poly: PolyVector<8, SIZE> = PolyVector::new(tables.clone(), f_sample_rate);
 
-    poly.update_envelope(&BreakPoints { values: [0.0, 1.0, 0.3, 0.0], durations: [0.2, 2.2, 4.0], curves: None });
+    let shape = EnvType::BreakPoint(
+      BreakPoints { values: [0.0, 1.0, 0.3, 0.0], durations: [0.2, 2.2, 4.0], curves: None }
+    );
+    poly.update_envelope(&shape);
     let mut lfo = WaveTable::new(&[0.0; 512].triangle().scale(0.0, 1.0), f_sample_rate);
     
 

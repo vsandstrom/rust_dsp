@@ -79,7 +79,6 @@ impl Envelope {
       },
       EnvType::Vector(vec) => {
         vec.to_owned()
-
       }
     };
     let env_length = buffer.len();
@@ -122,8 +121,15 @@ impl Envelope {
     self.speed = speed;
   }
 
-  pub fn new_shape<const N: usize, const M: usize>(&mut self, breakpoints: &BreakPoints<N, M>, samplerate: f32) {
-    let buffer = Envelope::generate(breakpoints, samplerate);
+  pub fn new_shape<const N: usize, const M: usize>(&mut self, shape: &EnvType<N, M>, samplerate: f32) {
+    
+    let buffer = match shape {
+      EnvType::BreakPoint(brk) => {
+        Envelope::generate(brk, samplerate)
+      },
+      EnvType::Vector(v) => v.to_owned()
+    };
+
     for (i, v) in buffer.iter().enumerate() {
       if let Some(b) = self.buffer.get_mut(i) {
         *b = *v;

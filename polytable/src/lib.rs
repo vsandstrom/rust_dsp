@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock};
 use interpolation::interpolation::Interpolation;
-use envelope::Envelope;
+use envelope::{Envelope};
 
 pub mod table {
   use wavetable::shared::WaveTable;
@@ -79,7 +79,7 @@ pub mod table {
 
 
 pub mod vector {
-  use envelope::{BreakPoints, Envelope};
+  use envelope::{BreakPoints, EnvType, Envelope};
   use vector::VectorOscillator;
   use std::sync::{Arc, RwLock};
   use crate::Interpolation;
@@ -143,8 +143,8 @@ pub mod vector {
     }
 
     #[inline]
-    pub fn update_envelope<const N:usize, const M:usize>(&mut self, breakpoints: &BreakPoints<N, M>) {
-      self.envelope.new_shape(breakpoints, self.samplerate)
+    pub fn update_envelope<const N:usize, const M:usize>(&mut self, shape: &EnvType<N, M>) {
+      self.envelope.new_shape(shape, self.samplerate)
     }
   }
 }
