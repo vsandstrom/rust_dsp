@@ -14,20 +14,20 @@ pub mod interpolation {
   /// Linear interpolation - read position is interpolated between 2 points
   impl Interpolation for Linear {
     fn interpolate(position: f32, buffer: &[f32], buffer_size: usize) -> f32 {
-      let pos = position as usize % buffer_size;
+      let pos = position as usize;
       let x = position.fract();
-      buffer[pos] * (1.0-x) + buffer[(pos+1) % buffer_size] * x 
+      buffer[pos % buffer_size] * (1.0-x) + buffer[(pos+1) % buffer_size] * x 
     }
   }
 
   /// Cubic interpolation - read position is interpolated between 4 points
   impl Interpolation for Cubic {
     fn interpolate(position: f32, buffer: &[f32], buffer_size: usize) -> f32 {
+      let a2 = (position.floor() as usize) % buffer_size;
       let diff = position.fract();
-      let a2 = position as usize % buffer_size;
       let a1 = {if a2 == 0 { buffer_size - 1 } else { a2 - 1 }};
-      let b1 = (a2+1) % buffer_size;
-      let b2 = (a2+2) % buffer_size;
+      let b1 = {if a2 + 1 >= buffer_size { a2 - (buffer_size - 1) } else { a2 + 1 }};
+      let b2 = {if b1 + 1 >= buffer_size { b1 - (buffer_size - 1) } else { b1 + 1 }};
 
       let c0 = buffer[b2] - buffer[b1] - buffer[a1] + buffer[a2];
       let c1 = buffer[a1] - buffer[a2] - c0;
@@ -39,9 +39,9 @@ pub mod interpolation {
   /// Cosine interpolation - read position is interpolated between 4 points
   impl Interpolation for Cosine {
     fn interpolate(position: f32, buffer: &[f32], buffer_size: usize) -> f32 {
-      let diff = position.fract();
+      let diff = position - position.floor();
       let a1 = position as usize;
-      let b1 = (a1+2) % buffer_size;
+      let b1 = match a1 + 1 >= buffer_size {true => (a1+1) % buffer_size, false => a1+1};
       let bw = (1.0 - f32::cos(diff*PI)) / 2.0;
       let aw = 1.0 - bw;
       buffer[a1] * aw + buffer[b1] * bw
@@ -55,8 +55,8 @@ pub mod interpolation {
       let diff = position.fract();
       let a2 = position as usize % buffer_size;
       let a1 = {if a2 == 0 { buffer_size-1 } else { a2 - 1 }};
-      let b1 = (a2+1) % buffer_size;
-      let b2 = (a2+2) % buffer_size;
+      let b1 = {if a2 + 1 >= buffer_size { a2 + 1 - buffer_size } else { a2 + 1 }};
+      let b2 = {if b1 + 1 >= buffer_size { b1 + 1 - buffer_size } else { b1 + 1 }};
       let sub = buffer[a2] - buffer[b1];
       let c1 = buffer[b1] - buffer[a1];
       let c3 = buffer[b2] - buffer[a2] + 3.0 * sub;

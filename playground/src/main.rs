@@ -126,8 +126,8 @@ fn main() -> anyhow::Result<()> {
         } 
 
         if ch == 0 {
-          out += {
-            let mut out = poly.play::<Linear, Linear>(
+          out = {
+            let out = poly.play::<Linear, Linear>(
               note,
               &[lfo.play::<Linear>(0.15, 0.0); 8],
               // &[0.5; 8],
@@ -136,13 +136,12 @@ fn main() -> anyhow::Result<()> {
             note = None;
             // if let None = gr.record(out) {
             //   out += gr.play::<Linear, Linear>(0.5, 0.2, 1.0, 0.1, trig.play(0.4));
-            // }
             out
-          }
             }
-            ch = (ch + 1) % 2;
-            *sample = out;
-      }
+          }
+        ch = (ch + 1) % 2;
+        *sample = out;
+        }
     };
     
 
