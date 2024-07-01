@@ -66,8 +66,6 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE>
         x if x < 0.0 => { (1.0 + x) * self.buf_size },
         x            => { x  * self.buf_size }
       };
-      println!("{}", self.next_grain);
-
       // set parameters for grain
       self.buf_positions[self.next_grain] = pos;
       self.env_positions[self.next_grain] = 0.0;

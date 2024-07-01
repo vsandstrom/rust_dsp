@@ -15,7 +15,6 @@ waveshape = {path= "../waveshape"}
 envelope = {path= "../envelope"}
 reverb = {path= "../reverb"}
 grains = {path= "../grains"}
-grains2 = {path= "../grains2"}
 trig = {path= "../trig"}
 dsp = {path= "../dsp"}
 delay = {path="../delay"}
