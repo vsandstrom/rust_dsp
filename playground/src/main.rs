@@ -6,12 +6,12 @@ use std::{
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use dsp::buffer::traits::SignalVector;
 use grains::Granulator;
-use grains2::Granulator2;
+// use grains2::Granulator2;
 use trig::{Dust, Impulse, Trigger};
 use wavetable::{owned::{self, WaveTable}, shared};
 use interpolation::interpolation::{Linear, Cubic};
 use waveshape::{sine, complex_sine, triangle, hanning, sawtooth, traits::Waveshape};
-use envelope::{BreakPoints, Envelope, EnvType::Vector, EnvType::BreakPoint};
+use envelope::{BreakPoints, EnvType::{self, BreakPoint, Vector}, Envelope};
 use vector::VectorOscillator;
 use polytable::vector::PolyVector;
 
@@ -65,8 +65,9 @@ fn main() -> anyhow::Result<()> {
     
 
     let gr_env: envelope::EnvType = envelope::EnvType::Vector(hanning(&mut [0.0; 1024]).to_owned());
-    let mut gr: Granulator2<16, {48000*8}> = Granulator2::new(gr_env, f_sample_rate);
-    let mut trig = Impulse::new(f_sample_rate);
+    // let gr_env: envelope::EnvType<3, 2> = EnvType::BreakPoint(BreakPoints { values: [0.0, 1.0, 0.0], durations: [0.5, 1.2], curves: Some([0.7, 1.2]) });
+    let mut gr: Granulator<16, {48000*8}> = Granulator::new(gr_env, f_sample_rate);
+    let mut trig = Dust::new(f_sample_rate);
     let mut phasor = WaveTable::new([0.0;1024].phasor(), f_sample_rate);
 
     // Create a channel to send and receive samples
@@ -132,15 +133,21 @@ fn main() -> anyhow::Result<()> {
           out = {
             let mut out = poly.play::<Linear, Linear>(
               note,
-              // &[lfo.play::<Linear>(0.15, 0.0); 8],
-              &[0.5; 8],
+              &[lfo.play::<Linear>(0.15, 0.0); 8],
+              // &[0.5; 8],
               &[0.0; 8]
             ) * 0.2;
             note = None;
             if let Some(sample) = gr.record(out) {
               out = sample;
             } else {
-              out += gr.play::<Linear, Linear>(phasor.play::<Linear>(0.12, 0.0), 0.2, 1.0, 0.0001, trig.play(0.1));
+              out += gr.play::<Linear, Linear>(
+                phasor.play::<Linear>(1.0/8.0, 0.0),
+                0.35,
+                1.0 + (lfo.play::<Cubic>(3.38, 0.0) * 0.01),
+                0.0001,
+                trig.play(0.05)
+              );
             }
             out
           }

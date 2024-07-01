@@ -3,17 +3,20 @@ use interpolation::interpolation::Interpolation;
 
 pub struct Granulator2<const NUMGRAINS: usize, const BUFSIZE:usize> {
   buffer: Vec<f32>,
-  envelope: Envelope,
-  samplerate: f32,
   buf_size: f32,
-  // grains: [Grain2; NUMGRAINS],
+
+  envelope: Envelope,
+  env_size: f32,
+  rec_pos: usize,
+
+  next_grain: usize,
   buf_positions: [f32; NUMGRAINS],
   env_positions: [f32; NUMGRAINS],
   durations: [f32; NUMGRAINS],
   rates: [f32; NUMGRAINS],
   active: [bool; NUMGRAINS],
-  rec_pos: usize,
-  next_grain: usize,
+
+  samplerate: f32,
 }
 
 impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator2<NUMGRAINS, BUFSIZE> {
@@ -30,6 +33,7 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator2<NUMGRAINS, BUFSIZE
     Self {
       buffer,
       buf_size: BUFSIZE as f32,
+      env_size: envelope.len() as f32,
       // grains,
       envelope,
       rec_pos: 0,
@@ -54,31 +58,40 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator2<NUMGRAINS, BUFSIZE
   ) -> f32
   where BufferInterpolation: Interpolation,
         EnvelopeInterpolation: Interpolation {
+
+    // TRIGGER GRAIN 
     if trigger >= 1.0 { 
+      // normalize buffer position
       let pos = match (position + jitter).fract() {
         x if x < 0.0 => { (1.0 + x) * self.buf_size },
         x            => { x  * self.buf_size }
       };
-      println!("{}" ,self.next_grain);
+      println!("{}", self.next_grain);
+
+      // set parameters for grain
       self.buf_positions[self.next_grain] = pos;
       self.env_positions[self.next_grain] = 0.0;
-      self.rates[self.next_grain] = rate;
-      self.durations[self.next_grain] = calc_duration(self.buffer.len(), self.samplerate, duration);
-      self.active[self.next_grain] = true;
+      self.rates        [self.next_grain] = rate;
+      self.durations    [self.next_grain] = calc_duration(self.envelope.len(), self.samplerate, duration);
+      // set grain to active
+      self.active       [self.next_grain] = true;
+      // increment and wait for next trigger
       self.next_grain = (self.next_grain + 1) % NUMGRAINS;
     }
 
+
     let mut out = 0.0;
     for i in 0..NUMGRAINS {
-      if (self.env_positions[i] as usize) < BUFSIZE && self.active[i] {
+      // accumulate output of active grains
+      if self.active[i] {
         let sig = BufferInterpolation::interpolate(self.buf_positions[i], &self.buffer, BUFSIZE);
         let env = self.envelope.read::<EnvelopeInterpolation>(self.env_positions[i]);
         self.buf_positions[i] += self.rates[i];
         self.env_positions[i] += self.durations[i];
+        // if the grain has reached the envelopes end, deactivate
+        if self.env_positions[i] >= self.env_size { self.active[i] = false; }
         out += sig * env;
-      } else {
-        self.active[i] = false;
-      }
+      } 
     }
     out
   }

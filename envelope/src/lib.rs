@@ -79,6 +79,7 @@ impl Envelope {
       },
       EnvType::Vector(vec) => {
         vec.to_owned()
+
       }
     };
     let env_length = buffer.len();

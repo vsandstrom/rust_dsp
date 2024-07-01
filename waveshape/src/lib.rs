@@ -261,7 +261,7 @@ pub mod traits {
       self
     }
 
-    /// Sawtooth: -1.0 -> 1.0
+    /// Sawtooth: 0.0 -> 1.0
     fn sawtooth(&mut self) -> &mut Self::Output {
       let mut angle: f32 = 0.0;
       let inc: f32 = 2.0 / (self.len() as f32 - 1.0);
@@ -306,5 +306,17 @@ pub mod traits {
 
 #[cfg(test)]
 mod tests {
-
+  use super::*;
+  use crate::traits::Waveshape;
+  #[test]
+  fn test_phasor() {
+    let x = [0.0; 8].phasor().to_owned();
+    assert_eq!(x[0], 0.0);
+  }
+  
+  #[test]
+  fn test_phasor2() {
+    let x = [0.0; 8].phasor().to_owned();
+    assert_eq!(x[7], 1.0);
+  }
 }
