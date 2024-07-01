@@ -6,13 +6,11 @@ use std::{
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use dsp::buffer::traits::SignalVector;
 use grains::Granulator;
-// use grains2::Granulator2;
-use trig::{Dust, Impulse, Trigger};
-use wavetable::{owned::{self, WaveTable}, shared};
+use trig::{Dust, Trigger};
+use wavetable::owned::WaveTable;
 use interpolation::interpolation::{Linear, Cubic};
-use waveshape::{sine, complex_sine, triangle, hanning, sawtooth, traits::Waveshape};
-use envelope::{BreakPoints, EnvType::{self, BreakPoint, Vector}, Envelope};
-use vector::VectorOscillator;
+use waveshape::{hanning, traits::Waveshape};
+use envelope::{BreakPoints, EnvType::{self}};
 use polytable::vector::PolyVector;
 
 
@@ -46,11 +44,11 @@ fn main() -> anyhow::Result<()> {
     // SETUP YOUR AUDIO PROCESSING STRUCTS HERE !!!! <-------------------------
     const SIZE: usize = 512;
 
-    let brk = BreakPoints::<3, 2>{
-      values: [0.0, 1.0, 0.0], 
-      durations: [0.2, 1.45], 
-      curves: Some([0.2, 1.8])
-    };
+    // let brk = BreakPoints::<3, 2>{
+    //   values: [0.0, 1.0, 0.0], 
+    //   durations: [0.2, 1.45], 
+    //   curves: Some([0.2, 1.8])
+    // };
 
     let tables = Arc::new(RwLock::new([
       [0.0; SIZE].complex_sine([1.0, 0.2, 0.5, 0.8], [0.0, 0.1, 0.8, 1.2]).to_owned(),
@@ -74,7 +72,7 @@ fn main() -> anyhow::Result<()> {
     let mut phasor = WaveTable::new([0.0;1024].phasor(), f_sample_rate);
 
     // Create a channel to send and receive samples
-    let (tx, rx) = channel::<f32>();
+    let (tx, _rx) = channel::<f32>();
     let time = Instant::now();
 
     let mut triggers = [false; 9];
@@ -187,5 +185,6 @@ fn main() -> anyhow::Result<()> {
       thread::sleep(time::Duration::from_secs(40));
     }
 
+    #[allow(unreachable_code)]
     Ok(())
 }
