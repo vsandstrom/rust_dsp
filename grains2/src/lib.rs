@@ -11,6 +11,7 @@ pub struct Granulator2<const NUMGRAINS: usize, const BUFSIZE:usize> {
   env_positions: [f32; NUMGRAINS],
   durations: [f32; NUMGRAINS],
   rates: [f32; NUMGRAINS],
+  active: [bool; NUMGRAINS],
   rec_pos: usize,
   next_grain: usize,
 }
@@ -24,6 +25,7 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator2<NUMGRAINS, BUFSIZE
     let buf_positions = [0.0; NUMGRAINS];
     let env_positions = [0.0; NUMGRAINS];
     let rates = [1.0; NUMGRAINS];
+    let active = [false; NUMGRAINS];
 
     Self {
       buffer,
@@ -37,6 +39,7 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator2<NUMGRAINS, BUFSIZE
       durations,
       samplerate,
       rates,
+      active
     }
   }
 
@@ -52,24 +55,29 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator2<NUMGRAINS, BUFSIZE
   where BufferInterpolation: Interpolation,
         EnvelopeInterpolation: Interpolation {
     if trigger >= 1.0 { 
-      let mut pos = position + jitter * self.buf_size;
-      while pos > self.buf_size { pos -= self.buf_size; }
-      while pos < 0.0 { pos += self.buf_size; }
+      let pos = match (position + jitter).fract() {
+        x if x < 0.0 => { (1.0 + x) * self.buf_size },
+        x            => { x  * self.buf_size }
+      };
+      println!("{}" ,self.next_grain);
       self.buf_positions[self.next_grain] = pos;
       self.env_positions[self.next_grain] = 0.0;
       self.rates[self.next_grain] = rate;
       self.durations[self.next_grain] = calc_duration(self.buffer.len(), self.samplerate, duration);
+      self.active[self.next_grain] = true;
       self.next_grain = (self.next_grain + 1) % NUMGRAINS;
     }
 
     let mut out = 0.0;
     for i in 0..NUMGRAINS {
-      if (self.env_positions[i] as usize) < BUFSIZE {
+      if (self.env_positions[i] as usize) < BUFSIZE && self.active[i] {
         let sig = BufferInterpolation::interpolate(self.buf_positions[i], &self.buffer, BUFSIZE);
         let env = self.envelope.read::<EnvelopeInterpolation>(self.env_positions[i]);
         self.buf_positions[i] += self.rates[i];
         self.env_positions[i] += self.durations[i];
         out += sig * env;
+      } else {
+        self.active[i] = false;
       }
     }
     out

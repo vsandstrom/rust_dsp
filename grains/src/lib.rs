@@ -151,7 +151,7 @@ impl<const N:usize> Grain<N> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use envelope::BreakPoints;
+    use envelope::{BreakPoints, EnvType};
     use interpolation::interpolation::{Floor, Linear};
 
     trait GrainTest {
@@ -179,7 +179,7 @@ mod tests {
       };
       let mut gr = Granulator::<8, 32>::new(
         Buffer::<32>::new(48000.0),
-        Envelope::new( &brk, 48000.0),
+        Envelope::new( &EnvType::BreakPoint(brk), 48000.0),
         48000.0
       );
 
@@ -196,7 +196,7 @@ mod tests {
       };
       let gr = Granulator::<8, 32>::new(
         Buffer::<32>::new(48000.0),
-        Envelope::new( &brk, 48000.0),
+        Envelope::new( &EnvType::BreakPoint(brk), 48000.0),
         48000.0
       );
       assert_eq!(0, gr.count_active());
@@ -212,7 +212,7 @@ mod tests {
       };
       let mut gr = Granulator::<8, 32>::new(
         Buffer::<32>::new(48000.0),
-        Envelope::new( &brk, 48000.0),
+        Envelope::new( &EnvType::BreakPoint(brk), 48000.0),
         48000.0
       );
       for _ in 0..3 {
@@ -231,7 +231,7 @@ mod tests {
       };
       let mut gr = Granulator::<SIZE, 32>::new(
         Buffer::<32>::new(48000.0),
-        Envelope::new( &brk, 48000.0),
+        Envelope::new( &EnvType::BreakPoint(brk), 48000.0),
         48000.0
       );
       // If no more grains are available at the time, no more will be active than MAX

@@ -11,7 +11,7 @@ use trig::{Dust, Impulse, Trigger};
 use wavetable::{owned::{self, WaveTable}, shared};
 use interpolation::interpolation::{Linear, Cubic};
 use waveshape::{sine, complex_sine, triangle, hanning, sawtooth, traits::Waveshape};
-use envelope::{BreakPoints, Envelope};
+use envelope::{BreakPoints, Envelope, EnvType::Vector, EnvType::BreakPoint};
 use vector::VectorOscillator;
 use polytable::vector::PolyVector;
 
@@ -63,8 +63,11 @@ fn main() -> anyhow::Result<()> {
     poly.update_envelope(&BreakPoints { values: [0.0, 1.0, 0.3, 0.0], durations: [0.2, 2.2, 4.0], curves: None });
     let mut lfo = WaveTable::new(&[0.0; 512].triangle().scale(0.0, 1.0), f_sample_rate);
     
-    let mut gr: Granulator2<16, {48000*8}> = Granulator2::default();
+
+    let gr_env: envelope::EnvType = envelope::EnvType::Vector(hanning(&mut [0.0; 1024]).to_owned());
+    let mut gr: Granulator2<16, {48000*8}> = Granulator2::new(gr_env, f_sample_rate);
     let mut trig = Impulse::new(f_sample_rate);
+    let mut phasor = WaveTable::new([0.0;1024].phasor(), f_sample_rate);
 
     // Create a channel to send and receive samples
     let (tx, rx) = channel::<f32>();
@@ -126,17 +129,19 @@ fn main() -> anyhow::Result<()> {
         } 
 
         if ch == 0 {
-          out += {
+          out = {
             let mut out = poly.play::<Linear, Linear>(
               note,
-              &[lfo.play::<Linear>(0.15, 0.0); 8],
-              // &[0.5; 8],
+              // &[lfo.play::<Linear>(0.15, 0.0); 8],
+              &[0.5; 8],
               &[0.0; 8]
             ) * 0.2;
             note = None;
-            // if let None = gr.record(out) {
-            //   out += gr.play::<Linear, Linear>(0.5, 0.2, 1.0, 0.1, trig.play(0.4));
-            // }
+            if let Some(sample) = gr.record(out) {
+              out = sample;
+            } else {
+              out += gr.play::<Linear, Linear>(phasor.play::<Linear>(0.12, 0.0), 0.2, 1.0, 0.0001, trig.play(0.1));
+            }
             out
           }
             }
