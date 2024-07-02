@@ -31,7 +31,6 @@ pub fn sine(table: &mut [f32]) -> &[f32] {
   table
 }
 
-
 /// Squared sinewave, positive bellcurve. Useful as envelope
 pub fn hanning(table: &mut [f32]) -> &[f32] {
   let mut angle: f32 = 0.0;
