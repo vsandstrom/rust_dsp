@@ -79,7 +79,7 @@ pub mod table {
 
 
 pub mod vector {
-  use envelope::{BreakPoints, Envelope};
+  use envelope::{EnvType, Envelope};
   use vector::VectorOscillator;
   use std::sync::{Arc, RwLock};
   use crate::Interpolation;
@@ -138,13 +138,13 @@ pub mod vector {
       }
     }
 
-    pub fn update_table(&mut self, sample: f32, voice_index: usize, table_index: usize) -> Result<(), &'static str>{
-      todo!()
-    }
+    // pub fn update_table(&mut self, sample: f32, voice_index: usize, table_index: usize) -> Result<(), &'static str>{
+    //   todo!()
+    // }
 
     #[inline]
-    pub fn update_envelope<const N:usize, const M:usize>(&mut self, breakpoints: &BreakPoints<N, M>) {
-      self.envelope.new_shape(breakpoints, self.samplerate)
+    pub fn update_envelope<const N:usize, const M:usize>(&mut self, shape: &EnvType<N, M>) {
+      self.envelope.new_shape(shape, self.samplerate)
     }
   }
 }

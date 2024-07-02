@@ -11,6 +11,11 @@ pub struct BreakPoints<const N: usize, const M: usize> {
   pub curves: Option<[f32; M]>
 }
 
+pub enum EnvType<const N:usize = 0, const M:usize = 0> {
+  BreakPoint(BreakPoints<N, M>),
+  Vector(Vec<f32>)
+}
+
 pub struct Envelope {
   buffer: Vec<f32>,
   env_length: usize,
@@ -67,8 +72,15 @@ impl Envelope {
     buffer
   }
 
-  pub fn new<const N: usize, const M: usize>(breakpoints: &BreakPoints<N, M>, samplerate: f32) -> Self {
-    let buffer = Envelope::generate(breakpoints, samplerate);
+  pub fn new<const N: usize, const M: usize>(shape: &EnvType<N, M>, samplerate: f32) -> Self {
+    let buffer = match shape {
+      EnvType::BreakPoint(brk) =>  {
+        Envelope::generate(brk, samplerate)
+      },
+      EnvType::Vector(vec) => {
+        vec.to_owned()
+      }
+    };
     let env_length = buffer.len();
     Envelope {
       buffer,
@@ -109,8 +121,15 @@ impl Envelope {
     self.speed = speed;
   }
 
-  pub fn new_shape<const N: usize, const M: usize>(&mut self, breakpoints: &BreakPoints<N, M>, samplerate: f32) {
-    let buffer = Envelope::generate(breakpoints, samplerate);
+  pub fn new_shape<const N: usize, const M: usize>(&mut self, shape: &EnvType<N, M>, samplerate: f32) {
+    
+    let buffer = match shape {
+      EnvType::BreakPoint(brk) => {
+        Envelope::generate(brk, samplerate)
+      },
+      EnvType::Vector(v) => v.to_owned()
+    };
+
     for (i, v) in buffer.iter().enumerate() {
       if let Some(b) = self.buffer.get_mut(i) {
         *b = *v;

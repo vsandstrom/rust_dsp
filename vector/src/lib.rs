@@ -1,6 +1,5 @@
 use interpolation::interpolation::Interpolation;
-use std::{f32::consts::TAU, sync::{Arc, RwLock}};
-use dsp::signal::clamp;
+use std::sync::{Arc, RwLock};
 
 /// Vector Oscillator using an vector of float-arrays to traverse smoothly 
 /// through different textures. Currently only using a hardcoded Linear 

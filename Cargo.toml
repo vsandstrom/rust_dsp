@@ -7,7 +7,6 @@ members = [
   "envelope",
   "filter",
   "grains",
-  "grains2",
   "interpolation",
   "reverb",
   "trig",
@@ -15,7 +14,6 @@ members = [
   "wavetable", 
   "vector", 
   "fdn", 
-  "grains2",
   "polytable"
 ]
 exclude = [

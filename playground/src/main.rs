@@ -6,13 +6,11 @@ use std::{
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use dsp::buffer::traits::SignalVector;
 use grains::Granulator;
-use grains2::Granulator2;
 use trig::{Dust, Trigger};
-use wavetable::{owned::{self, WaveTable}, shared};
+use wavetable::owned::WaveTable;
 use interpolation::interpolation::{Linear, Cubic};
-use waveshape::{sine, complex_sine, triangle, hanning, sawtooth, traits::Waveshape};
-use envelope::{BreakPoints, Envelope};
-use vector::VectorOscillator;
+use waveshape::{hanning, traits::Waveshape};
+use envelope::{BreakPoints, EnvType::{self}};
 use polytable::vector::PolyVector;
 
 
@@ -46,11 +44,11 @@ fn main() -> anyhow::Result<()> {
     // SETUP YOUR AUDIO PROCESSING STRUCTS HERE !!!! <-------------------------
     const SIZE: usize = 512;
 
-    let brk = BreakPoints::<3, 2>{
-      values: [0.0, 1.0, 0.0], 
-      durations: [0.2, 1.45], 
-      curves: Some([0.2, 1.8])
-    };
+    // let brk = BreakPoints::<3, 2>{
+    //   values: [0.0, 1.0, 0.0], 
+    //   durations: [0.2, 1.45], 
+    //   curves: Some([0.2, 1.8])
+    // };
 
     let tables = Arc::new(RwLock::new([
       [0.0; SIZE].complex_sine([1.0, 0.2, 0.5, 0.8], [0.0, 0.1, 0.8, 1.2]).to_owned(),
@@ -60,11 +58,21 @@ fn main() -> anyhow::Result<()> {
 
     let mut poly: PolyVector<8, SIZE> = PolyVector::new(tables.clone(), f_sample_rate);
 
-    poly.update_envelope(&BreakPoints { values: [0.0, 1.0, 0.3, 0.0], durations: [0.2, 2.2, 4.0], curves: None });
+    let shape = EnvType::BreakPoint(
+      BreakPoints { values: [0.0, 1.0, 0.3, 0.0], durations: [0.2, 2.2, 4.0], curves: None }
+    );
+    poly.update_envelope(&shape);
     let mut lfo = WaveTable::new(&[0.0; 512].triangle().scale(0.0, 1.0), f_sample_rate);
     
+
+    let gr_env: envelope::EnvType = envelope::EnvType::Vector(hanning(&mut [0.0; 1024]).to_owned());
+    // let gr_env: envelope::EnvType<3, 2> = EnvType::BreakPoint(BreakPoints { values: [0.0, 1.0, 0.0], durations: [0.5, 1.2], curves: Some([0.7, 1.2]) });
+    let mut gr: Granulator<16, {48000*8}> = Granulator::new(gr_env, f_sample_rate);
+    let mut trig = Dust::new(f_sample_rate);
+    let mut phasor = WaveTable::new([0.0;1024].phasor(), f_sample_rate);
+
     // Create a channel to send and receive samples
-    let (tx, rx) = channel::<f32>();
+    let (tx, _rx) = channel::<f32>();
     let time = Instant::now();
 
     let mut triggers = [false; 9];
@@ -124,19 +132,30 @@ fn main() -> anyhow::Result<()> {
 
         if ch == 0 {
           out = {
-            let out = poly.play::<Linear, Linear>(
+            let mut out = poly.play::<Linear, Linear>(
               note,
               &[lfo.play::<Linear>(0.15, 0.0); 8],
               // &[0.5; 8],
               &[0.0; 8]
             ) * 0.2;
             note = None;
-            out
-          }
+            if let Some(sample) = gr.record(out) {
+              out = sample;
+            } else {
+              out += gr.play::<Linear, Linear>(
+                phasor.play::<Linear>(1.0/8.0, 0.0),
+                0.35,
+                1.0 + (lfo.play::<Cubic>(3.38, 0.0) * 0.01),
+                0.0001,
+                trig.play(0.05)
+              );
             }
-            ch = (ch + 1) % 2;
-            *sample = out;
-      }
+            out
+            }
+          }
+        ch = (ch + 1) % 2;
+        *sample = out;
+        }
     };
     
 
@@ -166,5 +185,6 @@ fn main() -> anyhow::Result<()> {
       thread::sleep(time::Duration::from_secs(40));
     }
 
+    #[allow(unreachable_code)]
     Ok(())
 }
