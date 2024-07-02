@@ -12,6 +12,7 @@ use interpolation::interpolation::{Linear, Cubic};
 use waveshape::{hanning, traits::Waveshape};
 use envelope::{BreakPoints, EnvType::{self}};
 use polytable::vector::PolyVector;
+use reverb::SchroederVerb;
 
 
 fn main() -> anyhow::Result<()> {
@@ -42,7 +43,7 @@ fn main() -> anyhow::Result<()> {
     let f_sample_rate = config.sample_rate.0 as f32;
 
     // SETUP YOUR AUDIO PROCESSING STRUCTS HERE !!!! <-------------------------
-    const SIZE: usize = 512;
+    const SIZE: usize = 1 << 12;
 
     // let brk = BreakPoints::<3, 2>{
     //   values: [0.0, 1.0, 0.0], 
@@ -62,14 +63,17 @@ fn main() -> anyhow::Result<()> {
       BreakPoints { values: [0.0, 1.0, 0.3, 0.0], durations: [0.2, 2.2, 4.0], curves: None }
     );
     poly.update_envelope(&shape);
-    let mut lfo = WaveTable::new(&[0.0; 512].triangle().scale(0.0, 1.0), f_sample_rate);
+    let mut lfo = WaveTable::new(&[0.0; SIZE].triangle().scale(0.0, 1.0), f_sample_rate);
+    let mut dlfo = WaveTable::new(&[0.0; SIZE].triangle().scale(0.0, 1.0), f_sample_rate);
+    let mut rlfo = WaveTable::new(&[0.0; SIZE].triangle(), f_sample_rate);
+    let mut tlfo = WaveTable::new(&[0.0; SIZE].triangle().scale(0.0, 1.0), f_sample_rate);
     
 
     let gr_env: envelope::EnvType = envelope::EnvType::Vector(hanning(&mut [0.0; 1024]).to_owned());
     // let gr_env: envelope::EnvType<3, 2> = EnvType::BreakPoint(BreakPoints { values: [0.0, 1.0, 0.0], durations: [0.5, 1.2], curves: Some([0.7, 1.2]) });
-    let mut gr: Granulator<16, {48000*8}> = Granulator::new(gr_env, f_sample_rate);
+    let mut gr: Granulator<16, {48000*5}> = Granulator::new(gr_env, f_sample_rate);
     let mut trig = Dust::new(f_sample_rate);
-    let mut phasor = WaveTable::new([0.0;1024].phasor(), f_sample_rate);
+    let mut phasor = WaveTable::new([0.0;SIZE].phasor(), f_sample_rate);
 
     // Create a channel to send and receive samples
     let (tx, _rx) = channel::<f32>();
@@ -137,18 +141,18 @@ fn main() -> anyhow::Result<()> {
               &[lfo.play::<Linear>(0.15, 0.0); 8],
               // &[0.5; 8],
               &[0.0; 8]
-            ) * 0.2;
+            ) * 0.1;
             note = None;
             if let Some(sample) = gr.record(out) {
               out = sample;
             } else {
               out += gr.play::<Linear, Linear>(
                 phasor.play::<Linear>(1.0/8.0, 0.0),
-                0.35,
-                1.0 + (lfo.play::<Cubic>(3.38, 0.0) * 0.01),
+                0.35 + dlfo.play::<Linear>(4.38, 0.0) * 0.4,
+                1.0 + rlfo.play::<Linear>(1.8, 0.0) * 0.04,
                 0.0001,
-                trig.play(0.05)
-              );
+                trig.play(0.02 + tlfo.play::<Linear>(0.2, 0.0) * 0.1) 
+              ) * 0.1;
             }
             out
             }

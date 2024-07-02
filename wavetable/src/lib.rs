@@ -15,7 +15,7 @@ pub mod owned {
 
   pub struct WaveTable<const N:usize> {
     position: f32,
-    table: [f32; N],
+    table: Vec<f32>,
     size: usize,
     pub frequency: f32,
     pub samplerate: f32,
@@ -37,7 +37,7 @@ pub mod owned {
     pub fn new(table: &[f32; N], samplerate: f32) -> WaveTable<N> {
       WaveTable { 
         position: 0.0, 
-        table: *table,
+        table: table.to_vec(),
         size: table.len(),
         frequency: 0.0,
         samplerate,
