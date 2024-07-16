@@ -1,11 +1,20 @@
 use rand::Rng;
 
-pub struct Impulse { samplerate: f32, duration: f32, counter: u32 }
-pub struct Dust { samplerate: f32, duration: f32, counter: u32 }
+pub struct Impulse { 
+  samplerate: f32,
+  duration: f32,
+  counter: u32 
+}
+pub struct Dust {
+  samplerate: f32,
+  duration: f32,
+  counter: u32
+}
 
 pub trait Trigger { 
   fn new(samplerate: f32) -> Self;
   fn play(&mut self, duration: f32) -> f32; 
+  fn set_samplerate(&mut self, samplerate: f32);
 }
 
 impl Trigger for Impulse {
@@ -21,6 +30,10 @@ impl Trigger for Impulse {
     }
     self.counter += 1;
     0.0
+  }
+
+  fn set_samplerate(&mut self, samplerate: f32) {
+      self.samplerate = samplerate;
   }
 }
 
@@ -39,6 +52,10 @@ impl Trigger for Dust {
     self.duration = duration * rng;
     self.counter = 0;
     1.0
+  }
+
+  fn set_samplerate(&mut self, samplerate: f32) {
+      self.samplerate = samplerate;
   }
 }
 

@@ -7,12 +7,14 @@ use interpolation::interpolation::Interpolation;
 
 pub struct Comb<const N: usize> {
   buffer: Buffer<N>,
-  previous: f32,
   damp: f32,
+  previous: f32,
   feedforward: f32,
   feedback: f32,
   position: usize,
   delay: usize,
+  previous_in: f32,
+  previous_out: f32,
 }
 
 
@@ -32,13 +34,13 @@ impl<const N: usize> Comb<N> {
       feedforward,
       feedback,
       delay: N,
+      previous_in: 0.0,
+      previous_out: 0.0
     }
   }
-    
 }
 
 impl<const N:usize> Filter for Comb<N> {
-
   /// Set optional LowPass damping, [0.0 - 1.0], 0.0 is off
   fn set_damp(&mut self, damp: f32) {
     self.damp = damp;
@@ -49,14 +51,17 @@ impl<const N:usize> Filter for Comb<N> {
   /// AP:  feedback == feedforward > 0.0
   fn process<T: Interpolation>(&mut self, sample: f32) -> f32 {
     let delayed = self.buffer.read::<T>(self.position as f32);
+    let dc_blocked = sample - self.previous_in + 0.995 * self.previous_out;
+
+    self.previous_in = sample;
+    self.previous_out = dc_blocked;
+
     self.previous = delayed * (1.0 * self.damp) + self.previous * self.damp;
-    let fb = sample - self.feedback * self.previous;
+    let fb = dc_blocked - self.feedback * self.previous;
     self.buffer.write(fb, self.position);
     self.position = (self.position + 1) % self.delay;
     self.feedforward * fb + delayed
   }
-
-
 }
   
   //

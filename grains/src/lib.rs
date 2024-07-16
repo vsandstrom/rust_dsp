@@ -20,7 +20,7 @@ pub struct Granulator<const NUMGRAINS: usize, const BUFSIZE:usize> {
 }
 
 impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE> {
-  pub fn new<const N:usize, const M: usize>(env_shape: EnvType<N, M>, samplerate: f32) -> Self {
+  pub fn new<const N:usize, const M: usize>(env_shape: &EnvType<N, M>, samplerate: f32) -> Self {
     // Buffer to hold recorded audio
     let buffer = vec![0.0; BUFSIZE];
     let envelope = Envelope::new(&env_shape, samplerate);
@@ -60,7 +60,7 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE>
         EnvelopeInterpolation: Interpolation {
 
     // TRIGGER GRAIN 
-    if trigger >= 1.0 { 
+    if trigger >= 1.0 && !self.active[self.next_grain] { 
       // normalize buffer position
       let pos = match (position + jitter).fract() {
         x if x < 0.0 => { (1.0 + x) * self.buf_size },
@@ -104,6 +104,10 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE>
   pub fn update_envelope<const N: usize, const M: usize>(&mut self, env_shape: &EnvType<N, M>) {
     self.envelope.new_shape(&env_shape, self.samplerate);
     self.env_size = self.envelope.len() as f32;
+  }
+
+  pub fn set_samplerate(&mut self, samplerate: f32) {
+    self.samplerate = samplerate;
   }
 
   #[inline]

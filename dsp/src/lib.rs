@@ -188,35 +188,51 @@ pub mod buffer {
 
 pub mod math {
   /// Find next pow of two for quick wrap
+  #[inline]
   pub const fn next_pow2(size: usize) -> usize {
     let mut pow: usize = 1;
     while pow < size {pow = pow << 1;}
     pow
   }
 
+  #[inline]
   pub const fn is_pow2(size: usize) -> bool {
     size != 0 && (size & size-1) == 0 
   }
 
   /// Translate midi-number to frequency
+  #[inline]
   pub fn mtof(midi: i32, tuning: f32) -> f32 {
     let exp: f32 = (midi - 69) as f32 / 12.0;
     tuning * f32::powf(2.0, exp)
   }
 
   /// Translate frequency to midi-number
+  #[inline]
   pub fn ftom(freq: f32, tuning: f32) -> u8 {
     ((12.0 * f32::log10(freq / tuning) / f32::log10(2f32)) + 69.0).round() as u8
   }
 
   // Translate decibel to linear volume
   #[allow(non_snake_case)]
+  #[inline]
   pub fn db_to_volume(dB: f32) -> f32 {
     f32::powf(10.0, 0.05*dB)
   }
 
   // Translate  linear volume to decibel
+  #[inline]
   pub fn volume_to_db(volume: f32) -> f32 {
       20.0 * f32::log10(volume)
+  }
+
+  #[inline]
+  pub fn samples_to_wavelength(samples: usize, samplerate: f32) -> f32 {
+    (343.0 / samplerate) * samples as f32
+  }
+
+  #[inline]
+  pub fn wavelength_to_samples(wavelength: f32, samplerate: f32) -> usize {
+    (samplerate / (343.0 / wavelength)) as usize
   }
 }

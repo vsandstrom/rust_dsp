@@ -1,7 +1,7 @@
 use std::{
-  sync::{
-    mpsc::channel, Arc, RwLock
-  }, thread, time::{self, Instant}, usize
+  sync::{ mpsc::channel, Arc, RwLock }, 
+  thread, 
+  time::{self, Instant}, 
 };
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use dsp::buffer::traits::SignalVector;
@@ -12,7 +12,6 @@ use interpolation::interpolation::{Linear, Cubic};
 use waveshape::{hanning, traits::Waveshape};
 use envelope::{BreakPoints, EnvType::{self}};
 use polytable::vector::PolyVector;
-use reverb::SchroederVerb;
 
 
 fn main() -> anyhow::Result<()> {
@@ -71,9 +70,10 @@ fn main() -> anyhow::Result<()> {
 
     let gr_env: envelope::EnvType = envelope::EnvType::Vector(hanning(&mut [0.0; 1024]).to_owned());
     // let gr_env: envelope::EnvType<3, 2> = EnvType::BreakPoint(BreakPoints { values: [0.0, 1.0, 0.0], durations: [0.5, 1.2], curves: Some([0.7, 1.2]) });
-    let mut gr: Granulator<16, {48000*5}> = Granulator::new(gr_env, f_sample_rate);
+    let mut gr: Granulator<16, {48000*5}> = Granulator::new(&gr_env, f_sample_rate);
     let mut trig = Dust::new(f_sample_rate);
     let mut phasor = WaveTable::new([0.0;SIZE].phasor(), f_sample_rate);
+
 
     // Create a channel to send and receive samples
     let (tx, _rx) = channel::<f32>();
@@ -154,7 +154,7 @@ fn main() -> anyhow::Result<()> {
                 trig.play(0.02 + tlfo.play::<Linear>(0.2, 0.0) * 0.1) 
               ) * 0.1;
             }
-            out
+            out * 0.4
             }
           }
         ch = (ch + 1) % 2;
