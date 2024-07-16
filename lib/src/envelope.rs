@@ -12,6 +12,23 @@ pub enum EnvType<const N:usize = 0, const M:usize = 0> {
   Vector(Vec<f32>)
 }
 
+impl<const N: usize, const M: usize> EnvType<N,M> {
+  pub fn breakpoints(self) -> Option<BreakPoints<N,M>> {
+    match self {
+      EnvType::BreakPoint(brk) => Some(brk),
+      _ => None
+        
+    }
+  }
+
+  pub fn vector(self) -> Option<Vec<f32>> {
+    match self {
+      EnvType::Vector(vec) => Some(vec),
+      _ => None 
+    }
+  }
+}
+
 pub struct Envelope {
   buffer: Vec<f32>,
   env_length: usize,

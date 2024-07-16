@@ -8,6 +8,7 @@ pub struct Granulator<const NUMGRAINS: usize, const BUFSIZE:usize> {
   envelope: Envelope,
   env_size: f32,
   rec_pos: usize,
+  pub recording: bool,
 
   next_grain: usize,
   buf_positions: [f32; NUMGRAINS],
@@ -37,6 +38,7 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE>
       // grains,
       envelope,
       rec_pos: 0,
+      recording: false,
       env_positions,
       buf_positions, 
       next_grain: 0,

@@ -265,6 +265,4 @@ mod tests {
     println!("{:?}", shape);
     assert_eq!(vec![0.5, 1.0, 0.5, 0.0, -0.5, -1.0, -0.5, 0.0], shape);
   }
-
-
 }
