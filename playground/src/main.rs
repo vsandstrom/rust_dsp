@@ -4,14 +4,17 @@ use std::{
   time::{self, Instant}, 
 };
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use dsp::buffer::traits::SignalVector;
-use grains::Granulator;
-use trig::{Dust, Trigger};
-use wavetable::owned::WaveTable;
-use interpolation::interpolation::{Linear, Cubic};
-use waveshape::{hanning, traits::Waveshape};
-use envelope::{BreakPoints, EnvType::{self}};
-use polytable::vector::PolyVector;
+
+use rust_dsp::{
+  dsp::buffer::traits::SignalVector,
+  grains::Granulator,
+  trig::{Dust, Trigger},
+  wavetable::owned::WaveTable,
+  interpolation::{Linear, Cubic},
+  waveshape::{hanning, traits::Waveshape},
+  envelope::{BreakPoints, EnvType},
+  polytable::vector::PolyVector
+};
 
 
 fn main() -> anyhow::Result<()> {
@@ -68,7 +71,7 @@ fn main() -> anyhow::Result<()> {
     let mut tlfo = WaveTable::new(&[0.0; SIZE].triangle().scale(0.0, 1.0), f_sample_rate);
     
 
-    let gr_env: envelope::EnvType = envelope::EnvType::Vector(hanning(&mut [0.0; 1024]).to_owned());
+    let gr_env: EnvType = EnvType::Vector(hanning(&mut [0.0; 1024]).to_owned());
     // let gr_env: envelope::EnvType<3, 2> = EnvType::BreakPoint(BreakPoints { values: [0.0, 1.0, 0.0], durations: [0.5, 1.2], curves: Some([0.7, 1.2]) });
     let mut gr: Granulator<16, {48000*5}> = Granulator::new(&gr_env, f_sample_rate);
     let mut trig = Dust::new(f_sample_rate);

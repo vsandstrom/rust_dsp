@@ -1,22 +1,7 @@
 [workspace]
 members = [
-  "playground",
-  "buffer",
-  "delay",
-  "dsp",
-  "envelope",
-  "filter",
-  "grains",
-  "interpolation",
-  "reverb",
-  "trig",
-  "waveshape",
-  "wavetable", 
-  "vector", 
-  "fdn", 
-  "polytable"
+  "lib",
+  "playground"
 ]
-exclude = [
-  "interp_test"
-]
-resolver = "1"
+resolver = "2"
+
