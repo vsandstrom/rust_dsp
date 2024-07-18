@@ -18,6 +18,7 @@ pub struct Granulator<const NUMGRAINS: usize, const BUFSIZE:usize> {
   active: [bool; NUMGRAINS],
 
   samplerate: f32,
+  sr_recip: f32,
 }
 
 impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE> {
@@ -25,7 +26,7 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE>
     // Buffer to hold recorded audio
     let buffer = vec![0.0; BUFSIZE];
     let envelope = Envelope::new(&env_shape, samplerate);
-    let durations = [calc_duration(envelope.len(), samplerate, 0.2); NUMGRAINS];
+    let durations = [0.0; NUMGRAINS];
     let buf_positions = [0.0; NUMGRAINS];
     let env_positions = [0.0; NUMGRAINS];
     let rates = [1.0; NUMGRAINS];
@@ -44,6 +45,7 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE>
       next_grain: 0,
       durations,
       samplerate,
+      sr_recip: 1.0 / samplerate,
       rates,
       active
     }
@@ -72,7 +74,7 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE>
       self.buf_positions[self.next_grain] = pos;
       self.env_positions[self.next_grain] = 0.0;
       self.rates        [self.next_grain] = rate;
-      self.durations    [self.next_grain] = calc_duration(self.envelope.len(), self.samplerate, duration);
+      self.durations    [self.next_grain] = calc_duration(self.env_size, self.sr_recip, 1.0/duration);
       // set grain to active
       self.active       [self.next_grain] = true;
       // increment and wait for next trigger
@@ -110,6 +112,7 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE>
 
   pub fn set_samplerate(&mut self, samplerate: f32) {
     self.samplerate = samplerate;
+    self.sr_recip = 1.0 / samplerate;
   }
 
   #[inline]
@@ -125,6 +128,6 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE>
 }
   
 #[inline]
-fn calc_duration(env_len: usize, samplerate: f32, duration: f32) -> f32{
-  env_len as f32 / ((samplerate) * duration)
+fn calc_duration(env_len: f32, samplerate_recip: f32, duration_recip: f32) -> f32{
+  env_len * samplerate_recip * duration_recip
 }
