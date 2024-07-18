@@ -1,6 +1,7 @@
 use crate::interpolation::Interpolation;
 use crate::buffer::Buffer;
 
+#[derive(Clone, Copy)]
 pub struct BreakPoints<const N: usize, const M: usize> {
   pub values: [f32; N],
   pub durations: [f32; M],

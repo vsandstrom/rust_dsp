@@ -82,14 +82,14 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE>
 
     let mut out = 0.0;
     for i in 0..NUMGRAINS {
+      // if the grain has reached the envelopes end, deactivate
+      if self.env_positions[i] >= self.env_size { self.active[i] = false; continue;}
       // accumulate output of active grains
       if self.active[i] {
         let sig = BufferInterpolation::interpolate(self.buf_positions[i], &self.buffer, BUFSIZE);
         let env = self.envelope.read::<EnvelopeInterpolation>(self.env_positions[i]);
         self.buf_positions[i] += self.rates[i];
         self.env_positions[i] += self.durations[i];
-        // if the grain has reached the envelopes end, deactivate
-        if self.env_positions[i] >= self.env_size { self.active[i] = false; }
         out += sig * env;
       } 
     }
@@ -115,6 +115,12 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE>
   #[inline]
   pub fn reset_record(&mut self) {
     self.rec_pos = 0;
+  }
+
+  #[inline]
+  pub fn set_buffersize(&mut self, size: usize) {
+    self.buffer = vec![0.0; size];
+    self.buf_size = size as f32;
   }
 }
   
