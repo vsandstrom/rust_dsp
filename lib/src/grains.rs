@@ -97,7 +97,7 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE>
   }
 
   pub fn record(&mut self, sample: f32) -> Option<f32> {
-    if self.rec_pos == BUFSIZE { return None; }
+    if self.rec_pos == self.buf_size as usize { return None; }
     self.buffer[self.rec_pos] = sample;
     self.rec_pos += 1;
     Some(sample)
@@ -121,11 +121,6 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE>
   pub fn set_buffersize(&mut self, size: usize) {
     self.buffer = vec![0.0; size];
     self.buf_size = size as f32;
-    for mut pos in self.buf_positions {
-      if pos as usize >= size {
-        pos -= size as f32;
-      }
-    }
   }
 }
   
