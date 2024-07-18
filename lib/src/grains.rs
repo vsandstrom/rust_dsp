@@ -121,6 +121,11 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE>
   pub fn set_buffersize(&mut self, size: usize) {
     self.buffer = vec![0.0; size];
     self.buf_size = size as f32;
+    for mut pos in self.buf_positions {
+      if pos as usize >= size {
+        pos -= size as f32;
+      }
+    }
   }
 }
   
