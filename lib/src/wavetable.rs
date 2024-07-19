@@ -1,5 +1,4 @@
 use crate::interpolation::Interpolation;
-use crate::dsp::signal::clamp;
 
 pub mod owned {
   /// Single refers to the ownership of the underlying wavetable structure.

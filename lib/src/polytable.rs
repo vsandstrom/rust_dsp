@@ -149,4 +149,109 @@ pub mod vector {
   }
 }
 
+pub mod simple {
+    use std::marker::PhantomData;
+
+    use crate::{envelope::Envelope, interpolation::Interpolation, vector::simple, wavetable::simple::WaveTable};
+
+  pub struct PolyTable<const VOICES: usize> {
+    voices: [WaveTable; VOICES],
+    freqs: [f32; VOICES],
+    env_pos: [f32; VOICES],
+    next: usize,
+  }
+
+  impl<const VOICES: usize> PolyTable<VOICES> {
+    pub fn new() -> Self {
+      let voices = std::array::from_fn(|_| { WaveTable::new() });
+      Self {
+        voices,
+        freqs: [0.0; VOICES],
+        env_pos: [0.0; VOICES],
+        next: 0,
+      }
+    }
+
+    #[inline]
+    pub fn play<T: Interpolation, U: Interpolation, const N: usize>(
+      &mut self,
+      table: &[f32; N],
+      note: Option<f32>,
+      phases: &[f32; VOICES],
+      env: &Envelope
+    ) -> f32 {
+      let mut sig = 0.0;
+      if let Some(freq) = note {
+        self.freqs[self.next] = freq;
+        self.env_pos[self.next] = 0.0;
+        self.next = (self.next + 1) % VOICES;
+      }
+
+      for i in 0..VOICES {
+        if (self.env_pos[i] as usize) < env.len() {
+          sig += self.voices[i].play::<N, T>(table, self.freqs[i], phases[i]) * env.read::<U>(self.env_pos[i]);
+          self.env_pos[i] += 1.0;
+        }
+      }
+      sig
+    }
+  }
+
+  pub struct PolyVector<const VOICES: usize> {
+    voices: [simple::VectorOscillator; VOICES],
+    freqs: [f32; VOICES],
+    next: usize,
+    env_pos: [f32; VOICES],
+    // samplerate: f32,
+    // sr_recip: f32
+  }
+
+  impl<const VOICES: usize> PolyVector<VOICES> {
+    pub fn new(samplerate: f32) -> Self {
+      let voices = std::array::from_fn(|_| {simple::VectorOscillator::new(samplerate)});
+      Self {
+        voices,
+        freqs: [0.0; VOICES],
+        env_pos: [0.0; VOICES],
+        next: 0
+      }
+    }
+
+    pub fn play<OscInterpolation, EnvInterpolation, const WIDTH: usize, const LENGTH: usize>(
+      &mut self,
+      note: Option<f32>,
+      tables: &[[f32; LENGTH]; WIDTH],
+      env: &Envelope,
+      positions: &[f32; VOICES],
+      phases: &[f32; VOICES]
+    ) -> f32
+      where
+          OscInterpolation: Interpolation,
+          EnvInterpolation: Interpolation
+    {
+      let mut sig = 0.0;
+      if let Some(freq) = note {
+        self.freqs[self.next] = freq;
+        self.env_pos[self.next] = 0.0;
+        self.next = (self.next + 1) % VOICES;
+      }
+
+      for i in 0..VOICES {
+        if (self.env_pos[i] as usize) < env.len() {
+          sig += self.voices[i].play::<OscInterpolation, WIDTH, LENGTH>(
+            tables,
+            self.freqs[i],
+            positions[i],
+            phases[i]
+          ) * env.read::<EnvInterpolation>(
+            self.env_pos[i]
+          );
+          self.env_pos[i] += 1.0;
+        }
+      }
+      sig
+    }
+  }
+}
+
 

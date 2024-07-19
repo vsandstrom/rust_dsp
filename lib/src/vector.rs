@@ -25,7 +25,7 @@ impl<const TABLESIZE:usize> VectorOscillator<TABLESIZE> {
   }
 
   pub fn set_samplerate(&mut self, samplerate:f32) {
-    self.samplerate = samplerate;
+  self.samplerate = samplerate;
   }
 
   /// Position is a value between 0.0 -> 1.0, scrolls through wavetables
@@ -63,6 +63,50 @@ impl<const TABLESIZE:usize> VectorOscillator<TABLESIZE> {
     }
 
     out
+  }
+}
+
+pub mod simple {
+use crate::interpolation::Interpolation;
+
+  pub struct VectorOscillator {
+    table_pos: f32,
+    samplerate: f32,
+    sr_recip: f32,
+  }
+
+  impl VectorOscillator {
+    pub fn new(samplerate: f32) -> Self {
+      Self {
+        table_pos: 0.0,
+        samplerate,
+        sr_recip: 1.0 / samplerate,
+      }
+    }
+
+    pub fn play<T: Interpolation, const WIDTH: usize, const LENGTH: usize>(&mut self, tables: &[[f32; LENGTH]; WIDTH], frequency: f32, position: f32, phase: f32) -> f32 {
+      if frequency > self.samplerate * 0.5 {return 0.0}
+      let len = LENGTH as f32;
+      let position = if position >= 1.0 {0.99999999999999} else {position};
+      let position = position * (WIDTH as f32 - 1.0);
+      let t1 = position.floor() as usize % WIDTH;
+      let t2 = (t1 + 1) % WIDTH;
+      let sig = {
+        let x = position.fract();
+        T::interpolate(self.table_pos, &tables[t1], LENGTH) * (1.0 - x) +
+        T::interpolate(self.table_pos, &tables[t2], LENGTH) * x
+      };
+
+      self.table_pos += (len * self.sr_recip * frequency) + (phase * len);
+      while self.table_pos as usize > LENGTH { self.table_pos -= len; }
+      while self.table_pos < 0.0 { self.table_pos += len; }
+      sig
+    }
+
+    pub fn set_samplerate(&mut self, samplerate: f32) {
+      self.samplerate = samplerate;
+      self.sr_recip = 1.0 / samplerate;
+    }
   }
 }
 

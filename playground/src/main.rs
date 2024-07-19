@@ -6,14 +6,7 @@ use std::{
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
 use rust_dsp::{
-  dsp::buffer::traits::SignalVector,
-  grains::Granulator,
-  trig::{Dust, Trigger},
-  wavetable::owned::WaveTable,
-  interpolation::{Linear, Cubic},
-  waveshape::{hanning, traits::Waveshape},
-  envelope::{BreakPoints, EnvType},
-  polytable::vector::PolyVector
+  dsp::buffer::traits::SignalVector, envelope::{BreakPoints, EnvType, Envelope}, grains::Granulator, interpolation::{Cubic, Linear}, polytable::{simple, vector::PolyVector}, trig::{Dust, Trigger}, vector::simple::VectorOscillator, waveshape::{hanning, traits::Waveshape}, wavetable::owned::WaveTable
 };
 
 
@@ -59,12 +52,19 @@ fn main() -> anyhow::Result<()> {
       [0.0; SIZE].triangle().to_owned(),
     ].to_vec()));
 
-    let mut poly: PolyVector<8, SIZE> = PolyVector::new(tables.clone(), f_sample_rate);
+    let tables2 = [
+      [0.0; SIZE].complex_sine([1.0, 0.2, 0.5, 0.8], [0.0, 0.1, 0.8, 1.2]).to_owned(),
+      [0.0; SIZE].sine().to_owned(),
+      [0.0; SIZE].triangle().to_owned(),
+    ];
+
+    let mut poly: simple::PolyVector<8> = simple::PolyVector::new(f_sample_rate);
 
     let shape = EnvType::BreakPoint(
       BreakPoints { values: [0.0, 1.0, 0.3, 0.0], durations: [0.2, 2.2, 4.0], curves: None }
     );
-    poly.update_envelope(&shape);
+
+    let env = Envelope::new(&shape, f_sample_rate);
     let mut lfo = WaveTable::new(&[0.0; SIZE].triangle().scale(0.0, 1.0), f_sample_rate);
     let mut dlfo = WaveTable::new(&[0.0; SIZE].triangle().scale(0.0, 1.0), f_sample_rate);
     let mut rlfo = WaveTable::new(&[0.0; SIZE].triangle(), f_sample_rate);
@@ -138,9 +138,12 @@ fn main() -> anyhow::Result<()> {
         } 
 
         if ch == 0 {
+          // out = pv.play::<Linear, 3, 4096>(&tables2, 300.0, 0.2, 0.0);
           out = {
-            let mut out = poly.play::<Linear, Linear>(
+            let mut out = poly.play::<Linear, Linear, 3, 4096>(
               note,
+              &tables2,
+              &env,
               &[lfo.play::<Linear>(0.15, 0.0); 8],
               // &[0.5; 8],
               &[0.0; 8]
