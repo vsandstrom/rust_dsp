@@ -52,11 +52,12 @@ fn main() -> anyhow::Result<()> {
       [0.0; SIZE].triangle().to_owned(),
     ].to_vec()));
 
-    let tables2 = [
-      [0.0; SIZE].complex_sine([1.0, 0.2, 0.5, 0.8], [0.0, 0.1, 0.8, 1.2]).to_owned(),
-      [0.0; SIZE].sine().to_owned(),
-      [0.0; SIZE].triangle().to_owned(),
-    ];
+    let mut tables2 = Vec::with_capacity(16);
+
+    tables2.push([0.0; SIZE].complex_sine([1.0, 0.2, 0.5, 0.8], [0.0, 0.1, 0.8, 1.2]).to_owned());
+    tables2.push([0.0; SIZE].sine().to_owned());
+    tables2.push([0.0; SIZE].triangle().to_owned());
+    tables2.push([0.0; SIZE].sawtooth().to_owned());
 
     let mut poly: simple::PolyVector<8> = simple::PolyVector::new(f_sample_rate);
 
@@ -140,7 +141,7 @@ fn main() -> anyhow::Result<()> {
         if ch == 0 {
           // out = pv.play::<Linear, 3, 4096>(&tables2, 300.0, 0.2, 0.0);
           out = {
-            let mut out = poly.play::<Linear, Linear, 3, 4096>(
+            let mut out = poly.play::<Linear, Linear, 4096>(
               note,
               &tables2,
               &env,

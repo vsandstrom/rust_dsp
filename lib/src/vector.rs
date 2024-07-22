@@ -84,13 +84,14 @@ use crate::interpolation::Interpolation;
       }
     }
 
-    pub fn play<T: Interpolation, const WIDTH: usize, const LENGTH: usize>(&mut self, tables: &[[f32; LENGTH]; WIDTH], frequency: f32, position: f32, phase: f32) -> f32 {
+    pub fn play<T: Interpolation, const LENGTH: usize>(&mut self, tables: &[[f32; LENGTH]], frequency: f32, position: f32, phase: f32) -> f32 {
       if frequency > self.samplerate * 0.5 {return 0.0}
       let len = LENGTH as f32;
+      let width = tables.len();
       let position = if position >= 1.0 {0.99999999999999} else {position};
-      let position = position * (WIDTH as f32 - 1.0);
-      let t1 = position.floor() as usize % WIDTH;
-      let t2 = (t1 + 1) % WIDTH;
+      let position = position * (width as f32 - 1.0);
+      let t1 = position.floor() as usize % width;
+      let t2 = (t1 + 1) % width;
       let sig = {
         let x = position.fract();
         T::interpolate(self.table_pos, &tables[t1], LENGTH) * (1.0 - x) +

@@ -39,9 +39,9 @@ pub mod table {
         self.next_voice = (self.next_voice+1) % VOICES;
       }
 
-      for i in 0..VOICES {
+      for (i, voice) in self.voices.iter_mut().enumerate() {
         if (self.env_positions[i] as usize) < self.envelope.len() {
-          sig += self.voices[i].play::<T>(self.frequencies[i], phases[i]) * 
+          sig += voice.play::<T>(self.frequencies[i], phases[i]) * 
             self.envelope.read::<U>(self.env_positions[i]);
           self.env_positions[i] += 1.0;
         } 
@@ -120,9 +120,9 @@ pub mod vector {
         self.env_positions[self.next_voice] = 0.0;
         self.next_voice = (self.next_voice+1) % VOICES;
       }
-      for i in 0..VOICES {
+      for (i, voice) in self.voices.iter_mut().enumerate() {
         if (self.env_positions[i] as usize) < self.envelope.len() {
-          sig += self.voices[i].play::<T>(self.frequencies[i], positions[i], phases[i]) * 
+          sig += voice.play::<T>(self.frequencies[i], positions[i], phases[i]) * 
             self.envelope.read::<U>(self.env_positions[i]);
           self.env_positions[i] += 1.0;
         } 
@@ -152,22 +152,39 @@ pub mod vector {
 pub mod simple {
     use std::marker::PhantomData;
 
-    use crate::{envelope::Envelope, interpolation::Interpolation, vector::simple, wavetable::simple::WaveTable};
+    use crate::{
+      envelope::Envelope,
+      interpolation::Interpolation,
+      vector::simple,
+      wavetable::simple::WaveTable
+    };
+
+    struct Token<T> {
+      voice: T,
+      freq: f32,
+      env_pos: f32,
+    }
+
 
   pub struct PolyTable<const VOICES: usize> {
-    voices: [WaveTable; VOICES],
-    freqs: [f32; VOICES],
-    env_pos: [f32; VOICES],
+    voices: [Token<WaveTable>; VOICES],
+    // voices: [WaveTable; VOICES],
+    // freqs: [f32; VOICES],
+    // env_pos: [f32; VOICES],
     next: usize,
   }
 
   impl<const VOICES: usize> PolyTable<VOICES> {
     pub fn new() -> Self {
-      let voices = std::array::from_fn(|_| { WaveTable::new() });
+      let voices = std::array::from_fn(|_| {
+        Token{
+          voice: WaveTable::new(),
+          freq: 0.0,
+          env_pos: 0.0
+        }
+      });
       Self {
         voices,
-        freqs: [0.0; VOICES],
-        env_pos: [0.0; VOICES],
         next: 0,
       }
     }
@@ -182,15 +199,18 @@ pub mod simple {
     ) -> f32 {
       let mut sig = 0.0;
       if let Some(freq) = note {
-        self.freqs[self.next] = freq;
-        self.env_pos[self.next] = 0.0;
+        unsafe {
+          let v = self.voices.get_unchecked_mut(self.next);
+          v.freq = freq;
+          v.env_pos = 0.0;
+        }
         self.next = (self.next + 1) % VOICES;
       }
 
-      for i in 0..VOICES {
-        if (self.env_pos[i] as usize) < env.len() {
-          sig += self.voices[i].play::<N, T>(table, self.freqs[i], phases[i]) * env.read::<U>(self.env_pos[i]);
-          self.env_pos[i] += 1.0;
+      for (i, v) in self.voices.iter_mut().enumerate() {
+        if (v.env_pos as usize) < env.len() {
+          sig += v.voice.play::<N, T>(table, v.freq, phases[i]) * env.read::<U>(v.env_pos);
+          v.env_pos += 1.0;
         }
       }
       sig
@@ -198,29 +218,34 @@ pub mod simple {
   }
 
   pub struct PolyVector<const VOICES: usize> {
-    voices: [simple::VectorOscillator; VOICES],
-    freqs: [f32; VOICES],
+    voices: [Token<simple::VectorOscillator>; VOICES],
+    // voices: [simple::VectorOscillator; VOICES],
+    // freqs: [f32; VOICES],
     next: usize,
-    env_pos: [f32; VOICES],
+    // env_pos: [f32; VOICES],
     // samplerate: f32,
     // sr_recip: f32
   }
 
   impl<const VOICES: usize> PolyVector<VOICES> {
     pub fn new(samplerate: f32) -> Self {
-      let voices = std::array::from_fn(|_| {simple::VectorOscillator::new(samplerate)});
+      let voices = std::array::from_fn(|_| {
+        Token{
+          voice: simple::VectorOscillator::new(samplerate),
+          freq: 0.0,
+          env_pos: 0.0,
+        }
+        });
       Self {
         voices,
-        freqs: [0.0; VOICES],
-        env_pos: [0.0; VOICES],
         next: 0
       }
     }
 
-    pub fn play<OscInterpolation, EnvInterpolation, const WIDTH: usize, const LENGTH: usize>(
+    pub fn play<OscInterpolation, EnvInterpolation, const LENGTH: usize>(
       &mut self,
       note: Option<f32>,
-      tables: &[[f32; LENGTH]; WIDTH],
+      tables: &Vec<[f32; LENGTH]>,
       env: &Envelope,
       positions: &[f32; VOICES],
       phases: &[f32; VOICES]
@@ -231,22 +256,25 @@ pub mod simple {
     {
       let mut sig = 0.0;
       if let Some(freq) = note {
-        self.freqs[self.next] = freq;
-        self.env_pos[self.next] = 0.0;
+        unsafe {
+          let v = self.voices.get_unchecked_mut(self.next);
+          v.freq = freq;
+          v.env_pos = 0.0;
+        }
         self.next = (self.next + 1) % VOICES;
       }
 
-      for i in 0..VOICES {
-        if (self.env_pos[i] as usize) < env.len() {
-          sig += self.voices[i].play::<OscInterpolation, WIDTH, LENGTH>(
+      for (i, v) in self.voices.iter_mut().enumerate() {
+        if (v.env_pos as usize) < env.len() {
+          sig += v.voice.play::<OscInterpolation, LENGTH>(
             tables,
-            self.freqs[i],
+            v.freq,
             positions[i],
             phases[i]
           ) * env.read::<EnvInterpolation>(
-            self.env_pos[i]
+            v.env_pos
           );
-          self.env_pos[i] += 1.0;
+          v.env_pos += 1.0;
         }
       }
       sig
