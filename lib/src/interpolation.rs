@@ -129,7 +129,7 @@ mod tests {
     }
 
     #[test] fn cubic_vs_linear() {
-      let mut buf = vec![0.0; 512];
+      let mut buf = [0.0; 512];
       sine(&mut buf);
       let pos = 4.5;
       let lin = Linear::interpolate(pos, &buf, 512);

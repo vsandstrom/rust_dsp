@@ -1,6 +1,14 @@
 use crate::envelope::{EnvType, Envelope};
 use crate::interpolation::Interpolation;
 
+struct Token {
+  buf_position: f32,
+  env_position: f32,
+  duration: f32,
+  rate: f32,
+  active: bool
+}
+
 pub struct Granulator<const NUMGRAINS: usize, const BUFSIZE:usize> {
   buffer: Vec<f32>,
   buf_size: f32,
@@ -11,13 +19,10 @@ pub struct Granulator<const NUMGRAINS: usize, const BUFSIZE:usize> {
   pub recording: bool,
 
   next_grain: usize,
-  buf_positions: [f32; NUMGRAINS],
-  env_positions: [f32; NUMGRAINS],
-  durations: [f32; NUMGRAINS],
-  rates: [f32; NUMGRAINS],
-  active: [bool; NUMGRAINS],
+  grains: [Token; NUMGRAINS],
 
   samplerate: f32,
+  sr_recip: f32,
 }
 
 impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE> {
@@ -25,27 +30,28 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE>
     // Buffer to hold recorded audio
     let buffer = vec![0.0; BUFSIZE];
     let envelope = Envelope::new(&env_shape, samplerate);
-    let durations = [calc_duration(envelope.len(), samplerate, 0.2); NUMGRAINS];
-    let buf_positions = [0.0; NUMGRAINS];
-    let env_positions = [0.0; NUMGRAINS];
-    let rates = [1.0; NUMGRAINS];
-    let active = [false; NUMGRAINS];
+
+    let grains = std::array::from_fn(|_| {
+      Token {
+        duration: 0.0,
+        buf_position: 0.0,
+        env_position: 0.0,
+        rate: 1.0,
+        active: false
+      }
+    });
 
     Self {
       buffer,
       buf_size: BUFSIZE as f32,
       env_size: envelope.len() as f32,
-      // grains,
+      grains,
       envelope,
       rec_pos: 0,
       recording: false,
-      env_positions,
-      buf_positions, 
       next_grain: 0,
-      durations,
       samplerate,
-      rates,
-      active
+      sr_recip: 1.0 / samplerate,
     }
   }
 
@@ -62,34 +68,37 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE>
         EnvelopeInterpolation: Interpolation {
 
     // TRIGGER GRAIN 
-    if trigger >= 1.0 && !self.active[self.next_grain] { 
+    if trigger >= 1.0 && !self.grains[self.next_grain].active { 
       // normalize buffer position
       let pos = match (position + jitter).fract() {
         x if x < 0.0 => { (1.0 + x) * self.buf_size },
         x            => { x  * self.buf_size }
       };
-      // set parameters for grain
-      self.buf_positions[self.next_grain] = pos;
-      self.env_positions[self.next_grain] = 0.0;
-      self.rates        [self.next_grain] = rate;
-      self.durations    [self.next_grain] = calc_duration(self.envelope.len(), self.samplerate, duration);
+      unsafe {
+        // set parameters for grain
+        let g = self.grains.get_unchecked_mut(self.next_grain);
+        g.buf_position = pos;
+        g.env_position = 0.0;
+        g.rate         = rate;
+        g.duration     = calc_duration(self.env_size, self.sr_recip, 1.0/duration);
+        g.active       = true;
+      }
       // set grain to active
-      self.active       [self.next_grain] = true;
       // increment and wait for next trigger
       self.next_grain = (self.next_grain + 1) % NUMGRAINS;
     }
 
 
     let mut out = 0.0;
-    for i in 0..NUMGRAINS {
+    for g in self.grains.iter_mut() {
+      // if the grain has reached the envelopes end, deactivate
+      if g.env_position >= self.env_size { g.active = false; continue;}
       // accumulate output of active grains
-      if self.active[i] {
-        let sig = BufferInterpolation::interpolate(self.buf_positions[i], &self.buffer, BUFSIZE);
-        let env = self.envelope.read::<EnvelopeInterpolation>(self.env_positions[i]);
-        self.buf_positions[i] += self.rates[i];
-        self.env_positions[i] += self.durations[i];
-        // if the grain has reached the envelopes end, deactivate
-        if self.env_positions[i] >= self.env_size { self.active[i] = false; }
+      if g.active {
+        let sig = BufferInterpolation::interpolate(g.buf_position, &self.buffer, BUFSIZE);
+        let env = self.envelope.read::<EnvelopeInterpolation>(g.env_position);
+        g.buf_position += g.rate;
+        g.env_position += g.duration;
         out += sig * env;
       } 
     }
@@ -97,7 +106,7 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE>
   }
 
   pub fn record(&mut self, sample: f32) -> Option<f32> {
-    if self.rec_pos == BUFSIZE { return None; }
+    if self.rec_pos == self.buf_size as usize { return None; }
     self.buffer[self.rec_pos] = sample;
     self.rec_pos += 1;
     Some(sample)
@@ -110,15 +119,22 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE>
 
   pub fn set_samplerate(&mut self, samplerate: f32) {
     self.samplerate = samplerate;
+    self.sr_recip = 1.0 / samplerate;
   }
 
   #[inline]
   pub fn reset_record(&mut self) {
     self.rec_pos = 0;
   }
+
+  #[inline]
+  pub fn set_buffersize(&mut self, size: usize) {
+    self.buffer = vec![0.0; size];
+    self.buf_size = size as f32;
+  }
 }
   
 #[inline]
-fn calc_duration(env_len: usize, samplerate: f32, duration: f32) -> f32{
-  env_len as f32 / ((samplerate) * duration)
+fn calc_duration(env_len: f32, samplerate_recip: f32, duration_recip: f32) -> f32{
+  env_len * samplerate_recip * duration_recip
 }
