@@ -1,12 +1,20 @@
 use std::{
-  sync::{ mpsc::channel, Arc, RwLock }, 
+  sync::mpsc::channel,
   thread, 
   time::{self, Instant}, 
 };
+
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
 use rust_dsp::{
-  dsp::buffer::traits::SignalVector, envelope::{BreakPoints, EnvType, Envelope}, grains::Granulator, interpolation::{Cubic, Linear}, polytable::{simple, vector::PolyVector}, trig::{Dust, Trigger}, vector::simple::VectorOscillator, waveshape::{hanning, traits::Waveshape}, wavetable::owned::WaveTable
+  dsp::buffer::traits::SignalVector,
+  envelope::{BreakPoints, EnvType, Envelope},
+  grains::Granulator,
+  interpolation::Linear,
+  polytable::PolyVector,
+  trig::{Dust, Trigger},
+  waveshape::{hanning, traits::Waveshape},
+  wavetable::WaveTable
 };
 
 
@@ -40,18 +48,6 @@ fn main() -> anyhow::Result<()> {
     // SETUP YOUR AUDIO PROCESSING STRUCTS HERE !!!! <-------------------------
     const SIZE: usize = 1 << 12;
 
-    // let brk = BreakPoints::<3, 2>{
-    //   values: [0.0, 1.0, 0.0], 
-    //   durations: [0.2, 1.45], 
-    //   curves: Some([0.2, 1.8])
-    // };
-
-    let tables = Arc::new(RwLock::new([
-      [0.0; SIZE].complex_sine([1.0, 0.2, 0.5, 0.8], [0.0, 0.1, 0.8, 1.2]).to_owned(),
-      [0.0; SIZE].sine().to_owned(),
-      [0.0; SIZE].triangle().to_owned(),
-    ].to_vec()));
-
     let mut tables2 = Vec::with_capacity(16);
 
     tables2.push([0.0; SIZE].complex_sine([1.0, 0.2, 0.5, 0.8], [0.0, 0.1, 0.8, 1.2]).to_owned());
@@ -59,24 +55,33 @@ fn main() -> anyhow::Result<()> {
     tables2.push([0.0; SIZE].triangle().to_owned());
     tables2.push([0.0; SIZE].sawtooth().to_owned());
 
-    let mut poly: simple::PolyVector<8> = simple::PolyVector::new(f_sample_rate);
+    let mut poly: PolyVector<8> = PolyVector::new(f_sample_rate);
 
     let shape = EnvType::BreakPoint(
       BreakPoints { values: [0.0, 1.0, 0.3, 0.0], durations: [0.2, 2.2, 4.0], curves: None }
     );
 
     let env = Envelope::new(&shape, f_sample_rate);
-    let mut lfo = WaveTable::new(&[0.0; SIZE].triangle().scale(0.0, 1.0), f_sample_rate);
-    let mut dlfo = WaveTable::new(&[0.0; SIZE].triangle().scale(0.0, 1.0), f_sample_rate);
-    let mut rlfo = WaveTable::new(&[0.0; SIZE].triangle(), f_sample_rate);
-    let mut tlfo = WaveTable::new(&[0.0; SIZE].triangle().scale(0.0, 1.0), f_sample_rate);
-    
+    let lfo_t = [0.0; SIZE].triangle().scale(0.0, 1.0);
+    let mut lfo = WaveTable::new();
+    lfo.set_samplerate(f_sample_rate);
+    let dlfo_t = [0.0; SIZE].triangle().scale(0.0, 1.0);
+    let mut dlfo = WaveTable::new();
+    dlfo.set_samplerate(f_sample_rate);
+    let rlfo_t = [0.0; SIZE].triangle().to_owned();
+    let mut rlfo = WaveTable::new();
+    rlfo.set_samplerate(f_sample_rate);
+    let tlfo_t = [0.0; SIZE].triangle().scale(0.0, 1.0);
+    let mut tlfo = WaveTable::new();
+    tlfo.set_samplerate(f_sample_rate);
 
-    let gr_env: EnvType = EnvType::Vector(hanning(&mut [0.0; 1024]).to_owned());
+    let gr_env: EnvType = EnvType::Vector(hanning(&mut [0.0; 1024]).to_vec());
     // let gr_env: envelope::EnvType<3, 2> = EnvType::BreakPoint(BreakPoints { values: [0.0, 1.0, 0.0], durations: [0.5, 1.2], curves: Some([0.7, 1.2]) });
     let mut gr: Granulator<16, {48000*5}> = Granulator::new(&gr_env, f_sample_rate);
     let mut trig = Dust::new(f_sample_rate);
-    let mut phasor = WaveTable::new([0.0;SIZE].phasor(), f_sample_rate);
+    let ph_t = [0.0;SIZE].phasor().to_owned();
+    let mut phasor = WaveTable::new();
+    phasor.set_samplerate(f_sample_rate);
 
 
     // Create a channel to send and receive samples
@@ -141,11 +146,11 @@ fn main() -> anyhow::Result<()> {
         if ch == 0 {
           // out = pv.play::<Linear, 3, 4096>(&tables2, 300.0, 0.2, 0.0);
           out = {
-            let mut out = poly.play::<Linear, Linear, 4096>(
+            let mut out = poly.play::<SIZE, Linear, Linear>(
               note,
               &tables2,
               &env,
-              &[lfo.play::<Linear>(0.15, 0.0); 8],
+              &[lfo.play::<SIZE, Linear>(&lfo_t, 0.15, 0.0); 8],
               // &[0.5; 8],
               &[0.0; 8]
             ) * 0.1;
@@ -154,11 +159,11 @@ fn main() -> anyhow::Result<()> {
               out = sample;
             } else {
               out += gr.play::<Linear, Linear>(
-                phasor.play::<Linear>(1.0/8.0, 0.0),
-                0.35 + dlfo.play::<Linear>(4.38, 0.0) * 0.4,
-                1.0 + rlfo.play::<Linear>(1.8, 0.0) * 0.04,
+                phasor.play::<SIZE, Linear>(&ph_t, 1.0/8.0, 0.0),
+                0.35 + dlfo.play::<SIZE, Linear>(&dlfo_t, 4.38, 0.0) * 0.4,
+                1.0 + rlfo.play::<SIZE, Linear>(&rlfo_t, 1.8, 0.0) * 0.04,
                 0.0001,
-                trig.play(0.02 + tlfo.play::<Linear>(0.2, 0.0) * 0.1) 
+                trig.play(0.02 + tlfo.play::<SIZE, Linear>(&tlfo_t, 0.2, 0.0) * 0.1) 
               ) * 0.1;
             }
             out * 0.4
