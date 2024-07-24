@@ -3,7 +3,6 @@
 /fb_skiss
 /dsp_test
 /tests
-/interp_test
 Cargo.lock
 .DS_Store
 target
