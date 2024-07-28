@@ -7,14 +7,7 @@ use std::{
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
 use rust_dsp::{
-  dsp::buffer::traits::SignalVector,
-  envelope::{BreakPoints, EnvType, Envelope},
-  grains::Granulator,
-  interpolation::Linear,
-  polytable::PolyVector,
-  trig::{Dust, Trigger},
-  waveshape::{hanning, traits::Waveshape},
-  wavetable::WaveTable
+  delay::{Delay, DelayTrait, FixedDelay}, dsp::buffer::traits::SignalVector, envelope::{BreakPoints, EnvType, Envelope}, grains::Granulator, interpolation::{Cubic, Linear}, polytable::PolyVector, trig::{Dust, Trigger}, waveshape::{hanning, traits::Waveshape}, wavetable::WaveTable
 };
 
 
@@ -48,41 +41,41 @@ fn main() -> anyhow::Result<()> {
     // SETUP YOUR AUDIO PROCESSING STRUCTS HERE !!!! <-------------------------
     const SIZE: usize = 1 << 12;
 
-    let mut tables2 = Vec::with_capacity(16);
+    let t1 = [0.0; SIZE].complex_sine(
+      [1.0, 0.2, 0.5, 0.8],
+      [0.0, 0.1, 0.8, 1.2]
+    );
+    
+    let uni_lfo = [0.0; SIZE].triangle().scale(0.0, 1.0);
+    let ph_t = [0.0;SIZE].phasor();
+    let hann = [0.0; SIZE].hanning();
 
-    tables2.push([0.0; SIZE].complex_sine([1.0, 0.2, 0.5, 0.8], [0.0, 0.1, 0.8, 1.2]).to_owned());
-    tables2.push([0.0; SIZE].sine().to_owned());
-    tables2.push([0.0; SIZE].triangle().to_owned());
-    tables2.push([0.0; SIZE].sawtooth().to_owned());
+    let t2 = [0.0; SIZE].sine();
+    let t3 = [0.0; SIZE].triangle();
+    let t4 = [0.0; SIZE].sawtooth();
 
-    let mut poly: PolyVector<8> = PolyVector::new(f_sample_rate);
+    let tables = [t1, t2, t3, t4];
 
     let shape = EnvType::BreakPoint(
       BreakPoints { values: [0.0, 1.0, 0.3, 0.0], durations: [0.2, 2.2, 4.0], curves: None }
     );
 
     let env = Envelope::new(&shape, f_sample_rate);
-    let lfo_t = [0.0; SIZE].triangle().scale(0.0, 1.0);
-    let mut lfo = WaveTable::new();
-    lfo.set_samplerate(f_sample_rate);
-    let dlfo_t = [0.0; SIZE].triangle().scale(0.0, 1.0);
-    let mut dlfo = WaveTable::new();
-    dlfo.set_samplerate(f_sample_rate);
-    let rlfo_t = [0.0; SIZE].triangle().to_owned();
-    let mut rlfo = WaveTable::new();
-    rlfo.set_samplerate(f_sample_rate);
-    let tlfo_t = [0.0; SIZE].triangle().scale(0.0, 1.0);
-    let mut tlfo = WaveTable::new();
-    tlfo.set_samplerate(f_sample_rate);
+    let gr_env: EnvType = EnvType::Vector(hann.clone().to_vec());
 
-    let gr_env: EnvType = EnvType::Vector(hanning(&mut [0.0; 1024]).to_vec());
-    // let gr_env: envelope::EnvType<3, 2> = EnvType::BreakPoint(BreakPoints { values: [0.0, 1.0, 0.0], durations: [0.5, 1.2], curves: Some([0.7, 1.2]) });
-    let mut gr: Granulator<16, {48000*5}> = Granulator::new(&gr_env, f_sample_rate);
+    let mut lfo = WaveTable::from(f_sample_rate);
+    let mut dlfo = WaveTable::from(f_sample_rate);
+    let mut rlfo = WaveTable::from(f_sample_rate);
+    let mut tlfo = WaveTable::from(f_sample_rate);
+    let mut phasor = WaveTable::from(f_sample_rate);
+    let mut poly = PolyVector::<8>::new(f_sample_rate);
+    let mut del = Delay::new(config.sample_rate.0 as usize * 2);
+    let mut fix = FixedDelay::<96000>::new();
     let mut trig = Dust::new(f_sample_rate);
-    let ph_t = [0.0;SIZE].phasor().to_owned();
-    let mut phasor = WaveTable::new();
-    phasor.set_samplerate(f_sample_rate);
-
+    let mut gr = Granulator::<16, {48000*5}>::new(
+      &gr_env,
+      f_sample_rate
+    );
 
     // Create a channel to send and receive samples
     let (tx, _rx) = channel::<f32>();
@@ -91,20 +84,21 @@ fn main() -> anyhow::Result<()> {
     let mut triggers = [false; 9];
 
     // Callbacks
-    let input_callback = move | data: &[f32], _: &cpal::InputCallbackInfo | {
+    let input_callback = move 
+      | data: &[f32], _: &cpal::InputCallbackInfo | {
         // Process input data
         let mut output_fell_behind = false;
         for &sample in data {
           // Send input data to the output callback, or do any processing
-          match tx.send(sample) {
-            Err(_) => output_fell_behind = true,
-            _ => ()
+          if tx.send(sample).is_err() {
+            output_fell_behind = true;
           }
         }
         if output_fell_behind { eprintln!("Output fell behind"); }
     };
 
-    let output_callback = move | data: &mut [f32], _: &cpal::OutputCallbackInfo | {
+    let output_callback = move 
+      | data: &mut [f32], _: &cpal::OutputCallbackInfo | {
       // Process output data
       let mut ch = 0;
       let mut note = None;
@@ -144,13 +138,20 @@ fn main() -> anyhow::Result<()> {
         } 
 
         if ch == 0 {
-          // out = pv.play::<Linear, 3, 4096>(&tables2, 300.0, 0.2, 0.0);
+          // out = pv.play::<Linear, 3, 4096>(&tables, 300.0, 0.2, 0.0);
+          //
+          let ph_v = phasor.play::<SIZE, Linear>(&ph_t, 1.0/8.0, 0.0);
+          let lfo_v = lfo.play::<SIZE, Linear>(&uni_lfo, 0.15, 0.0);
+          let rlfo_v = rlfo.play::<SIZE, Cubic>(&tables[2], 0.8, 0.0);
+          let dlfo_v = dlfo.play::<SIZE, Linear>(&uni_lfo, 4.38, 0.0);
+          let tlfo_v = tlfo.play::<SIZE, Linear>(&uni_lfo, 0.2, 0.0);
+
           out = {
             let mut out = poly.play::<SIZE, Linear, Linear>(
               note,
-              &tables2,
+              &tables,
               &env,
-              &[lfo.play::<SIZE, Linear>(&lfo_t, 0.15, 0.0); 8],
+              &[lfo_v; 8],
               // &[0.5; 8],
               &[0.0; 8]
             ) * 0.1;
@@ -158,15 +159,22 @@ fn main() -> anyhow::Result<()> {
             if let Some(sample) = gr.record(out) {
               out = sample;
             } else {
-              out += gr.play::<Linear, Linear>(
-                phasor.play::<SIZE, Linear>(&ph_t, 1.0/8.0, 0.0),
-                0.35 + dlfo.play::<SIZE, Linear>(&dlfo_t, 4.38, 0.0) * 0.4,
-                1.0 + rlfo.play::<SIZE, Linear>(&rlfo_t, 1.8, 0.0) * 0.04,
+              out += 
+              gr.play::<Linear, Linear>(
+                ph_v,
+                0.35 + dlfo_v * 0.4,
+                1.0 + rlfo_v * 0.04,
                 0.0001,
-                trig.play(0.02 + tlfo.play::<SIZE, Linear>(&tlfo_t, 0.2, 0.0) * 0.1) 
-              ) * 0.1;
+                trig.play(0.02) + (tlfo_v * 0.1)
+              )
+               * 0.1;
             }
-            out * 0.4
+
+            out * 0.4 + fix.play(out * 0.5, 0.4)
+              // del.play::<Linear>(
+              // out * 0.4,
+              // f_sample_rate * 0.3 + (rlfo_v * 42.25),
+              // 0.4)
             }
           }
         ch = (ch + 1) % 2;

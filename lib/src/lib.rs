@@ -8,4 +8,7 @@ pub mod buffer;
 pub mod waveshape;
 pub mod envelope;
 pub mod polytable;
+pub mod delay;
+pub mod filter;
+pub mod reverb;
 

@@ -1,6 +1,5 @@
 
 pub mod signal {
-
   pub fn clamp(signal: f32, bottom: f32, top: f32 ) -> f32 {
       f32::max(bottom, f32::min(signal, top))
   }
@@ -61,16 +60,16 @@ pub mod buffer {
 
   /// Same as map, but for entire buffers. Suitable for normalizing Wavetable buffers.
   pub fn range(values: &mut [f32], in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> &[f32] {
-    for i in 0..values.len() {
-      map(&mut values[i], in_min, in_max, out_min, out_max);
+    for x in values.iter_mut() {
+      map(x, in_min, in_max, out_min, out_max);
     }
     values
   }
 
   pub fn sum(values: &[f32]) -> f32 {
     let mut sum = 0.0;
-    for i in 0..values.len() {
-      sum += values[i];
+    for v in values.iter() {
+      sum += v;
     }
     sum
   }
@@ -78,8 +77,8 @@ pub mod buffer {
   /// Normalizes contents of vec, sum of contents == 1.0
   pub fn normalize(values: &mut [f32]) {
     let x = 1.0 / sum(values);
-    for i in 0..values.len() {
-      values[i] *= x;
+    for v in values.iter_mut() {
+      *v *= x;
     }
   }
 
@@ -87,9 +86,9 @@ pub mod buffer {
   pub fn scale(values: &mut [f32], outmin: f32, outmax: f32) -> &[f32] {
     let mut min = 0.0f32;
     let mut max = 0.0f32;
-    for i in 0..values.len() {
-      if values[i] < min { min = values[i] };
-      if values[i] > max { max = values[i] };
+    for v in values.iter_mut() {
+      if *v < min { min = *v };
+      if *v > max { max = *v };
     }
     range(values, min, max, outmin, outmax)
   }
@@ -108,9 +107,9 @@ pub mod buffer {
 
     impl SignalVector for Vec<f32> {
       fn range(mut self, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> Self {
-        for i in 0..self.len() {
-          let temp = self[i].map(in_min, in_max, out_min, out_max);
-          self[i] = temp;
+        for n in self.iter_mut() {
+          let temp = n.map(in_min, in_max, out_min, out_max);
+          *n = temp;
         }
         self
       }
@@ -126,8 +125,8 @@ pub mod buffer {
       /// Sum of values in vec == 1
       fn normalize(mut self) -> Self {
         let y = 1.0 / sum(&self);
-        for i in 0..self.len() {
-          self[i] *= y;
+        for x in self.iter_mut() {
+          *x *= y;
         }
         self
       }
@@ -147,9 +146,9 @@ pub mod buffer {
     
     impl<const N:usize> SignalVector for [f32; N] {
       fn range(mut self, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> Self {
-        for i in 0..self.len() {
-          let temp = self[i].map(in_min, in_max, out_min, out_max);
-          self[i] = temp;
+        for x in self.iter_mut() {
+          let temp = x.map(in_min, in_max, out_min, out_max);
+          *x = temp;
         }
         self
       }
@@ -165,8 +164,8 @@ pub mod buffer {
       /// Sum of values in vec == 1
       fn normalize(mut self) -> Self {
         let y = 1.0 / sum(&self);
-        for i in 0..self.len() {
-          self[i] *= y;
+        for x in self.iter_mut() {
+          *x *= y;
         }
         self
       }
@@ -191,13 +190,13 @@ pub mod math {
   #[inline]
   pub const fn next_pow2(size: usize) -> usize {
     let mut pow: usize = 1;
-    while pow < size {pow = pow << 1;}
+    while pow < size {pow <<= 1;}
     pow
   }
 
   #[inline]
   pub const fn is_pow2(size: usize) -> bool {
-    size != 0 && (size & size-1) == 0 
+    size != 0 && size & (size-1) == 0 
   }
 
   /// Translate midi-number to frequency

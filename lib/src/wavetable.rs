@@ -7,6 +7,29 @@ pub struct WaveTable {
   sr_recip: f32,
 }
 
+impl Default for WaveTable {
+  fn default() -> Self {
+    Self {
+      position: 0.0,
+      samplerate: 0.0,
+      sr_recip: 0.0,
+    }
+  }
+}
+
+impl From<f32> for WaveTable {
+  /// Create a wavetable instance using the samplerate value
+  fn from(samplerate: f32) -> Self {
+    Self{
+      position: 0.0,
+      samplerate,
+      sr_recip: 1.0/samplerate
+    }
+      
+  }
+
+}
+
 impl WaveTable {
   pub fn new() -> Self {
     Self {

@@ -10,8 +10,8 @@ pub fn complex_sine<const SIZE: usize, const N:usize>(table: &mut [f32; SIZE], a
     for i in 0..amps.len() {
       let inc = TAU * n / len as f32;
       let mut angle = inc * len as f32 * phases[i];
-      for j in 0..len {
-        table[j] += angle.sin() * amps[i];
+      for sample in table.iter_mut() {
+        *sample += angle.sin() * amps[i];
         angle += inc;
       }
       n += 1.0;
@@ -24,8 +24,8 @@ pub fn complex_sine<const SIZE: usize, const N:usize>(table: &mut [f32; SIZE], a
 pub fn sine<const SIZE: usize>(table: &mut [f32; SIZE]) -> [f32; SIZE] {
   let mut angle: f32 = 0.0;
   let inc: f32 = TAU / table.len() as f32;
-  for i in 0..table.len() {
-    table[i] = angle.sin();
+  for sample in table.iter_mut() {
+    *sample = angle.sin();
     angle += inc;
   }
   *table
@@ -35,8 +35,8 @@ pub fn sine<const SIZE: usize>(table: &mut [f32; SIZE]) -> [f32; SIZE] {
 pub fn hanning<const SIZE: usize>(table: &mut [f32; SIZE]) -> [f32; SIZE] {
   let mut angle: f32 = 0.0;
   let inc: f32 = PI / (table.len() as f32);
-  for i in 0..table.len() {
-    table[i] = angle.sin().powf(2.0);
+  for sample in table.iter_mut() {
+    *sample = angle.sin().powf(2.0);
     angle += inc;
   }
   *table
@@ -45,9 +45,10 @@ pub fn hanning<const SIZE: usize>(table: &mut [f32; SIZE]) -> [f32; SIZE] {
 /// Square
 pub fn square<const SIZE: usize>(table: &mut [f32; SIZE]) -> [f32; SIZE] {
   let mut val = -1.0;
-  for i in 0..table.len() {
-    table[i] = val;
-    if i == table.len()/2-1 { val = 1.0; } 
+  let len = table.len();
+  for (i, sample) in table.iter_mut().enumerate() {
+    *sample = val;
+    if i == len/2-1 { val = 1.0; } 
   }
   *table
 }
@@ -56,9 +57,9 @@ pub fn square<const SIZE: usize>(table: &mut [f32; SIZE]) -> [f32; SIZE] {
 pub fn triangle<const SIZE: usize>(table: &mut [f32; SIZE]) -> [f32; SIZE] {
   let mut angle = 0.0;
   let mut inc: f32 = 2.0 / (table.len() as f32 / 2.0);
-  for i in 0..table.len() {
-    if angle >= 1.0 || angle <= -1.0 { inc = inc * -1.0; }
-    table[i] = angle;
+  for sample in table.iter_mut() {
+    if angle >= 1.0 || angle <= -1.0 { inc *= -1.0; }
+    *sample = angle;
     angle += inc;
   }
   *table
@@ -68,8 +69,8 @@ pub fn triangle<const SIZE: usize>(table: &mut [f32; SIZE]) -> [f32; SIZE] {
 pub fn sawtooth<const SIZE: usize>(table: &mut [f32; SIZE]) -> [f32; SIZE] {
   let mut angle: f32 = 0.0;
   let inc: f32 = 2.0 / (table.len() as f32 - 1.0);
-  for i in 0..table.len() {
-    table[i] = angle - 1.0;
+  for sample in table.iter_mut() {
+    *sample = angle - 1.0;
     angle += inc;
   }
   *table
@@ -79,8 +80,8 @@ pub fn sawtooth<const SIZE: usize>(table: &mut [f32; SIZE]) -> [f32; SIZE] {
 pub fn reverse_sawtooth<const SIZE: usize>(table: &mut [f32; SIZE]) -> [f32; SIZE] {
   let mut angle: f32 = 0.0;
   let inc: f32 = 2.0 / (table.len() as f32 - 1.0);
-  for i in 0..table.len() {
-    table[i] = angle + 1.0;
+  for sample in table.iter_mut() {
+    *sample = angle + 1.0;
     angle -= inc;
   }
   *table
@@ -109,8 +110,8 @@ pub mod traits {
     fn hanning(&mut self) -> Self::Output{
       let mut angle: f32 = 0.0;
       let inc: f32 = PI / (self.len() as f32);
-      for i in 0..N {
-        self[i] = angle.sin().powf(2.0);
+      for sample in self.iter_mut() {
+        *sample = angle.sin().powf(2.0);
         angle += inc;
       }
       *self
@@ -120,8 +121,8 @@ pub mod traits {
     fn sine(&mut self) -> Self::Output{
       let mut angle: f32 = 0.0;
       let inc: f32 = TAU / self.len() as f32;
-      for i in 0..self.len() {
-        self[i] = angle.sin();
+      for sample in self.iter_mut() {
+        *sample = angle.sin();
         angle += inc;
       }
       *self
@@ -130,9 +131,10 @@ pub mod traits {
     ///Square
     fn square(&mut self) -> Self::Output{
       let mut val = -1.0;
-      for i in 0..self.len() {
-        self[i] = val;
-        if self[i] == self.len() as f32/2.0-1.0 { val = 1.0; } 
+      let len = self.len();
+      for (i, sample) in self.iter_mut().enumerate() {
+        *sample = val;
+        if i == len/2-1 { val = 1.0; } 
       }
       *self
     }
@@ -141,9 +143,9 @@ pub mod traits {
     fn triangle(&mut self) -> Self::Output {
       let mut angle = 0.0;
       let mut inc: f32 = 2.0 / (self.len() as f32 / 2.0);
-      for i in 0..self.len() {
-        if angle >= 1.0 || angle <= -1.0 { inc = inc * -1.0; }
-        self[i] = angle;
+      for sample in self.iter_mut() {
+        if angle >= 1.0 || angle <= -1.0 { inc *= -1.0; }
+        *sample = angle;
         angle += inc;
       }
       *self
@@ -153,8 +155,8 @@ pub mod traits {
     fn sawtooth(&mut self) -> Self::Output {
       let mut angle: f32 = 0.0;
       let inc: f32 = 2.0 / (self.len() as f32 - 1.0);
-      for i in 0..self.len() {
-        self[i] = angle - 1.0;
+      for sample in self.iter_mut() {
+        *sample = angle - 1.0;
         angle += inc;
       }
       *self
@@ -164,8 +166,8 @@ pub mod traits {
     fn phasor(&mut self) -> Self::Output {
       let mut angle: f32 = 0.0;
       let inc: f32 = 1.0 / (self.len() as f32 - 1.0);
-      for i in 0..self.len() {
-        self[i] = angle;
+      for sample in self.iter_mut() {
+        *sample = angle;
         angle += inc;
       }
       *self
@@ -175,8 +177,8 @@ pub mod traits {
     fn reverse_sawtooth(&mut self) -> Self::Output {
       let mut angle: f32 = 0.0;
       let inc: f32 = 2.0 / (self.len() as f32 - 1.0);
-      for i in 0..self.len() {
-        self[i] = angle + 1.0;
+      for sample in self.iter_mut() {
+        *sample = angle + 1.0;
         angle -= inc;
       }
       *self
@@ -185,18 +187,16 @@ pub mod traits {
     /// Create a complex waveform from amplitudes and phases of sine partials
     fn complex_sine<const M:usize>(&mut self, amps: [f32; M], phases: [f32; M]) -> Self::Output {
       let mut n: f32 = 1.0;
-      if amps.len() == phases.len() {
-        for i in 0..amps.len() {
-          let inc = TAU * n / self.len() as f32;
-          let mut angle = inc * self.len() as f32 * phases[i];
-          for j in 0..self.len() {
-            self[j] += angle.sin() * amps[i];
-            angle += inc;
-          }
-          n += 1.0;
+      for (amp, phase) in amps.iter().zip(phases.iter()) {
+        let inc = TAU * n / self.len() as f32;
+        let mut angle = inc * self.len() as f32 * phase;
+        for sample in self.iter_mut() {
+          *sample += angle.sin() * amp;
+          angle += inc;
         }
-        scale(self, -1.0f32, 1.0f32);
+        n += 1.0;
       }
+      scale(self, -1.0f32, 1.0f32);
       *self
     }
   }
@@ -208,8 +208,8 @@ pub mod traits {
     fn hanning(&mut self) -> Self::Output{
       let mut angle: f32 = 0.0;
       let inc: f32 = PI / (self.len() as f32);
-      for i in 0..self.len() {
-        self[i] = angle.sin().powf(2.0);
+      for sample in self.iter_mut() {
+        *sample = angle.sin().powf(2.0);
         angle += inc;
       }
       self.to_owned()
@@ -220,8 +220,8 @@ pub mod traits {
     fn phasor(&mut self) -> Self::Output {
       let mut angle: f32 = 0.0;
       let inc: f32 = 1.0 / (self.len() as f32 - 1.0);
-      for i in 0..self.len() {
-        self[i] = angle;
+      for sample in self.iter_mut() {
+        *sample = angle;
         angle += inc;
       }
       self.to_owned()
@@ -231,8 +231,8 @@ pub mod traits {
     fn sine(&mut self) -> Self::Output {
       let mut angle: f32 = 0.0;
       let inc: f32 = PI * 2.0 / self.len() as f32;
-      for i in 0..self.len() {
-        self[i] = angle.sin();
+      for sample in self.iter_mut() {
+        *sample = angle.sin();
         angle += inc;
       }
       self.to_owned()
@@ -241,9 +241,10 @@ pub mod traits {
     /// Square
     fn square(&mut self) -> Self::Output {
       let mut val = -1.0;
-      for i in 0..self.len() {
-        self[i] = val;
-        if self[i] == self.len() as f32/2.0-1.0 { val = 1.0; } 
+      let len = self.len();
+      for (i, sample) in self.iter_mut().enumerate() {
+        *sample = val;
+        if i == len/2 - 1 { val = 1.0; } 
       }
       self.to_owned()
     }
@@ -252,9 +253,9 @@ pub mod traits {
     fn triangle(&mut self) -> Self::Output {
       let mut angle = 0.0;
       let mut inc: f32 = 2.0 / (self.len() as f32 / 2.0);
-      for i in 0..self.len() {
-        if angle >= 1.0 || angle <= -1.0 { inc = inc * -1.0; }
-        self[i] = angle;
+      for sample in self.iter_mut() {
+        if angle >= 1.0 || angle <= -1.0 { inc *= -1.0; }
+        *sample = angle;
         angle += inc;
       }
       self.to_owned()
@@ -264,8 +265,8 @@ pub mod traits {
     fn sawtooth(&mut self) -> Self::Output {
       let mut angle: f32 = 0.0;
       let inc: f32 = 2.0 / (self.len() as f32 - 1.0);
-      for i in 0..self.len() {
-        self[i] = angle - 1.0;
+      for sample in self.iter_mut() {
+        *sample = angle - 1.0;
         angle += inc;
       }
       self.to_owned()
@@ -276,8 +277,8 @@ pub mod traits {
     fn reverse_sawtooth(&mut self) -> Self::Output {
       let mut angle: f32 = 0.0;
       let inc: f32 = 2.0 / (self.len() as f32 - 1.0);
-      for i in 0..self.len() {
-        self[i] = angle + 1.0;
+      for sample in self.iter_mut() {
+        *sample = angle + 1.0;
         angle -= inc;
       }
       self.to_owned()
@@ -286,18 +287,17 @@ pub mod traits {
     /// Create a complex waveform from amplitudes and phases of sine partials
     fn complex_sine<const M: usize> (&mut self, amps: [f32; M], phases: [f32; M]) -> Self::Output {
       let mut n: f32 = 1.0;
-      if amps.len() == phases.len() {
-        for i in 0..amps.len() {
-          let inc = PI * 2.0f32 * n / self.len() as f32;
-          let mut angle = inc * self.len() as f32 * phases[i];
-          for j in 0..self.len() {
-            self[j] += angle.sin() * amps[i];
-            angle += inc;
-          }
-          n += 1.0;
+      let len = self.len() as f32;
+      for (amp, phase) in amps.iter().zip(phases.iter()) {
+        let inc = PI * 2.0f32 * n / len;
+        let mut angle = inc * len * phase;
+        for sample in self.iter_mut() {
+          *sample += angle.sin() * amp;
+          angle += inc;
         }
-        scale(self, -1.0f32, 1.0f32);
+        n += 1.0;
       }
+      scale(self, -1.0f32, 1.0f32);
       self.to_owned()
     }
   }

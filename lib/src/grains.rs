@@ -29,7 +29,7 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE>
   pub fn new<const N:usize, const M: usize>(env_shape: &EnvType<N, M>, samplerate: f32) -> Self {
     // Buffer to hold recorded audio
     let buffer = vec![0.0; BUFSIZE];
-    let envelope = Envelope::new(&env_shape, samplerate);
+    let envelope = Envelope::new(env_shape, samplerate);
 
     let grains = std::array::from_fn(|_| {
       Token {
@@ -80,7 +80,11 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE>
         g.buf_position = pos;
         g.env_position = 0.0;
         g.rate         = rate;
-        g.duration     = calc_duration(self.env_size, self.sr_recip, 1.0/duration);
+        g.duration     = calc_duration(
+          self.env_size, 
+          self.sr_recip, 
+          1.0/duration
+        );
         g.active       = true;
       }
       // set grain to active
@@ -113,7 +117,7 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE>
   }
 
   pub fn update_envelope<const N: usize, const M: usize>(&mut self, env_shape: &EnvType<N, M>) {
-    self.envelope.new_shape(&env_shape, self.samplerate);
+    self.envelope.new_shape(env_shape, self.samplerate);
     self.env_size = self.envelope.len() as f32;
   }
 

@@ -1,4 +1,3 @@
-
 use rust_dsp::interpolation::*;
 use rust_dsp::wavetable::WaveTable;
 use simple_plot::plot;

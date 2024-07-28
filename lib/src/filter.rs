@@ -1,6 +1,5 @@
-use crate::dsp::signal::dcblock;
 use crate::buffer::Buffer;
-use crate::interpolation::interpolation::Interpolation;
+use crate::interpolation::Interpolation;
 
 pub struct Comb<const N: usize> {
   buffer: Buffer<N>,
@@ -381,12 +380,12 @@ pub mod biquad {
     }
 
     fn set_coeffs(&mut self, coeffs: [BiquadCoeffs; N]) {
-      for i in 0..N {
-        self.bank[i].a1 = coeffs[i].a1;
-        self.bank[i].a2 = coeffs[i].a2;
-        self.bank[i].b0 = coeffs[i].b0;
-        self.bank[i].b1 = coeffs[i].b1;
-        self.bank[i].b2 = coeffs[i].b2;
+      for (bank, c) in self.bank.iter_mut().zip(coeffs.iter()) {
+        bank.a1 = c.a1;
+        bank.a2 = c.a2;
+        bank.b0 = c.b0;
+        bank.b1 = c.b1;
+        bank.b2 = c.b2;
       }
     }
   }
@@ -401,12 +400,12 @@ pub mod biquad {
     }
 
     fn set_coeffs(&mut self, coeffs: [BiquadCoeffs; N]) {
-      for i in 0..N {
-        self.bank[i].a1 = coeffs[i].a1;
-        self.bank[i].a2 = coeffs[i].a2;
-        self.bank[i].b0 = coeffs[i].b0;
-        self.bank[i].b1 = coeffs[i].b1;
-        self.bank[i].b2 = coeffs[i].b2;
+      for (bank, c) in self.bank.iter_mut().zip(coeffs.iter()) {
+        bank.a1 = c.a1;
+        bank.a2 = c.a2;
+        bank.b0 = c.b0;
+        bank.b1 = c.b1;
+        bank.b2 = c.b2;
       }
     }
   }

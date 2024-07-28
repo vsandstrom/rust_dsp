@@ -5,4 +5,4 @@ members = [
   "interp_test"
 ]
 resolver = "2"
-
+default-run = "playground/src/main.rs"
