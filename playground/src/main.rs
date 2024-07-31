@@ -7,7 +7,15 @@ use std::{
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
 use rust_dsp::{
-  delay::{Delay, DelayTrait, FixedDelay}, dsp::buffer::traits::SignalVector, envelope::{BreakPoints, EnvType, Envelope}, grains::Granulator, interpolation::{Cubic, Linear}, polytable::PolyVector, trig::{Dust, Trigger}, waveshape::{hanning, traits::Waveshape}, wavetable::WaveTable
+  delay::{Delay, DelayTrait, FixedDelay}, 
+  dsp::buffer::traits::SignalVector,
+  envelope::{BreakPoints, EnvType, Envelope},
+  grains::Granulator,
+  interpolation::{Cubic, Linear},
+  polytable::PolyVector,
+  trig::{Dust, Trigger},
+  waveshape::traits::Waveshape,
+  wavetable::shared::WaveTable 
 };
 
 

@@ -1,5 +1,5 @@
 use rust_dsp::interpolation::*;
-use rust_dsp::wavetable::WaveTable;
+use rust_dsp::wavetable::shared::WaveTable;
 use simple_plot::plot;
 
 
