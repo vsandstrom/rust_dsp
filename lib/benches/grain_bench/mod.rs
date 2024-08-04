@@ -6,15 +6,31 @@ use rust_dsp::{
 
 use rand::{thread_rng, Rng};
 
-
-
-
 fn grain_old(og: &mut OldGranulator<32, 240000>) -> f32 {
-  og.play::<Linear, Linear>(0.5, 0.5, 1.0,  1.0)
-
+  let mut out = 0.0;
+  let mut trigger = 1.0;
+  for i in 0..256 {
+    out = og.play::<Linear, Linear>(0.5, 0.5, 1.0,  trigger);
+    if i % 64 == 0 {
+      trigger = 1.0;
+    } else {
+      trigger = 0.0;
+    }
+  }
+  out
 }
 fn grain_new(ng: &mut NewGranulator<32, 240000>) -> f32 {
-  ng.play::<Linear, Linear>(0.5, 0.5, 1.0, 0.1, 1.0)
+  let mut out = 0.0;
+  let mut trigger = 1.0;
+  for i in 0..256 {
+    out = ng.play::<Linear, Linear>(0.5, 0.5, 1.0, 0.1, trigger);
+    if i % 64 == 0 {
+      trigger = 1.0;
+    } else {
+      trigger = 0.0;
+    }
+  }
+  out
 }
 
 pub fn criterion_benchmark_grains(c: &mut Criterion) {

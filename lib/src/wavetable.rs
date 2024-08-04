@@ -117,10 +117,9 @@ pub mod shared {
 
   /// Wavetable that shares the table containing the wave representation.
   ///
-  /// Pretty slow compared to the other variants, matches the `owned` type only 
-  /// at small table sizes, <=128.
-  /// Actually pretty useless, and you should use the Arc-type if shared tables
-  /// are something you care about.
+  /// Performance lies between owned and Arc<RwLock>, and is preferred when
+  /// trying to keep allocated data at a minimum. Beware of stack overflow when
+  /// creating too many big arrays. 
   pub struct WaveTable {
     position: f32,
     samplerate: f32,
