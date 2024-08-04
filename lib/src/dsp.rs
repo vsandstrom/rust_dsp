@@ -1,5 +1,7 @@
 
 pub mod signal {
+  use core::f32::consts::FRAC_1_SQRT_2;
+
   pub fn clamp(signal: f32, bottom: f32, top: f32 ) -> f32 {
       f32::max(bottom, f32::min(signal, top))
   }
@@ -19,6 +21,28 @@ pub mod signal {
     map(&mut sample, -1.0, 1.0, 0.0, 1.0)
   }
 
+  /// calculates panning weights for stereo equal power panning.
+  pub fn pan_exp2(pan: f32) -> (f32, f32) {
+    let c = f32::cos(pan);
+    let s = f32::sin(pan);
+    (
+      match FRAC_1_SQRT_2 * (c + s) {
+        x if x < 0.0 => {0.0},
+        x            => { x }
+      },
+      match FRAC_1_SQRT_2 * (c - s) {
+        x if x < 0.0 => {0.0},
+        x            => { x }
+      }
+    )
+  }
+
+  pub fn pan_lin2(pan:f32) -> (f32, f32) {
+    match pan * 0.5 {
+      x if x < 0.0 => {(0.5 + x, 0.5 - x)},
+      x            => {(0.5 - x, 0.5 + x)}
+    }
+  }
 
   pub mod traits {
     use crate::dsp::signal::map;
