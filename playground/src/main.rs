@@ -74,11 +74,11 @@ fn main() -> anyhow::Result<()> {
     let env = Envelope::new(&shape, f_sample_rate);
     let gr_env: EnvType = EnvType::Vector(hann.clone().to_vec());
 
-    let mut lfo = WaveTable::from(f_sample_rate);
-    let mut dlfo = WaveTable::from(f_sample_rate);
-    let mut rlfo = WaveTable::from(f_sample_rate);
-    let mut tlfo = WaveTable::from(f_sample_rate);
-    let mut phasor = WaveTable::from(f_sample_rate);
+    let mut lfo      = WaveTable::from(f_sample_rate);
+    let mut dlfo     = WaveTable::from(f_sample_rate);
+    let mut rlfo     = WaveTable::from(f_sample_rate);
+    let mut tlfo     = WaveTable::from(f_sample_rate);
+    let mut phasor   = WaveTable::from(f_sample_rate);
     let mut poly = PolyVector::<8>::new(f_sample_rate);
     // let mut del = Delay::new(config.sample_rate.0 as usize * 2);
     let mut fix_l = FixedDelay::<96000>::new();
