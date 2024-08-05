@@ -1,6 +1,6 @@
 use crate::{
   vector::VectorOscillator,
-  wavetable::WaveTable,
+  wavetable::shared::WaveTable,
   envelope::Envelope,
   interpolation::Interpolation
 };
@@ -14,6 +14,22 @@ struct Token<T> {
 pub struct PolyTable<const VOICES: usize> {
   voices: [Token<WaveTable>; VOICES],
   next: usize,
+}
+
+impl<const VOICES: usize> Default for PolyTable<VOICES> {
+  fn default() -> Self {
+    let voices = std::array::from_fn(|_| {
+      Token{
+        voice: WaveTable::new(),
+        freq: 0.0,
+        env_pos: 0.0
+      }
+    });
+    Self {
+      voices,
+      next: 0,
+    }
+  }
 }
 
 impl<const VOICES: usize> PolyTable<VOICES> {
@@ -61,12 +77,7 @@ impl<const VOICES: usize> PolyTable<VOICES> {
 
 pub struct PolyVector<const VOICES: usize> {
   voices: [Token<VectorOscillator>; VOICES],
-  // voices: [simple::VectorOscillator; VOICES],
-  // freqs: [f32; VOICES],
   next: usize,
-  // env_pos: [f32; VOICES],
-  // samplerate: f32,
-  // sr_recip: f32
 }
 
 impl<const VOICES: usize> PolyVector<VOICES> {
@@ -87,7 +98,7 @@ impl<const VOICES: usize> PolyVector<VOICES> {
   pub fn play<const LENGTH: usize, OscInterpolation, EnvInterpolation>(
     &mut self,
     note: Option<f32>,
-    tables: &Vec<[f32; LENGTH]>,
+    tables: &[[f32; LENGTH]],
     env: &Envelope,
     positions: &[f32; VOICES],
     phases: &[f32; VOICES]

@@ -1,7 +1,15 @@
 [package]
 name = "rust_dsp"
-version = "0.1.1"
+version = "0.1.11"
 edition = "2021"
 
 [dependencies]
 rand = "0.8.5"
+bitvec = "1.0.1"
+
+[dev-dependencies]
+criterion = { version = "0.5", features = [ "html_reports" ] }
+
+[[bench]]
+name = "bench" 
+harness = false

@@ -18,7 +18,6 @@ impl<const N: usize, const M: usize> EnvType<N,M> {
     match self {
       EnvType::BreakPoint(brk) => Some(brk),
       _ => None
-        
     }
   }
 
@@ -108,6 +107,10 @@ impl Envelope {
     self.env_length
   }
 
+  pub fn is_empty(&self) -> bool {
+    self.env_length > 0
+  }
+
   pub fn read<T: Interpolation>(&self, position: f32) -> f32 {
     T::interpolate(position, &self.buffer, self.env_length)
   }
@@ -117,16 +120,13 @@ impl Envelope {
   }
 
   pub fn play<T: Interpolation>(&mut self, trigger: f32) -> f32 {
-    let mut out = 0.0;
     if trigger >= 1.0 {
       self.buf_position = 0.0;
+    } 
+    let mut out = 0.0;
+    if (self.buf_position as usize) < self.len() {
       out = self.read::<T>(self.buf_position);
       self.buf_position += self.speed;
-    } else {
-      if self.running() {
-        out = self.read::<T>(self.buf_position);
-        self.buf_position += self.speed;
-      }
     }
     out
   }

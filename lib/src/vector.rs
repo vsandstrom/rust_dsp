@@ -1,5 +1,10 @@
 use crate::interpolation::Interpolation;
 
+/// Interpolating oscillator
+///
+/// Linearly interpolating through an array tables. 
+/// Internaly the tables use the user-supplied method 
+/// of type `trait Interpolation`
 pub struct VectorOscillator {
   table_pos: f32,
   samplerate: f32,
@@ -50,7 +55,7 @@ mod tests {
   #[test]
   fn one_table() {
     const SIZE: usize = 512;
-    let tables = [ [0.0; SIZE].sine() ];
+    let tables = [[0.0; SIZE].sine()];
     let mut vc = VectorOscillator::new(48000.0);
     let mut shape = vec!();
     for i in 0..16 {

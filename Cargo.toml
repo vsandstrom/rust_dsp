@@ -1,7 +1,8 @@
 [workspace]
 members = [
   "lib",
-  "playground"
+  "playground",
+  "interp_test"
 ]
 resolver = "2"
-
+default-run = "playground/src/main.rs"

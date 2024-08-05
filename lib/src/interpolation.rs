@@ -38,7 +38,7 @@ impl Interpolation for Cubic {
 /// Cosine interpolation - read position is interpolated between 4 points
 impl Interpolation for Cosine {
   fn interpolate(position: f32, buffer: &[f32], buffer_size: usize) -> f32 {
-    let diff = position - position.floor();
+    let diff = position.fract();
     let a1 = position as usize;
     let b1 = match a1 + 1 >= buffer_size {true => (a1+1) % buffer_size, false => a1+1};
     let bw = (1.0 - f32::cos(diff*PI)) / 2.0;

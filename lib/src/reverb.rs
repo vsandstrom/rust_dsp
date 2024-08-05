@@ -1,5 +1,5 @@
 use crate::filter::{Comb, Filter};
-use crate::interpolation::interpolation::Interpolation;
+use crate::interpolation::Interpolation;
 
 pub struct SchroederVerb {
   c1: Comb<4799>,
@@ -105,69 +105,70 @@ impl Verb for ChownVerb {
 }
 
 
-pub struct VikVerb {
-  matrix: [f32; 5],
-  ccoeffs: [f32; 3],
-  diff1: Comb<437>,  // 3.12 m
-  diff2: Comb<452>,  // 3.22 m
-  diff3: Comb<731>,  // 5.22 m
-  diff4: Comb<921>,  // 6.58 m
-  diff5: Comb<1109>, // 7.92 m
-  c1: Comb<2399>,
-  c2: Comb<2809>,
-  c3: Comb<3301>,
-  a1: Comb<11>,
-  a2: Comb<39>,
-  a3: Comb<47>,
-  bounce: f32,
-  early_reflections: f32,
 
-}
-
-impl Verb for VikVerb {
-  fn new(samplerate: f32) -> Self {
-    let diff1 = Comb::new(samplerate, 0.95, 0.05);
-    let diff3 = Comb::new(samplerate, 0.95, 0.05);
-    let diff2 = Comb::new(samplerate, 0.95, 0.05);
-    let diff4 = Comb::new(samplerate, 0.95, 0.05);
-    let diff5 = Comb::new(samplerate, 0.95, 0.05);
-    
-    let c1 = Comb::new(samplerate, 0.95, 0.0);
-    let c2 = Comb::new(samplerate, 0.95, 0.0);
-    let c3 = Comb::new(samplerate, 0.95, 0.0);
-    
-    let a1 = Comb::new(samplerate, 0.7, 0.7);
-    let a2 = Comb::new(samplerate, 0.7, 0.7);
-    let a3 = Comb::new(samplerate, 0.7, 0.7);
-    Self{
-      matrix: [0.0; 5],
-      diff1, diff2, diff3, diff4, diff5,
-      bounce: 0.4,
-      early_reflections: 0.2,
-      c1, c2, c3, 
-      ccoeffs: [0.7301, 0.609, 0.504],
-      a1, a2, a3,
-    }
-  }
-
-  fn process<T: Interpolation>(&mut self, sample: f32) -> f32 {
-    self.matrix[0] = self.diff1.process::<T>(sample + self.matrix[3] * self.bounce);
-    self.matrix[1] = self.diff2.process::<T>(sample + self.matrix[0] * self.bounce);
-    self.matrix[2] = self.diff3.process::<T>(sample + self.matrix[1] * self.bounce);
-    self.matrix[3] = self.diff4.process::<T>(sample + self.matrix[4] * self.bounce);
-    self.matrix[4] = self.diff5.process::<T>(sample + self.matrix[2] * self.bounce);
-    let mut out = self.matrix.iter().sum::<f32>() * 0.2;
-    let early = out;
-    out += self.c1.process::<T>(out) * self.ccoeffs[0];
-    out += self.c2.process::<T>(out) * self.ccoeffs[1];
-    out += self.c3.process::<T>(out) * self.ccoeffs[2];
-
-    out = self.a1.process::<T>(out);
-    out = self.a2.process::<T>(out);
-    out = self.a3.process::<T>(out);
-    out + early * self.early_reflections
-  }
-}
+// pub struct VikVerb {
+//   matrix: [f32; 5],
+//   ccoeffs: [f32; 3],
+//   diff1: Comb<437>,  // 3.12 m
+//   diff2: Comb<452>,  // 3.22 m
+//   diff3: Comb<731>,  // 5.22 m
+//   diff4: Comb<921>,  // 6.58 m
+//   diff5: Comb<1109>, // 7.92 m
+//   c1: Comb<2399>,
+//   c2: Comb<2809>,
+//   c3: Comb<3301>,
+//   a1: Comb<11>,
+//   a2: Comb<39>,
+//   a3: Comb<47>,
+//   bounce: f32,
+//   early_reflections: f32,
+//
+// }
+//
+// impl Verb for VikVerb {
+//   fn new(samplerate: f32) -> Self {
+//     let diff1 = Comb::new(samplerate, 0.95, 0.05);
+//     let diff3 = Comb::new(samplerate, 0.95, 0.05);
+//     let diff2 = Comb::new(samplerate, 0.95, 0.05);
+//     let diff4 = Comb::new(samplerate, 0.95, 0.05);
+//     let diff5 = Comb::new(samplerate, 0.95, 0.05);
+//     
+//     let c1 = Comb::new(samplerate, 0.95, 0.0);
+//     let c2 = Comb::new(samplerate, 0.95, 0.0);
+//     let c3 = Comb::new(samplerate, 0.95, 0.0);
+//     
+//     let a1 = Comb::new(samplerate, 0.7, 0.7);
+//     let a2 = Comb::new(samplerate, 0.7, 0.7);
+//     let a3 = Comb::new(samplerate, 0.7, 0.7);
+//     Self{
+//       matrix: [0.0; 5],
+//       diff1, diff2, diff3, diff4, diff5,
+//       bounce: 0.4,
+//       early_reflections: 0.2,
+//       c1, c2, c3, 
+//       ccoeffs: [0.7301, 0.609, 0.504],
+//       a1, a2, a3,
+//     }
+//   }
+//
+//   fn process<T: Interpolation>(&mut self, sample: f32) -> f32 {
+//     self.matrix[0] = self.diff1.process::<T>(sample + self.matrix[3] * self.bounce);
+//     self.matrix[1] = self.diff2.process::<T>(sample + self.matrix[0] * self.bounce);
+//     self.matrix[2] = self.diff3.process::<T>(sample + self.matrix[1] * self.bounce);
+//     self.matrix[3] = self.diff4.process::<T>(sample + self.matrix[4] * self.bounce);
+//     self.matrix[4] = self.diff5.process::<T>(sample + self.matrix[2] * self.bounce);
+//     let mut out = self.matrix.iter().sum::<f32>() * 0.2;
+//     let early = out;
+//     out += self.c1.process::<T>(out) * self.ccoeffs[0];
+//     out += self.c2.process::<T>(out) * self.ccoeffs[1];
+//     out += self.c3.process::<T>(out) * self.ccoeffs[2];
+//
+//     out = self.a1.process::<T>(out);
+//     out = self.a2.process::<T>(out);
+//     out = self.a3.process::<T>(out);
+//     out + early * self.early_reflections
+//   }
+// }
 
 pub trait Verb {
   fn new(samplerate: f32) -> Self;
