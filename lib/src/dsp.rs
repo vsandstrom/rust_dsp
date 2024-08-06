@@ -1,6 +1,5 @@
-
 pub mod signal {
-  use core::f32::consts::FRAC_1_SQRT_2;
+  use core::f32::consts::{FRAC_1_SQRT_2, FRAC_PI_4};
 
   pub fn clamp(signal: f32, bottom: f32, top: f32 ) -> f32 {
       f32::max(bottom, f32::min(signal, top))
@@ -23,17 +22,12 @@ pub mod signal {
 
   /// calculates panning weights for stereo equal power panning.
   pub fn pan_exp2(pan: f32) -> (f32, f32) {
-    let c = f32::cos(pan);
-    let s = f32::sin(pan);
+    let p = pan * FRAC_PI_4;
+    let c = f32::cos(p);
+    let s = f32::sin(p);
     (
-      match FRAC_1_SQRT_2 * (c + s) {
-        x if x < 0.0 => {0.0},
-        x            => { x }
-      },
-      match FRAC_1_SQRT_2 * (c - s) {
-        x if x < 0.0 => {0.0},
-        x            => { x }
-      }
+      FRAC_1_SQRT_2 * (c + s),
+      FRAC_1_SQRT_2 * (c - s)
     )
   }
 
@@ -259,3 +253,28 @@ pub mod math {
     (samplerate / (343.0 / wavelength)) as usize
   }
 }
+
+#[cfg(test)]
+mod test {
+  use crate::dsp::signal::pan_exp2;
+
+  #[test]
+  fn pan_center() {
+    assert_eq!(std::f32::consts::FRAC_1_SQRT_2, pan_exp2(0.0).0);
+    assert_eq!(std::f32::consts::FRAC_1_SQRT_2, pan_exp2(0.0).1);
+  }
+
+  #[test]
+  fn pan_left() {
+    assert!((pan_exp2(1.0).0 - 1.0).abs() < f32::EPSILON);
+    assert_eq!(0.0, pan_exp2(1.0).1);
+  }
+
+  #[test]
+  fn pan_right() {
+    assert_eq!(0.0, pan_exp2(-1.0).0);
+    assert!((pan_exp2(-1.0).1 - 1.0).abs() < f32::EPSILON);
+  }
+}
+
+
