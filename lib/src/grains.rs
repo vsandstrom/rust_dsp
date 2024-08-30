@@ -77,10 +77,13 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE>
 
     // TRIGGER GRAIN 
     if trigger >= 1.0 && !self.grains[self.next_grain].active { 
-      let pos = { 
-        if jitter < 0.0 { (1.0 - jitter) + position } 
-        else            { jitter + position }
-      }.fract() * self.buf_size;
+      let pos = (1.0 + jitter + position).fract() * self.buf_size;
+
+
+      // let pos = { 
+      //   if jitter < 0.0 { (1.0 - jitter) + position } 
+      //   else            { jitter + position }
+      // }.fract() * self.buf_size;
 
       // normalize buffer position
       // let pos = match (position + jitter) {
