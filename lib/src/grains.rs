@@ -85,7 +85,7 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE>
 
       // normalize buffer position
       let pos = match (position + 1.0 + jitter).fract() {
-        x if x < 0.0 => { (1.0 + x) * self.buf_size },
+        x if x < 0.0 => { (1.0 + x).fract() * self.buf_size },
         x            => { x  * self.buf_size }
       };
       unsafe {
