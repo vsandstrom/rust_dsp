@@ -219,7 +219,7 @@ pub mod math {
 
   /// Translate midi-number to frequency
   #[inline]
-  pub fn mtof(midi: i32, tuning: f32) -> f32 {
+  pub fn mtof(midi: u8, tuning: f32) -> f32 {
     let exp: f32 = (midi - 69) as f32 / 12.0;
     tuning * f32::powf(2.0, exp)
   }
@@ -228,6 +228,11 @@ pub mod math {
   #[inline]
   pub fn ftom(freq: f32, tuning: f32) -> u8 {
     ((12.0 * f32::log10(freq / tuning) / f32::log10(2f32)) + 69.0).round() as u8
+  }
+
+  /// Translate midi-number to playback rate
+  pub fn mtor(midi: u8) -> f32 {
+    f32::powf(2.0, (midi as f32 - 36.0) / 12.0)
   }
 
   // Translate decibel to linear volume
