@@ -65,42 +65,9 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE>
 
 
   #[inline]
-  pub fn play<BufferInterpolation, EnvelopeInterpolation>( &mut self,
-    position: f32,
-    duration: f32,
-    rate: f32,
-    jitter: f32,
-    trigger:f32
-  ) -> f32
+  pub fn play<BufferInterpolation, EnvelopeInterpolation>(&mut self) -> f32
   where BufferInterpolation: Interpolation,
         EnvelopeInterpolation: Interpolation {
-
-    // TRIGGER GRAIN 
-    if trigger >= 1.0 && !self.grains[self.next_grain].active { 
-      // normalize buffer position
-      let pos = match (position + jitter).fract() {
-        x if x < 0.0 => { (1.0 + x) * self.buf_size },
-        x            => { x  * self.buf_size }
-      };
-      unsafe {
-        // set parameters for grain
-        let g = self.grains.get_unchecked_mut(self.next_grain);
-        g.buf_position = pos;
-        g.env_position = 0.0;
-        g.rate         = rate;
-        g.duration     = calc_duration(
-          self.env_size, 
-          self.sr_recip, 
-          1.0/duration
-        );
-        g.active       = true;
-      }
-      // set grain to active
-      // increment and wait for next trigger
-      self.next_grain = (self.next_grain + 1) % NUMGRAINS;
-    }
-
-
     let mut out = 0.0;
     for g in self.grains.iter_mut() {
       // if the grain has reached the envelopes end, deactivate
@@ -256,38 +223,9 @@ pub mod stereo {
     rate: f32,
     pan: f32,
     jitter: f32,
-    trigger:f32
   ) -> &[f32; 2]
   where BufferInterpolation: Interpolation,
         EnvelopeInterpolation: Interpolation {
-
-    // TRIGGER GRAIN 
-    if trigger >= 1.0 && !self.grains[self.next_grain].active { 
-      // normalize buffer position
-      let pos = match (position + jitter).fract() {
-        x if x < 0.0 => { (1.0 + x) * self.buf_size },
-        x            => { x  * self.buf_size }
-      };
-      unsafe {
-        // set parameters for grain
-        let g = self.grains.get_unchecked_mut(self.next_grain);
-        g.buf_position = pos;
-        g.env_position = 0.0;
-        g.rate         = rate;
-        g.pan          = pan_exp2(pan);
-        g.duration     = calc_duration(
-          self.env_size, 
-          self.sr_recip, 
-          1.0/duration
-        );
-        g.active       = true;
-      }
-      // set grain to active
-      // increment and wait for next trigger
-      self.next_grain = (self.next_grain + 1) % NUMGRAINS;
-    }
-
-
     self.out = [0.0;2];
     for g in self.grains.iter_mut() {
       // if the grain has reached the envelopes end, deactivate
