@@ -241,9 +241,9 @@ pub mod stereo {
   pub fn trigger_new(&mut self,
     position: f32,
     duration: f32,
+    pan: f32,
     rate: f32,
     jitter: f32,
-    pan: f32
   ) -> bool {
     if let Some(g) = self.grains.get_mut(self.next_grain) {
       // guard for triggering already active grain
