@@ -217,13 +217,7 @@ pub mod stereo {
 
 
   #[inline]
-  pub fn play<BufferInterpolation, EnvelopeInterpolation>( &mut self,
-    position: f32,
-    duration: f32,
-    rate: f32,
-    pan: f32,
-    jitter: f32,
-  ) -> &[f32; 2]
+  pub fn play<BufferInterpolation, EnvelopeInterpolation>( &mut self) -> &[f32; 2]
   where BufferInterpolation: Interpolation,
         EnvelopeInterpolation: Interpolation {
     self.out = [0.0;2];
