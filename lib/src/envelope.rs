@@ -196,6 +196,111 @@ impl Clone for Envelope {
 
 }
 
+pub mod new_env {
+  pub struct BreakPoint {
+    pub value: f32,
+    pub duration: f32,
+    pub curve: Option<f32>
+  }
+
+  pub enum Reset {
+    /// creates discontinuities, snaps to first value in envelope.
+    HARD,
+    /// handles retriggering without discontinuities, uses previous value
+    /// and next segment to calculate a new trajectory.
+    SOFT
+  }
+
+  pub struct Envelope<const N: usize> {
+    breakpoints: [BreakPoint; N],
+    counter: f32,
+    segment: usize,
+    steps: usize,
+    inc: f32,
+    previous_value: f32,
+    samplerate: f32,
+    rate: f32,
+    reset: Reset
+  }
+
+  impl<const N: usize> Envelope<N> {
+    /// Create a new Envelope, only if the number of breakpoints are at least 2.
+    pub fn new(breakpoints: [BreakPoint; N], samplerate: f32) -> Result<Self, String> {
+      // the breakpoint array needs to at least 2, otherwise there are no duration to 
+      // travel between
+      if N < 2 { return Err("Breakpoints need to be at least 2 items long".to_string()) }
+      Ok(Self { 
+        breakpoints, 
+        counter: 0.0,
+        segment: 0,
+        steps: 0,
+        inc: 0.0,
+        previous_value: 0.0, 
+        samplerate, 
+        rate: 1.0,
+        reset: Reset::HARD
+      })
+    }
+
+    /// Trigger or reset envelope
+    #[inline]
+    pub fn trigger(&mut self) {
+      match self.reset {
+        Reset::HARD => {
+          // consume first value, duration and curve is disregarded.
+          self.previous_value = self.breakpoints.first().unwrap().value;
+          self.segment = 0;
+        },
+        Reset::SOFT => { 
+          if self.previous_value == 0.0 {
+            self.previous_value = self.breakpoints.first().unwrap().value;
+          }
+          self.segment = 0; 
+        }
+      }
+    }
+
+    /// generate next sample.
+    #[inline]
+    pub fn play(&mut self) -> f32 {
+      match self.breakpoints.get(self.segment) {
+        // step through each segment
+        Some(bkp) => {
+          if self.segment == 0 || self.counter >= self.steps as f32 {
+            self.steps = (bkp.duration * self.samplerate) as usize;
+            let angle = self.previous_value + bkp.value;
+            self.inc = angle / self.steps as f32;
+            // reset couter and step into next segment
+            self.segment += 1;
+            self.counter = 0.0;
+            self.previous_value
+          } else {
+            // increment value and return counter
+            self.previous_value += self.inc;
+            self.counter += self.rate;
+            self.previous_value
+          }
+        },
+        // if there are no more segments
+        None => { 0.0 } 
+      }
+    }
+
+    #[inline]
+    pub fn set_reset_type(&mut self, reset_type: Reset) {
+      self.reset = reset_type;
+    }
+  
+
+    // fn calc_segment(&self, index: usize) -> (usize, f32) {
+    //   let steps = (bkp.duration * self.samplerate) as u32;
+    //   let angle = self.previous_value + bkp.value;
+    //   let inc = angle / steps as f32;
+    // }
+
+  }
+}
+
 #[cfg(test)]
 mod tests {
 

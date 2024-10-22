@@ -204,6 +204,8 @@ pub mod buffer {
 }
 
 pub mod math {
+    use std::f32::consts::PI;
+
   /// Find next pow of two for quick wrap
   #[inline]
   pub const fn next_pow2(size: usize) -> usize {
@@ -219,21 +221,27 @@ pub mod math {
 
   /// Translate midi-number to frequency
   #[inline]
-  pub fn mtof(midi: u8, tuning: f32) -> f32 {
+  pub fn midi_to_freq(midi: u8, tuning: f32) -> f32 {
     let exp: f32 = (midi - 69) as f32 / 12.0;
     tuning * f32::powf(2.0, exp)
   }
 
   /// Translate frequency to midi-number
   #[inline]
-  pub fn ftom(freq: f32, tuning: f32) -> u8 {
+  pub fn freq_to_midi(freq: f32, tuning: f32) -> u8 {
     ((12.0 * f32::log10(freq / tuning) / f32::log10(2f32)) + 69.0).round() as u8
   }
 
   /// Translate midi-number to playback rate
-  pub fn mtor(midi: u8) -> f32 {
+  pub fn midi_to_rate(midi: u8) -> f32 {
     f32::powf(2.0, (midi as f32 - 36.0) / 12.0)
   }
+
+  pub fn hz_to_radian(hz: f32, samplerate: f32) -> f32 {
+    2.0 * PI * hz * (1.0 / samplerate)
+  }
+
+
 
   // Translate decibel to linear volume
   #[allow(non_snake_case)]

@@ -1,6 +1,7 @@
 use crate::envelope::{EnvType, Envelope};
 use crate::interpolation::Interpolation;
 
+
 pub trait GrainTrait {
   fn record(&mut self, sample: f32) -> Option<f32>;
   fn update_envelope<const N: usize, const M: usize>(&mut self, env_shape: &EnvType<N, M>);
@@ -95,7 +96,7 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE>
       // guard for triggering already active grain
       if g.active { return false }
       // set parameters for grain
-      g.buf_position = wrap_position(position, jitter, self.buf_size);
+      g.buf_position = wrap_position(position + jitter, self.buf_size);
       g.env_position = 0.0;
       g.rate         = rate;
       g.duration     = calc_duration(
@@ -114,8 +115,8 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE>
 }
   
 #[inline]
-fn wrap_position(position: f32, jitter: f32, bufsize: f32) -> f32 {
-  match (position + jitter).fract() {
+fn wrap_position(position: f32, bufsize: f32) -> f32 {
+  match position.fract() {
     x if x < 0.0 => { (1.0 + x) * bufsize },
     x            => { x  * bufsize }
   }
@@ -249,7 +250,7 @@ pub mod stereo {
       // guard for triggering already active grain
       if g.active { return false }
       // set parameters for grain
-      g.buf_position = wrap_position(position, jitter, self.buf_size);
+      g.buf_position = wrap_position(position + jitter, self.buf_size);
       g.env_position = 0.0;
       g.rate         = rate;
       g.pan          = pan_exp2(pan);
