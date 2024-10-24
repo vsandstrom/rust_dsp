@@ -14,7 +14,7 @@ pub struct Dust {
 pub trait Trigger { 
   fn new(samplerate: f32) -> Self;
   fn play(&mut self, duration: f32) -> f32; 
-  fn bind(&mut self, duration: f32, func: &dyn Fn());
+  fn bind(&mut self, duration: f32, func: &mut dyn Fn());
   fn set_samplerate(&mut self, samplerate: f32);
 
 }
@@ -34,7 +34,7 @@ impl Trigger for Impulse {
     0.0
   }
 
-  fn bind(&mut self, duration: f32, func: &dyn Fn()) {
+  fn bind(&mut self, duration: f32, func: &mut dyn Fn()) {
     if self.counter >= (self.duration * self.samplerate) as u32 {
       self.duration = duration;
       self.counter = 0;
@@ -65,7 +65,7 @@ impl Trigger for Dust {
     1.0
   }
 
-  fn bind(&mut self, duration: f32, func: &dyn Fn()) {
+  fn bind(&mut self, duration: f32, func: &mut dyn Fn()) {
     if self.counter < (self.duration * self.samplerate) as u32 {
       self.counter += 1;
     }
