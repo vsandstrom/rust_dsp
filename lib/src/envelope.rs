@@ -220,6 +220,8 @@ pub mod new_env {
     previous_value: f32,
     samplerate: f32,
     rate: f32,
+    playing: bool,
+    looping: bool,
     reset: Reset
   }
 
@@ -238,6 +240,8 @@ pub mod new_env {
         previous_value: 0.0, 
         samplerate, 
         rate: 1.0,
+        playing: false,
+        looping: false,
         reset: Reset::HARD
       })
     }
@@ -250,12 +254,14 @@ pub mod new_env {
           // consume first value, duration and curve is disregarded.
           self.previous_value = self.breakpoints.first().unwrap().value;
           self.segment = 0;
+          self.playing = true;
         },
         Reset::SOFT => { 
           if self.previous_value == 0.0 {
             self.previous_value = self.breakpoints.first().unwrap().value;
           }
           self.segment = 0; 
+          self.playing = true;
         }
       }
     }
@@ -263,26 +269,47 @@ pub mod new_env {
     /// generate next sample.
     #[inline]
     pub fn play(&mut self) -> f32 {
-      match self.breakpoints.get(self.segment) {
-        // step through each segment
-        Some(bkp) => {
-          if self.segment == 0 || self.counter >= self.steps as f32 {
-            self.steps = (bkp.duration * self.samplerate) as usize;
-            let angle = self.previous_value + bkp.value;
-            self.inc = angle / self.steps as f32;
-            // reset couter and step into next segment
-            self.segment += 1;
-            self.counter = 0.0;
-            self.previous_value
-          } else {
-            // increment value and return counter
-            self.previous_value += self.inc;
-            self.counter += self.rate;
-            self.previous_value
-          }
-        },
-        // if there are no more segments
-        None => { 0.0 } 
+      if self.playing {
+        match self.breakpoints.get(self.segment) {
+          // step through each segment
+          Some(bkp) => {
+            if self.segment == 0 || self.counter >= self.steps as f32 {
+              self.steps = (bkp.duration * self.samplerate) as usize;
+              let angle = bkp.value - self.previous_value;
+              self.inc = angle / self.steps as f32;
+              // reset couter and step into next segment
+              self.segment += 1;
+              self.counter = 0.0;
+              self.previous_value
+            } else {
+              // increment value and counter, return new value
+              self.previous_value += self.inc;
+              self.counter += self.rate;
+              self.previous_value
+            }
+          },
+          // if there are no more segments
+          None => { 
+            if self.counter >= self.steps as f32 { 
+              if self.looping {
+                self.previous_value = self.breakpoints.first().unwrap().value;
+                self.segment = 0;
+              } else {
+                self.playing = false;
+              }
+              0.0
+            }
+            else {
+              // Handle the tail of the last segment
+              self.previous_value += self.inc;
+              self.counter += self.rate;
+              self.previous_value
+            }
+          } 
+        }
+      }
+      else {
+        0.0
       }
     }
 
@@ -290,8 +317,12 @@ pub mod new_env {
     pub fn set_reset_type(&mut self, reset_type: Reset) {
       self.reset = reset_type;
     }
-  
 
+    #[inline]
+    pub fn set_loopable(&mut self, loopable: bool) {
+      self.looping = loopable;
+    }
+  
     // fn calc_segment(&self, index: usize) -> (usize, f32) {
     //   let steps = (bkp.duration * self.samplerate) as u32;
     //   let angle = self.previous_value + bkp.value;
