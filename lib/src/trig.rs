@@ -16,7 +16,6 @@ pub trait Trigger {
   fn play(&mut self, duration: f32) -> f32; 
   fn bind(&mut self, duration: f32, func: &mut impl FnMut());
   fn set_samplerate(&mut self, samplerate: f32);
-
 }
 
 impl Trigger for Impulse {
