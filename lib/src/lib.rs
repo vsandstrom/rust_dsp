@@ -11,6 +11,7 @@ pub mod polytable;
 pub mod delay;
 pub mod filter;
 pub mod reverb;
+pub mod midibitfield;
 // pub mod karplus;
 pub mod noise;
 #[allow(non_snake_case)]
