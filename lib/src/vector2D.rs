@@ -1,6 +1,6 @@
 use crate::interpolation::Interpolation;
 use core::ops::Add;
-use std::{f32::consts::SQRT_2, iter::Sum, ops::AddAssign};
+use std::{f32::consts::SQRT_2, ops::AddAssign};
 
 
 #[derive(Clone, Copy)]
@@ -66,14 +66,14 @@ impl VectorOscillator2D {
   ///
   /// ```
   /// // ex:
-  /// // setup
-  /// const SIZE: usize = 512;
-  /// let osc = VectorOscillator2D::new(48000.0, (0.0,0.0).into());
-  /// let tables = [Table2D{(1.0, 3.5).into(), [0.0, 512].sine()}];
-  /// // constant size of table, &impl Interpolation
-  /// let sample = osc.play::<SIZE, Linear>(&tables, 100.0, 2.5, 0.0);
-  /// ```
-  ///
+  // // setup
+  // const SIZE: usize = 512;
+  // let osc = VectorOscillator2D::new(48000.0, (0.0,0.0).into());
+  // let tables = [Table2D{(1.0, 3.5).into(), [0.0, 512].sine()}];
+  // // constant size of table, &impl Interpolation
+  // let sample = osc.play::<SIZE, Linear>(&tables, 100.0, 2.5, 0.0);
+  // ```
+  //
   pub fn play<const LENGTH: usize, T: Interpolation>(&mut self,
     tables: &[Table2D<LENGTH>],
     frequency: f32, 
