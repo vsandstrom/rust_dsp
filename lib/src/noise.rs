@@ -8,7 +8,6 @@ pub struct Noise {
   samplerate: f32,
   sr_recip: f32,
 }
-
 impl Noise {
   pub fn play(&mut self, duration: f32) -> f32 {
     self.counter += 1;

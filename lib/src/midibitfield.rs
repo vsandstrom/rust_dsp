@@ -101,7 +101,7 @@ use super::*;
   fn error_128() {
     let mut bm = MidiBitField::default();
     let x = bm.add(128);
-    assert!(x.is_err(), )
+    assert!(x.is_err())
   }
 
   #[test]
@@ -109,7 +109,7 @@ use super::*;
     let mut bm = MidiBitField::default();
     bm.add(2).unwrap();
 
-    assert_eq!("0b100", bm.repr());
+    assert_eq!("100", bm.repr());
   }
 
 }
