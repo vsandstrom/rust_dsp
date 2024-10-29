@@ -1,8 +1,8 @@
-use criterion::{criterion_group, Criterion};
+use criterion::Criterion;
 use crate::old_granular::Granulator as OldGranulator;
 use rust_dsp::{
   buffer::Buffer, 
-  envelope::{BreakPoints, EnvType, Envelope},
+  envelope::{EnvType, Envelope},
   grains::{
     Granulator as NewGranulator, 
     GrainTrait,
@@ -29,13 +29,10 @@ fn grain_old(og: &mut OldGranulator<32, 240000>) -> f32 {
 }
 fn grain_new(ng: &mut NewGranulator<32, 240000>) -> f32 {
   let mut out = 0.0;
-  let mut trigger = 1.0;
   for i in 0..256 {
-    out = ng.play::<Linear, Linear>(0.5, 0.5, 1.0, 0.1, trigger);
+    out = ng.play::<Linear, Linear>();
     if i % 64 == 0 {
-      trigger = 1.0;
-    } else {
-      trigger = 0.0;
+      ng.trigger_new(0.5, 0.5, 1.0, 0.1);
     }
   }
   out
@@ -43,15 +40,12 @@ fn grain_new(ng: &mut NewGranulator<32, 240000>) -> f32 {
 
 fn grain_stereo(sg: &mut StereoGranulator<32, 240000>) -> f32 {
   let mut out = 0.0;
-  let mut trigger = 1.0;
   for i in 0..128 {
-    for sample in sg.play::<Linear, Linear>(0.5, 0.5, 1.0, 0.0, 0.1, trigger) {
+    for sample in sg.play::<Linear, Linear>() {
       out = *sample
     }
     if i % 32 == 0 {
-      trigger = 1.0;
-    } else {
-      trigger = 0.0;
+      sg.trigger_new(0.5, 0.5, 0.0, 1.0, 0.0);
     }
   }
   out

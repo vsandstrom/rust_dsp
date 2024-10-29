@@ -1,6 +1,5 @@
-
 pub mod signal {
-  use core::f32::consts::FRAC_1_SQRT_2;
+  use core::f32::consts::{FRAC_1_SQRT_2, FRAC_PI_4};
 
   pub fn clamp(signal: f32, bottom: f32, top: f32 ) -> f32 {
       f32::max(bottom, f32::min(signal, top))
@@ -23,17 +22,12 @@ pub mod signal {
 
   /// calculates panning weights for stereo equal power panning.
   pub fn pan_exp2(pan: f32) -> (f32, f32) {
-    let c = f32::cos(pan);
-    let s = f32::sin(pan);
+    let p = pan * FRAC_PI_4;
+    let c = f32::cos(p);
+    let s = f32::sin(p);
     (
-      match FRAC_1_SQRT_2 * (c + s) {
-        x if x < 0.0 => {0.0},
-        x            => { x }
-      },
-      match FRAC_1_SQRT_2 * (c - s) {
-        x if x < 0.0 => {0.0},
-        x            => { x }
-      }
+      FRAC_1_SQRT_2 * (c + s),
+      FRAC_1_SQRT_2 * (c - s)
     )
   }
 
@@ -210,6 +204,8 @@ pub mod buffer {
 }
 
 pub mod math {
+    use std::f32::consts::PI;
+
   /// Find next pow of two for quick wrap
   #[inline]
   pub const fn next_pow2(size: usize) -> usize {
@@ -225,16 +221,27 @@ pub mod math {
 
   /// Translate midi-number to frequency
   #[inline]
-  pub fn mtof(midi: i32, tuning: f32) -> f32 {
+  pub fn midi_to_freq(midi: u8, tuning: f32) -> f32 {
     let exp: f32 = (midi - 69) as f32 / 12.0;
     tuning * f32::powf(2.0, exp)
   }
 
   /// Translate frequency to midi-number
   #[inline]
-  pub fn ftom(freq: f32, tuning: f32) -> u8 {
+  pub fn freq_to_midi(freq: f32, tuning: f32) -> u8 {
     ((12.0 * f32::log10(freq / tuning) / f32::log10(2f32)) + 69.0).round() as u8
   }
+
+  /// Translate midi-number to playback rate
+  pub fn midi_to_rate(midi: u8) -> f32 {
+    f32::powf(2.0, (midi as f32 - 36.0) / 12.0)
+  }
+
+  pub fn hz_to_radian(hz: f32, samplerate: f32) -> f32 {
+    2.0 * PI * hz * (1.0 / samplerate)
+  }
+
+
 
   // Translate decibel to linear volume
   #[allow(non_snake_case)]
@@ -259,3 +266,28 @@ pub mod math {
     (samplerate / (343.0 / wavelength)) as usize
   }
 }
+
+#[cfg(test)]
+mod test {
+  use crate::dsp::signal::pan_exp2;
+
+  #[test]
+  fn pan_center() {
+    assert_eq!(std::f32::consts::FRAC_1_SQRT_2, pan_exp2(0.0).0);
+    assert_eq!(std::f32::consts::FRAC_1_SQRT_2, pan_exp2(0.0).1);
+  }
+
+  #[test]
+  fn pan_left() {
+    assert!((pan_exp2(1.0).0 - 1.0).abs() < f32::EPSILON);
+    assert_eq!(0.0, pan_exp2(1.0).1);
+  }
+
+  #[test]
+  fn pan_right() {
+    assert_eq!(0.0, pan_exp2(-1.0).0);
+    assert!((pan_exp2(-1.0).1 - 1.0).abs() < f32::EPSILON);
+  }
+}
+
+

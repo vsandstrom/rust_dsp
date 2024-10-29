@@ -2,7 +2,8 @@
 members = [
   "lib",
   "playground",
-  "interp_test"
+  "interp_test",
+  "noise_test"
 ]
 resolver = "2"
 default-run = "playground/src/main.rs"

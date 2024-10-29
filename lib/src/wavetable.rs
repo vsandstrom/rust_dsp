@@ -74,7 +74,6 @@ pub mod arc {
     size: usize,
     samplerate: f32,
     sr_recip: f32,
-
   }
 
   impl WaveTable {
@@ -157,6 +156,7 @@ pub mod shared {
     }
   
 
+    /// Play function for wavetable where __SIZE__ is the table size and __TableInterpolation = &impl Interpolation__
     #[inline]
     pub fn play<const SIZE: usize, TableInterpolation>(&mut self, table: &[f32; SIZE], frequency: f32, phase: f32) -> f32
       where

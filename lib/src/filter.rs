@@ -1,8 +1,11 @@
-use crate::buffer::Buffer;
-use crate::interpolation::Interpolation;
 
-pub struct Comb<const N: usize> {
-  buffer: Buffer<N>,
+pub trait Filter {
+  fn process(&mut self, sample: f32) -> f32;
+  fn set_damp(&mut self, damp: f32);
+}
+
+pub struct Comb {
+  buffer: Vec<f32>,
   damp: f32,
   previous: f32,
   feedforward: f32,
@@ -13,17 +16,10 @@ pub struct Comb<const N: usize> {
   previous_out: f32,
 }
 
-
-pub trait Filter {
-  fn set_damp(&mut self, damp: f32);
-  fn process<T: Interpolation>(&mut self, sample: f32) -> f32;
-}
-
-impl<const N: usize> Comb<N> {
-  pub fn new(samplerate: f32, feedforward: f32, feedback: f32) -> Self {
-    let buffer = Buffer::<N>::new(samplerate);
+impl Comb {
+  pub fn new<const N: usize>(samplerate: f32, feedforward: f32, feedback: f32) -> Self {
     Comb{
-      buffer,
+      buffer: vec![0.0;N],
       previous: 0.0,
       damp: 0.0,
       position: 0,
@@ -36,7 +32,7 @@ impl<const N: usize> Comb<N> {
   }
 }
 
-impl<const N:usize> Filter for Comb<N> {
+impl Filter for Comb {
   /// Set optional LowPass damping, [0.0 - 1.0], 0.0 is off
   fn set_damp(&mut self, damp: f32) {
     self.damp = damp;
@@ -44,9 +40,9 @@ impl<const N:usize> Filter for Comb<N> {
 
   /// IIR: feedback > 0.0, feedforward == 0.0
   /// FIR: feedback == 0.0, feedforward > 0.0
-  /// AP:  feedback == feedforward > 0.0
-  fn process<T: Interpolation>(&mut self, sample: f32) -> f32 {
-    let delayed = self.buffer.read::<T>(self.position as f32);
+  /// AllPass:  feedback == feedforward > 0.0
+  fn process(&mut self, sample: f32) -> f32 {
+    let delayed = self.buffer[self.position];
     let dc_blocked = sample - self.previous_in + 0.995 * self.previous_out;
 
     self.previous_in = sample;
@@ -54,7 +50,7 @@ impl<const N:usize> Filter for Comb<N> {
 
     self.previous = delayed * (1.0 * self.damp) + self.previous * self.damp;
     let fb = dc_blocked - self.feedback * self.previous;
-    self.buffer.write(fb, self.position);
+    self.buffer[self.position] = fb;
     self.position = (self.position + 1) % self.delay;
     self.feedforward * fb + delayed
   }
@@ -90,25 +86,33 @@ impl<const N:usize> Filter for Comb<N> {
   //
   //       where: b0 == aM
 
-#[allow(unused)]
-pub struct VComb<const N:usize> {
-  buffer: Buffer<N>,
-  previous: f32,
-  write_pos: usize,
-  read_pos: f32,
+#[derive(Default)]
+pub struct Onepole {
+  prev: f32,
   damp: f32
 }
 
-#[allow(unused)]
-impl<const N:usize> VComb<N> {
-  fn new(delay: usize, samplerate: f32, feedforward: f32, feedback: f32) -> Self {
-    todo!();
+impl Onepole {
+  pub fn new() -> Self {
+    Self {
+      prev: 0.0,
+      damp: 0.0
+    }
   }
 }
 
+impl Filter for Onepole {
+  fn process(&mut self, sample: f32) -> f32 {
+    self.prev = (self.damp * sample) + ((1.0 - self.damp) * self.prev);
+    self.prev
+  }
+
+  fn set_damp(&mut self, damp: f32) {
+    self.damp = damp;
+  }
+}
 
 pub mod biquad {
-
   pub struct BiquadCoeffs {a1: f32, a2: f32, b0: f32, b1: f32, b2: f32}
   
   pub trait BiquadTrait {
@@ -182,21 +186,29 @@ pub mod biquad {
     prev_out: f32
   }
   
+  impl Default for Biquad {
+    fn default() -> Self { Self::new() }
+  }
+
   impl Biquad {
+
     pub fn new() -> Self {
       Self {
-        x1: 0.0,
-        x2: 0.0,
-        y1: 0.0,
-        y2: 0.0,
-        a1: 0.0,
-        a2: 0.0,
-        b0: 0.0,
-        b1: 0.0,
-        b2: 0.0,
+        x1: 0.0, x2: 0.0,
+        y1: 0.0, y2: 0.0,
+        a1: 0.0, a2: 0.0,
+        b0: 0.0, b1: 0.0, b2: 0.0,
         prev_in: 0.0,
         prev_out: 0.0
       }
+    }
+    
+    fn calc_next(&self, input: f32) -> f32 {
+        self.b0 * input 
+        + self.b1 * self.x1 
+        + self.b2 * self.x1
+        - self.a1 * self.y1
+        - self.a2 * self.y1
     }
   }
   
@@ -224,6 +236,7 @@ pub mod biquad {
       self.b1 = coeffs.b1;
       self.b2 = coeffs.b2;
     }
+
   }
 
   impl BiquadTrait for Biquad4 {
@@ -240,7 +253,8 @@ pub mod biquad {
       self.y1_2 = self.y1_1;
       self.y1_1 = output;
       
-      output = self.b0 * output 
+      output = 
+        self.b0 * output 
         + self.b1 * self.x2_1 
         + self.b2 * self.x2_2
         - self.a1 * self.y2_1
