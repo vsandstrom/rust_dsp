@@ -1,4 +1,5 @@
 #[derive(Default)]
+
 pub struct MidiBitField { data: u128 /* default: 0 */ }
 
 impl MidiBitField {

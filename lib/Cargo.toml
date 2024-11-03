@@ -10,6 +10,15 @@ bitvec = "1.0.1"
 [dev-dependencies]
 criterion = { version = "0.5", features = [ "html_reports" ] }
 
+[features]
+default = []
+c_bindings = []
+
 [[bench]]
 name = "bench" 
 harness = false
+
+[lib]
+name = "rust_dsp"
+path = "src/lib.rs"
+crate-type = ["rlib", "cdylib", "staticlib"]

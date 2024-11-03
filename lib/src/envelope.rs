@@ -197,12 +197,14 @@ impl Clone for Envelope {
 }
 
 pub mod new_env {
+  #[derive(Clone, Copy)]
   pub struct BreakPoint {
     pub value: f32,
     pub duration: f32,
     pub curve: Option<f32>
   }
 
+  #[derive(Clone, Copy)]
   pub enum Reset {
     /// creates discontinuities, snaps to first value in envelope.
     HARD,
@@ -211,6 +213,7 @@ pub mod new_env {
     SOFT
   }
 
+  #[derive(Clone, Copy)]
   pub struct Envelope<const N: usize> {
     breakpoints: [BreakPoint; N],
     counter: f32,
