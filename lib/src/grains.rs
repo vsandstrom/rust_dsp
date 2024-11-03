@@ -1,10 +1,9 @@
 use crate::envelope::{EnvType, Envelope};
 use crate::interpolation::Interpolation;
 
-
 pub trait GrainTrait {
   fn record(&mut self, sample: f32) -> Option<f32>;
-  fn update_envelope<const N: usize, const M: usize>(&mut self, env_shape: &EnvType<N, M>);
+  fn update_envelope(&mut self, shape: Vec<f32>);
   fn set_samplerate(&mut self, samplerate: f32);
   fn reset_record(&mut self);
   fn set_buffersize(&mut self, size: usize);
@@ -18,42 +17,41 @@ struct Grain {
   active: bool
 }
 
-pub struct Granulator<const NUMGRAINS: usize, const BUFSIZE:usize> {
+pub struct Granulator {
   buffer: Vec<f32>,
-  buf_size: f32,
+  buf_size: usize,
 
-  envelope: Envelope,
-  env_size: f32,
+  envelope: Vec<f32>,
+  env_size: usize,
   rec_pos: usize,
   pub recording: bool,
 
   next_grain: usize,
-  grains: [Grain; NUMGRAINS],
+  grains: Vec<Grain>,
 
   samplerate: f32,
   sr_recip: f32,
 }
 
-impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE> {
-  pub fn new<const N:usize, const M: usize>(env_shape: &EnvType<N, M>, samplerate: f32) -> Self {
-    // Buffer to hold recorded audio
-    let buffer = vec![0.0; BUFSIZE];
-    let envelope = Envelope::new(env_shape, samplerate);
 
-    let grains = std::array::from_fn(|_| {
+impl Granulator {
+  pub fn new(envelope: Vec<f32>, samplerate: f32, num_grains: usize, buf_size: usize) -> Self {
+    // Buffer to hold recorded audio
+    let buffer = vec![0.0; buf_size];
+
+    let grains = vec![
       Grain {
         duration: 0.0,
         buf_position: 0.0,
         env_position: 0.0,
         rate: 1.0,
         active: false
-      }
-    });
+      }];
 
     Self {
       buffer,
-      buf_size: BUFSIZE as f32,
-      env_size: envelope.len() as f32,
+      buf_size,
+      env_size: envelope.len(),
       grains,
       envelope,
       rec_pos: 0,
@@ -72,11 +70,11 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE>
     let mut out = 0.0;
     for g in self.grains.iter_mut() {
       // if the grain has reached the envelopes end, deactivate
-      if g.env_position >= self.env_size { g.active = false; continue;}
+      if g.env_position >= self.env_size as f32 { g.active = false; continue;}
       // accumulate output of active grains
       if g.active {
-        let sig = BufferInterpolation::interpolate(g.buf_position, &self.buffer, BUFSIZE);
-        let env = self.envelope.read::<EnvelopeInterpolation>(g.env_position);
+        let sig = BufferInterpolation::interpolate(g.buf_position, &self.buffer, self.buf_size);
+        let env = EnvelopeInterpolation::interpolate(g.env_position, &self.envelope, self.env_size);
         g.buf_position += g.rate;
         g.env_position += g.duration;
         out += sig * env;
@@ -108,33 +106,34 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE>
     }
     // set grain to active
     // increment and wait for next trigger
-    self.next_grain = (self.next_grain + 1) % NUMGRAINS;
+    self.next_grain = (self.next_grain + 1) % self.grains.len();
     true
   }
 
 }
   
 #[inline]
-fn wrap_position(position: f32, bufsize: f32) -> f32 {
+fn wrap_position(position: f32, bufsize: usize) -> f32 {
+  let b = bufsize as f32;
   match position.fract() {
-    x if x < 0.0 => { (1.0 + x) * bufsize },
-    x            => { x  * bufsize }
+    x if x < 0.0 => { (1.0 + x) * b},
+    x            => { x  * b}
   }
 }
 
-impl<const NUMGRAINS:usize, const BUFSIZE: usize> GrainTrait for Granulator<NUMGRAINS, BUFSIZE> {
+impl GrainTrait for Granulator {
   #[inline]
   fn record(&mut self, sample: f32) -> Option<f32> {
-    if self.rec_pos == self.buf_size as usize { return None; }
+    if self.rec_pos == self.buf_size { return None; }
     self.buffer[self.rec_pos] = sample;
     self.rec_pos += 1;
     Some(sample)
   }
 
   #[inline]
-  fn update_envelope<const N: usize, const M: usize>(&mut self, env_shape: &EnvType<N, M>) {
-    self.envelope.new_shape(env_shape, self.samplerate);
-    self.env_size = self.envelope.len() as f32;
+  fn update_envelope(&mut self, shape: Vec<f32>) {
+    self.env_size = shape.len();
+    self.envelope = shape;
   }
 
   fn set_samplerate(&mut self, samplerate: f32) {
@@ -148,7 +147,7 @@ impl<const NUMGRAINS:usize, const BUFSIZE: usize> GrainTrait for Granulator<NUMG
 
   fn set_buffersize(&mut self, size: usize) {
     self.buffer = vec![0.0; size];
-    self.buf_size = size as f32;
+    self.buf_size = size;
   }
 }
 
@@ -158,6 +157,7 @@ pub mod stereo {
   use crate::dsp::signal::pan_exp2;
   use GrainTrait;
 
+  #[derive(Clone, Copy)]
   struct Grain {
     buf_position: f32,
     env_position: f32,
@@ -167,30 +167,29 @@ pub mod stereo {
     active: bool
   }
 
-  pub struct Granulator<const NUMGRAINS: usize, const BUFSIZE:usize> {
+  pub struct Granulator {
     buffer: Vec<f32>,
-    buf_size: f32,
+    buf_size: usize,
     out: [f32; 2],
 
-    envelope: Envelope,
-    env_size: f32,
+    envelope: Vec<f32>,
+    env_size: usize,
     rec_pos: usize,
     pub recording: bool,
 
     next_grain: usize,
-    grains: [Grain; NUMGRAINS],
+    grains: Vec<Grain>,
 
     samplerate: f32,
     sr_recip: f32,
   }
 
-  impl<const NUMGRAINS:usize, const BUFSIZE: usize> Granulator<NUMGRAINS, BUFSIZE> {
-    pub fn new<const N:usize, const M: usize>(env_shape: &EnvType<N, M>, samplerate: f32) -> Self {
+  impl Granulator {
+    pub fn new(shape: Vec<f32>, samplerate: f32, num_grains: usize, buf_size: usize) -> Self {
     // Buffer to hold recorded audio
-    let buffer = vec![0.0; BUFSIZE];
-    let envelope = Envelope::new(env_shape, samplerate);
+    let buffer = vec![0.0; buf_size];
 
-    let grains = std::array::from_fn(|_| {
+    let grains = vec![
       Grain {
         duration: 0.0,
         buf_position: 0.0,
@@ -198,16 +197,15 @@ pub mod stereo {
         pan: (0.0, 0.0),
         rate: 1.0,
         active: false
-      }
-    });
+      }; num_grains];
 
     Self {
       buffer,
-      buf_size: BUFSIZE as f32,
-      env_size: envelope.len() as f32,
+      buf_size,
+      env_size: shape.len(),
       out: [0.0; 2],
       grains,
-      envelope,
+      envelope: shape,
       rec_pos: 0,
       recording: false,
       next_grain: 0,
@@ -224,11 +222,11 @@ pub mod stereo {
     self.out = [0.0;2];
     for g in self.grains.iter_mut() {
       // if the grain has reached the envelopes end, deactivate
-      if g.env_position >= self.env_size { g.active = false; continue;}
+      if g.env_position >= self.env_size as f32 { g.active = false; continue;}
       // accumulate output of active grains
       if g.active {
-        let sig = BufferInterpolation::interpolate(g.buf_position, &self.buffer, BUFSIZE);
-        let env = self.envelope.read::<EnvelopeInterpolation>(g.env_position);
+        let sig = BufferInterpolation::interpolate(g.buf_position, &self.buffer, self.buf_size);
+        let env = EnvelopeInterpolation::interpolate(g.env_position, &self.envelope, self.env_size);
         g.buf_position += g.rate;
         g.env_position += g.duration;
         self.out[0] += sig * g.pan.0 * env;
@@ -263,25 +261,25 @@ pub mod stereo {
     }
     // set grain to active
     // increment and wait for next trigger
-    self.next_grain = (self.next_grain + 1) % NUMGRAINS;
+    self.next_grain = (self.next_grain + 1) % self.grains.len();
     true
   }
 }
 
 
-  impl<const NUMGRAINS:usize, const BUFSIZE: usize> GrainTrait for Granulator<NUMGRAINS, BUFSIZE> {
+  impl GrainTrait for Granulator {
     #[inline]
     fn record(&mut self, sample: f32) -> Option<f32> {
-      if self.rec_pos == self.buf_size as usize { return None; }
+      if self.rec_pos == self.buf_size { return None; }
       self.buffer[self.rec_pos] = sample;
       self.rec_pos += 1;
       Some(sample)
     }
 
     #[inline]
-    fn update_envelope<const N: usize, const M: usize>(&mut self, env_shape: &EnvType<N, M>) {
-      self.envelope.new_shape(env_shape, self.samplerate);
-      self.env_size = self.envelope.len() as f32;
+    fn update_envelope(&mut self, shape: Vec<f32>) {
+      self.env_size = shape.len();
+      self.envelope = shape;
     }
 
     fn set_samplerate(&mut self, samplerate: f32) {
@@ -296,12 +294,12 @@ pub mod stereo {
     #[inline]
     fn set_buffersize(&mut self, size: usize) {
       self.buffer = vec![0.0; size];
-      self.buf_size = size as f32;
+      self.buf_size = size;
     }
   }
 }
   
 #[inline]
-fn calc_duration(env_len: f32, samplerate_recip: f32, duration_recip: f32) -> f32{
-  env_len * samplerate_recip * duration_recip
+fn calc_duration(env_len: usize, samplerate_recip: f32, duration_recip: f32) -> f32{
+  env_len as f32 * samplerate_recip * duration_recip
 }

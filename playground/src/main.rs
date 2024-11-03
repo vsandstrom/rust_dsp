@@ -14,8 +14,8 @@ use rust_dsp::{
   envelope::new_env::{BreakPoint, Envelope},
   grains::{stereo::Granulator, GrainTrait},
   interpolation::{self, Cubic, Linear},
-  polytable::PolyVector,
-  trig::{Dust, Impulse, Trigger},
+  polytable::{PolyTable, PolyVector},
+  trig::{Dust, Impulse, TrigTrait},
   waveshape::traits::Waveshape,
   wavetable::shared::WaveTable 
 };
@@ -45,15 +45,14 @@ fn main() -> anyhow::Result<()> {
 
     // Use default config from input device
     let config: cpal::StreamConfig = input_device.default_input_config()?.into();
-    // println!("{:#?}", config);
-
-    let f_sample_rate = config.sample_rate.0 as f32;
+    let sr = config.sample_rate.0 as f32;
 
     // SETUP YOUR AUDIO PROCESSING STRUCTS HERE !!!! <-------------------------
     const SIZE: usize = 1 << 12;
 
 
-    let trig = Impulse::new(f_sample_rate);
+    let mut triggers = [false; 9];
+    let trig = Impulse::new(sr);
 
     let t1 = [0.0; SIZE].complex_sine(
       [1.0, 0.2, 0.5, 0.8],
@@ -69,20 +68,28 @@ fn main() -> anyhow::Result<()> {
     let mut env = Envelope::new([
       BreakPoint{value: 0.0, duration: 0.2, curve: None},
       BreakPoint{value: 1.0, duration: 0.2, curve: None},
-      BreakPoint{value: 0.0, duration: 0.2, curve: None},
+      BreakPoint{value: 0.8, duration: 2.2, curve: None},
       BreakPoint{value: 0.4, duration: 0.8, curve: None},
+      BreakPoint{value: 0.3, duration: 1.2, curve: None},
       BreakPoint{value: 0.0, duration: 1.2, curve: None},
-      BreakPoint{value: 0.4, duration: 0.8, curve: None},
-      BreakPoint{value: 0.0, duration: 1.2, curve: None},
-      BreakPoint{value: 0.4, duration: 0.8, curve: None},
-      BreakPoint{value: 0.0, duration: 1.2, curve: None},
-    ], f_sample_rate).unwrap();
+    ], sr).unwrap();
 
-    env.set_loopable(true);
-    env.trigger();
+    let mut position_env = Envelope::new([
+      BreakPoint{value: 0.0, duration: 0.1, curve: None}, 
+      BreakPoint{value: 0.2, duration: 0.1, curve: None}, 
+      BreakPoint{value: 0.8, duration: 0.1, curve: None}, 
+      BreakPoint{value: 0.1, duration: 0.1, curve: None}, 
+    ], sr).unwrap();
+    position_env.set_loopable(true);
+
+    let mut envs = [env; 5];
+
 
     let mut wv = WaveTable::new();
-    wv.set_samplerate(f_sample_rate);
+    wv.set_samplerate(sr);
+
+    let mut pv: PolyVector<5> = PolyVector::new(sr);
+    // pv.set_samplerate(sr);
 
     // Create a channel to send and receive samples
     let (tx, _rx) = channel::<f32>();
@@ -102,20 +109,61 @@ fn main() -> anyhow::Result<()> {
       if output_fell_behind { eprintln!("Output fell behind"); }
     };
 
+
     let output_callback = move 
       | data: &mut [f32], _: &cpal::OutputCallbackInfo | {
+      let inner_time = Instant::now().duration_since(time).as_secs_f32();
+      if inner_time > 2.5 && !triggers[0] {
+        triggers[0]=true;
+        pv.trigger(Some(300.0));
+        envs[0].trig();
+      } else if inner_time > 3.7 && !triggers[1] {
+        triggers[1] = true;
+        pv.trigger(Some(225.0));
+        envs[1].trig();
+      } else if inner_time > 4.0 && !triggers[2] {
+        triggers[2] = true;
+        pv.trigger(Some(450.0));
+        envs[2].trig();
+      } else if inner_time > 5.2 && !triggers[3] {
+        triggers[3] = true;
+        pv.trigger(Some(800.0));
+        envs[3].trig();
+      } else if inner_time > 6.3 && !triggers[4] {
+        triggers[4] = true;
+        pv.trigger(Some(350.0));
+        envs[4].trig();
+      } else if inner_time > 7.4 && !triggers[5] {
+        triggers[5] = true;
+        pv.trigger(Some(500.0));
+        envs[0].trig();
+      } else if inner_time > 8.5 && !triggers[6] {
+        triggers[6] = true;
+        pv.trigger(Some(377.0));
+        envs[1].trig();
+      } else if inner_time > 9.6 && !triggers[7] {
+        triggers[7] = true;
+        envs[2].trig();
+        pv.trigger(Some(275.0));
+        envs[3].trig();
+      } else if inner_time > 10.7 && !triggers[8] {
+        triggers[8] = true;
+        pv.trigger(Some(900.0/2.9));
+        envs[4].trig();
+      } 
       // Process output data
       for frame in data.chunks_mut(2) {
         frame.iter_mut().for_each(
-          |sample| 
-          *sample = (
-            wv.play::<SIZE, Linear>(&tables[3], 200.0, 0.0) ) * env.play()
-          );
-
-        // SORRY FOR THE STUPID POLY HANDLING!!!!
-        // polyvector is built specifically for
-        // triggering on midi note on
-      }
+          |sample| {
+          let pos = position_env.play();
+          *sample = 
+            pv.play::<SIZE, Linear>(
+              &tables,
+              &[pos; 5],
+              &[0.0; 5], 
+              &mut |sig, i| {sig * envs[i].play()})
+          })
+      };
     };
 
     let err_callback = |err: cpal::StreamError| {

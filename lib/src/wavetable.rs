@@ -158,16 +158,16 @@ pub mod shared {
 
     /// Play function for wavetable where __SIZE__ is the table size and __TableInterpolation = &impl Interpolation__
     #[inline]
-    pub fn play<const SIZE: usize, TableInterpolation>(&mut self, table: &[f32; SIZE], frequency: f32, phase: f32) -> f32
+    pub fn play<TableInterpolation>(&mut self, table: &[f32], frequency: f32, phase: f32) -> f32
       where
           TableInterpolation: Interpolation
     {
       debug_assert!(self.samplerate > f32::EPSILON, "samplerate has not been set");
       if frequency > self.samplerate * 0.5 { return 0.0; }
-      let len = SIZE as f32;
+      let len = table.len() as f32;
       self.position += (len * self.sr_recip * frequency) + (phase * len);
       while self.position > len { self.position -= len; }
-      TableInterpolation::interpolate(self.position, table, SIZE)
+      TableInterpolation::interpolate(self.position, table, table.len())
     }
       
     pub fn set_samplerate(&mut self, samplerate: f32) {
@@ -199,7 +199,7 @@ mod tests {
     let mut shape = vec!();
     // Check if it wraps
     for _ in 0..16 {
-      let out = wt.play::<SIZE, Floor>(&table, SAMPLERATE/ SIZE as f32, 0.0);
+      let out = wt.play::<Floor>(&table, SAMPLERATE/ SIZE as f32, 0.0);
       shape.push(out);
     }
     assert_eq!(vec![
@@ -218,7 +218,7 @@ mod tests {
     let mut shape = vec!();
     // Check if it wraps
     for _ in 0..16 {
-      let out = wt.play::<SIZE, Linear>(&table, SAMPLERATE / SIZE as f32, 1.0);
+      let out = wt.play::<Linear>(&table, SAMPLERATE / SIZE as f32, 1.0);
       shape.push(out);
     }
     assert_eq!(vec![
@@ -236,7 +236,7 @@ mod tests {
     wt.set_samplerate(SAMPLERATE);
     let mut shape = vec!();
     for _ in 0..20 { 
-      let out = wt.play::<SIZE, Linear>(&table, SAMPLERATE / SIZE as f32, 1.0);
+      let out = wt.play::<Linear>(table.as_ref(), SAMPLERATE / SIZE as f32, 1.0);
       shape.push(out) 
     } 
     println!("{:?}", shape);
@@ -252,7 +252,7 @@ mod tests {
     wt.set_samplerate(SAMPLERATE);
     let mut shape = vec!();
     for _ in 0..(SIZE * dilude) {
-      shape.push(wt.play::<SIZE, Linear>(&table, SAMPLERATE / SIZE as f32 * 0.5, 0.0));
+      shape.push(wt.play::<Linear>(&table, SAMPLERATE / SIZE as f32 * 0.5, 0.0));
     }
     println!("{:?}", shape);
     assert_eq!(vec![

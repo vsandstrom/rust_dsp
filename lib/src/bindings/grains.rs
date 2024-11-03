@@ -5,34 +5,31 @@ use crate::{
   grains::Granulator
 };
 
-const NUMGRAINS: usize = 32;
-const BUFSIZE:   usize = {8*48000};
-
-
 #[no_mangle]
-pub extern "C" fn granulator_new(samplerate: f32) -> *mut GranulatorOpaque {
-  let x = hanning(&mut [0.0; 1024]);
-  let envtype: EnvType<0, 0> = EnvType::Vector(x.to_vec());
-  let g = Box::new(Granulator::<NUMGRAINS, BUFSIZE>::new(&envtype, samplerate));
+/// Constructor
+pub extern "C" fn granulator_new(samplerate: f32, num_grains: usize, buf_size: usize) -> *mut GranulatorOpaque {
+  let shape = hanning(&mut [0.0; 1024]).to_vec();
+  let g = Box::new(Granulator::new(shape, samplerate, num_grains, buf_size));
   Box::into_raw(g) as *mut GranulatorOpaque
 }
 
 #[no_mangle]
+/// Destructor
 pub extern "C" fn granulator_delete(granulator: *mut GranulatorOpaque) {
   if !granulator.is_null() {
-    unsafe {Box::from_raw(granulator as *mut Granulator<NUMGRAINS, BUFSIZE>);}
+    unsafe {drop(Box::from_raw(granulator as *mut Granulator))}
   }
 }
 
 #[no_mangle]
+/// Trigger new grain
 pub extern "C" fn granulator_trigger(granulator: *mut GranulatorOpaque, position: f32, duration: f32, rate: f32, jitter: f32) -> bool {
-  let granulator = unsafe {&mut *(granulator as Granulator) };
-  granulator.trigger_new(position, duration, rate, jitter)
-  
+  unsafe {(*(granulator as *mut Granulator)).trigger_new(position, duration, rate, jitter)}
 }
 #[no_mangle]
-pub extern "C" fn granulator_play(granulator: *mut Granulator) -> f32 {
-  Granulator::play::<Linear>(&granulator)
+/// Play 
+pub extern "C" fn granulator_play(granulator: *mut GranulatorOpaque) -> f32 {
+  unsafe {(*(granulator as *mut Granulator)).play::<Linear, Linear>() }
 }
 
 

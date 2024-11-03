@@ -1,14 +1,12 @@
 use crate::{
   vector::VectorOscillator,
   wavetable::shared::WaveTable,
-  envelope::Envelope,
   interpolation::Interpolation
 };
 
 struct Token<T> {
   voice: T,
   freq: f32,
-  env_pos: f32,
 }
 
 pub struct PolyTable<const VOICES: usize> {
@@ -22,7 +20,6 @@ impl<const VOICES: usize> Default for PolyTable<VOICES> {
       Token{
         voice: WaveTable::new(),
         freq: 0.0,
-        env_pos: 0.0
       }
     });
     Self {
@@ -38,7 +35,6 @@ impl<const VOICES: usize> PolyTable<VOICES> {
       Token{
         voice: WaveTable::new(),
         freq: 0.0,
-        env_pos: 0.0
       }
     });
     Self {
@@ -47,31 +43,34 @@ impl<const VOICES: usize> PolyTable<VOICES> {
     }
   }
 
-  #[inline]
-  pub fn play<T: Interpolation, U: Interpolation, const N: usize>(
-    &mut self,
-    table: &[f32; N],
-    note: Option<f32>,
-    phases: &[f32; VOICES],
-    env: &Envelope
-  ) -> f32 {
-    let mut sig = 0.0;
+  pub fn trigger(&mut self, note: Option<f32>) {
     if let Some(freq) = note {
       unsafe {
         let v = self.voices.get_unchecked_mut(self.next);
         v.freq = freq;
-        v.env_pos = 0.0;
       }
       self.next = (self.next + 1) % VOICES;
     }
+  }
 
+  #[inline]
+  pub fn play<T: Interpolation, const N: usize>(
+    &mut self,
+    table: &[f32; N],
+    phases: &[f32; VOICES],
+    env_func: &mut impl FnMut(f32, usize) -> f32
+  ) -> f32 {
+    let mut sig = 0.0;
     for (i, v) in self.voices.iter_mut().enumerate() {
-      if (v.env_pos as usize) < env.len() {
-        sig += v.voice.play::<N, T>(table, v.freq, phases[i]) * env.read::<U>(v.env_pos);
-        v.env_pos += 1.0;
-      }
+      sig += env_func(v.voice.play::<T>(table, v.freq, phases[i]), i);
     }
     sig
+  }
+
+  pub fn set_samplerate(&mut self, samplerate: f32) {
+    for t in self.voices.iter_mut() {
+      t.voice.set_samplerate(samplerate);
+    }
   }
 }
 
@@ -86,50 +85,41 @@ impl<const VOICES: usize> PolyVector<VOICES> {
       Token{
         voice: VectorOscillator::new(samplerate),
         freq: 0.0,
-        env_pos: 0.0,
       }
-      });
-    Self {
-      voices,
-      next: 0
-    }
+    });
+    Self { voices, next: 0 }
   }
-
-  pub fn play<const LENGTH: usize, OscInterpolation, EnvInterpolation>(
-    &mut self,
-    note: Option<f32>,
-    tables: &[[f32; LENGTH]],
-    env: &Envelope,
-    positions: &[f32; VOICES],
-    phases: &[f32; VOICES]
-  ) -> f32
-    where
-        OscInterpolation: Interpolation,
-        EnvInterpolation: Interpolation
-  {
-    let mut sig = 0.0;
+  
+  pub fn trigger(&mut self, note: Option<f32>) {
     if let Some(freq) = note {
       unsafe {
         let v = self.voices.get_unchecked_mut(self.next);
         v.freq = freq;
-        v.env_pos = 0.0;
       }
       self.next = (self.next + 1) % VOICES;
     }
+  }
 
+  pub fn play<const LENGTH: usize, OscInterpolation>(
+    &mut self,
+    tables: &[[f32; LENGTH]],
+    positions: &[f32; VOICES],
+    phases: &[f32; VOICES],
+    env_func: &mut impl FnMut(f32, usize) -> f32
+  ) -> f32
+    where
+        OscInterpolation: Interpolation,
+  {
+    let mut sig = 0.0;
     for (i, v) in self.voices.iter_mut().enumerate() {
-      if (v.env_pos as usize) < env.len() {
-        sig += v.voice.play::<LENGTH, OscInterpolation>(
-          tables,
-          v.freq,
-          positions[i],
-          phases[i]
-        ) * env.read::<EnvInterpolation>(
-          v.env_pos
-        );
-        v.env_pos += 1.0;
-      }
+      sig += env_func(v.voice.play::<LENGTH, OscInterpolation>( tables, v.freq, positions[i], phases[i]), i);
     }
     sig
+  }
+
+  pub fn set_samplerate(&mut self, samplerate: f32) {
+    for v in &mut self.voices {
+      v.voice.set_samplerate(samplerate);
+    }
   }
 }

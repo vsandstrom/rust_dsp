@@ -16,7 +16,7 @@ fn run_table<const N: usize>(wt: &mut ShareTable, &table: &[f32; N]) -> f32 {
   let mut out = 0.0;
   let mut freq = 100.0;
   for i in 0..256 {
-    out = wt.play::<N, Linear>(&table, freq, 0.0);
+    out = wt.play::<Linear>(&table, freq, 0.0);
     if i % 64 == 0 { freq += 10.0; }
   }
   out
