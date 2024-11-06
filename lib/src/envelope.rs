@@ -1,5 +1,6 @@
 use crate::interpolation::Interpolation;
 use crate::buffer::Buffer;
+use std::sync::Arc;
 
 #[derive(Clone, Copy)]
 pub struct BreakPoints<const N: usize, const M: usize> {
@@ -197,6 +198,9 @@ impl Clone for Envelope {
 }
 
 pub mod new_env {
+  use crate::envelope::Arc;
+
+
   #[derive(Clone, Copy)]
   pub struct BreakPoint {
     pub value: f32,
@@ -213,9 +217,9 @@ pub mod new_env {
     SOFT
   }
 
-  #[derive(Clone, Copy)]
-  pub struct Envelope<const N: usize> {
-    breakpoints: [BreakPoint; N],
+  #[derive(Clone)]
+  pub struct Envelope {
+    breakpoints: Vec<BreakPoint>,
     counter: f32,
     segment: usize,
     steps: usize,
@@ -228,12 +232,12 @@ pub mod new_env {
     reset: Reset
   }
 
-  impl<const N: usize> Envelope<N> {
+  impl Envelope {
     /// Create a new Envelope, only if the number of breakpoints are at least 2.
-    pub fn new(breakpoints: [BreakPoint; N], samplerate: f32) -> Result<Self, String> {
+    pub fn new(breakpoints: Vec<BreakPoint>, samplerate: f32) -> Result<Self, String> {
       // the breakpoint array needs to at least 2, otherwise there are no duration to 
       // travel between
-      if N < 2 { return Err("Breakpoints need to be at least 2 items long".to_string()) }
+      if breakpoints.len() < 2 { return Err("Breakpoints need to be at least 2 items long".to_string()) }
       Ok(Self { 
         breakpoints, 
         counter: 0.0,

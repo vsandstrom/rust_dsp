@@ -1,8 +1,15 @@
 use crate::wavetable::shared::WaveTable;
-use crate::interpolation::Linear;
+use crate::interpolation::{Cubic, Linear};
 
 #[repr(C)]
 pub struct WavetableOpaque;
+// Underlying structure:
+// pub struct WaveTable {
+//   position: f32,
+//   samplerate: f32,
+//   sr_recip: f32,
+// }
+// ```
 
 #[no_mangle]
 /// Constructor
@@ -27,8 +34,14 @@ pub unsafe extern "C" fn wavetable_set_samplerate(wavetable: *mut WavetableOpaqu
 
 
 #[no_mangle]
-pub unsafe extern "C" fn wavetable_play(wavetable: *mut WavetableOpaque, table: *const f32, table_length: usize, frequency: f32, phase: f32) -> f32 {
+pub unsafe extern "C" fn wavetable_play_linear(wavetable: *mut WavetableOpaque, table: *const f32, table_length: usize, frequency: f32, phase: f32) -> f32 {
   let table = std::slice::from_raw_parts(table, table_length);
   (*(wavetable as *mut WaveTable)).play::<Linear>(table, frequency, phase)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn wavetable_play_cubic(wavetable: *mut WavetableOpaque, table: *const f32, table_length: usize, frequency: f32, phase: f32) -> f32 {
+  let table = std::slice::from_raw_parts(table, table_length);
+  (*(wavetable as *mut WaveTable)).play::<Cubic>(table, frequency, phase)
 }
 

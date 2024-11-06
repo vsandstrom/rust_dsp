@@ -21,4 +21,4 @@ harness = false
 [lib]
 name = "rust_dsp"
 path = "src/lib.rs"
-crate-type = ["rlib", "cdylib", "staticlib"]
+crate-type = ["rlib", "staticlib"]

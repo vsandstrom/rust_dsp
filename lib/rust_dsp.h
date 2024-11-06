@@ -5,7 +5,29 @@
 #include <ostream>
 #include <new>
 
+enum class Reset {
+  Hard,
+  Soft,
+};
+
 struct GranulatorOpaque {
+
+};
+
+struct WavetableOpaque {
+
+};
+
+/// struct Delay {
+///   buffer: Vec<f32>,
+///   delay: f32,
+///   position: usize,
+/// }
+struct DelayOpaque {
+
+};
+
+struct EnvelopeOpaque {
 
 };
 
@@ -75,6 +97,25 @@ float math_samples_to_wavelength(size_t samples, float samplerate);
 
 size_t wavelength_to_samples(float wavelength, float samplerate);
 
+void shape_complex_sine(float *table,
+                        size_t size,
+                        const float *amps,
+                        size_t asize,
+                        const float *phases,
+                        size_t psize);
+
+void shape_sine(float *table, size_t size);
+
+void shape_hanning(float *table, size_t size);
+
+void shape_square(float *table, size_t size);
+
+void shape_triangle(float *table, size_t size);
+
+void shape_reverse_sawtooth(float *table, size_t size);
+
+void shape_sawtooth(float *table, size_t size);
+
 /// Constructor
 GranulatorOpaque *granulator_new(float samplerate, size_t num_grains, size_t buf_size);
 
@@ -88,7 +129,61 @@ bool granulator_trigger(GranulatorOpaque *granulator,
                         float rate,
                         float jitter);
 
-/// Play
-float granulator_play(GranulatorOpaque *granulator);
+/// Play with linear buffer interpolation
+float granulator_play_linear(GranulatorOpaque *granulator);
+
+/// Play with cubic buffer interpolation
+float granulator_play_cubic(GranulatorOpaque *granulator);
+
+/// Record into buffer
+bool granulator_record(GranulatorOpaque *granulator, float sample);
+
+/// Constructor
+WavetableOpaque *wavetable_new();
+
+/// Destructor
+void wavetable_delete(WavetableOpaque *wavetable);
+
+void wavetable_set_samplerate(WavetableOpaque *wavetable, float samplerate);
+
+float wavetable_play_linear(WavetableOpaque *wavetable,
+                            const float *table,
+                            size_t table_length,
+                            float frequency,
+                            float phase);
+
+float wavetable_play_cubic(WavetableOpaque *wavetable,
+                           const float *table,
+                           size_t table_length,
+                           float frequency,
+                           float phase);
+
+/// Constructor
+DelayOpaque *delay_new(size_t length);
+
+/// Destructor
+void delay_delete(DelayOpaque *delay);
+
+float delay_play_linear(DelayOpaque *delay, float input, float seconds, float feedback);
+
+float delay_play_cubic(DelayOpaque *delay, float input, float seconds, float feedback);
+
+EnvelopeOpaque *envelope_new(const float *value,
+                             size_t v_len,
+                             const float *duration,
+                             size_t d_len,
+                             const float *curve,
+                             size_t c_len,
+                             float samplerate);
+
+void envelope_delete(EnvelopeOpaque *env);
+
+void envelope_trig(EnvelopeOpaque *env);
+
+float envelope_play(EnvelopeOpaque *env);
+
+void envelope_set_reset_type(EnvelopeOpaque *env, Reset reset_type);
+
+void envelope_loopable(EnvelopeOpaque *env, bool loopable);
 
 }  // extern "C"

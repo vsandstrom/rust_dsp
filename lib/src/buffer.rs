@@ -1,6 +1,3 @@
-
-use std::usize;
-
 use crate::interpolation::Interpolation;
 
 pub struct Buffer<const N: usize> {

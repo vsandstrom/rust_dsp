@@ -3,7 +3,7 @@ use crate::dsp::buffer::scale;
 
 /// Create a complex waveform from amplitudes and phases of sine partials
 /// (tip: normalize amplitudes to get waveform within -1.0 - 1.0)
-pub fn complex_sine<const SIZE: usize, const N:usize>(table: &mut [f32; SIZE], amps: &[f32; N], phases: &[f32; N]) -> [f32; SIZE] {
+pub fn complex_sine(table: &mut [f32], amps: &[f32], phases: &[f32]) {
   let len = table.len();
   let mut n: f32 = 1.0;
   if amps.len() == phases.len() {
@@ -18,43 +18,39 @@ pub fn complex_sine<const SIZE: usize, const N:usize>(table: &mut [f32; SIZE], a
     }
     scale(table, -1.0f32, 1.0f32);
   }
-  *table
 }
 /// Sine: sin(2pi / table.len() * n)
-pub fn sine<const SIZE: usize>(table: &mut [f32; SIZE]) -> [f32; SIZE] {
+pub fn sine(table: &mut [f32]) {
   let mut angle: f32 = 0.0;
   let inc: f32 = TAU / table.len() as f32;
   for sample in table.iter_mut() {
     *sample = angle.sin();
     angle += inc;
   }
-  *table
 }
 
 /// Squared sinewave, positive bellcurve. Useful as envelope
-pub fn hanning<const SIZE: usize>(table: &mut [f32; SIZE]) -> [f32; SIZE] {
+pub fn hanning(table: &mut [f32]) {
   let mut angle: f32 = 0.0;
   let inc: f32 = PI / (table.len() as f32);
   for sample in table.iter_mut() {
     *sample = angle.sin().powf(2.0);
     angle += inc;
   }
-  *table
 }
 
 /// Square
-pub fn square<const SIZE: usize>(table: &mut [f32; SIZE]) -> [f32; SIZE] {
+pub fn square(table: &mut [f32]) {
   let mut val = -1.0;
   let len = table.len();
   for (i, sample) in table.iter_mut().enumerate() {
     *sample = val;
     if i == len/2-1 { val = 1.0; } 
   }
-  *table
 }
 
 /// Triangle 
-pub fn triangle<const SIZE: usize>(table: &mut [f32; SIZE]) -> [f32; SIZE] {
+pub fn triangle(table: &mut [f32]) {
   let mut angle = 0.0;
   let mut inc: f32 = 2.0 / (table.len() as f32 / 2.0);
   for sample in table.iter_mut() {
@@ -62,29 +58,26 @@ pub fn triangle<const SIZE: usize>(table: &mut [f32; SIZE]) -> [f32; SIZE] {
     *sample = angle;
     angle += inc;
   }
-  *table
 }
 
 /// Sawtooth: -1.0 -> 1.0
-pub fn sawtooth<const SIZE: usize>(table: &mut [f32; SIZE]) -> [f32; SIZE] {
+pub fn sawtooth(table: &mut [f32]) {
   let mut angle: f32 = 0.0;
   let inc: f32 = 2.0 / (table.len() as f32 - 1.0);
   for sample in table.iter_mut() {
     *sample = angle - 1.0;
     angle += inc;
   }
-  *table
 }
 
 /// Reverse sawtooth: 1.0 -> -1.0
-pub fn reverse_sawtooth<const SIZE: usize>(table: &mut [f32; SIZE]) -> [f32; SIZE] {
+pub fn reverse_sawtooth(table: &mut [f32]) {
   let mut angle: f32 = 0.0;
   let inc: f32 = 2.0 / (table.len() as f32 - 1.0);
   for sample in table.iter_mut() {
     *sample = angle + 1.0;
     angle -= inc;
   }
-  *table
 }
 
 pub mod traits {

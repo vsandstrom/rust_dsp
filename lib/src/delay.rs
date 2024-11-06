@@ -1,13 +1,12 @@
 use crate::interpolation::Interpolation;
 
 pub trait DelayTrait {
-  fn new(max_samples: usize) -> Self;
-  fn set_time(&mut self, delay_time: f32);
+  fn new(length: usize) -> Self;
+  // fn set_time(&mut self, delay_time: f32);
 }
 
 pub struct Delay {
   buffer: Vec<f32>,
-  delay: f32,
   position: usize,
 }
 
@@ -33,15 +32,14 @@ impl DelayTrait for Delay {
   fn new(max_samples: usize) -> Self {
     Delay{
       buffer: vec![0.0; max_samples],
-      delay: 0.0,
       position: 0,
     }
   }
 
-  /// Set delay time in samples
-  fn set_time(&mut self, delay: f32) {
-    self.delay = delay;
-  }
+  // /// Set delay time in samples
+  // fn set_time(&mut self, delay: f32) {
+  //   self.delay = delay;
+  // }
 }
 
 /// Constant size delay line.
@@ -78,5 +76,18 @@ impl<const MAXLEN: usize> Default for FixedDelay<MAXLEN> {
       position: 0,
     }
   }
+}
+
+/// A non interpolated delay function, where state management of buffer and position is handled
+/// elsewhere.
+#[inline]
+pub fn delay(buffer: &mut [f32], pos: &mut usize, input: f32, feedback: f32) -> f32 {
+  let len = buffer.len();
+  let time = (*pos + len) % len;
+  let out = buffer[time];
+  *pos %= buffer.len();
+  buffer[*pos] = input + (out * feedback);
+  *pos += 1;
+  out
 }
 
