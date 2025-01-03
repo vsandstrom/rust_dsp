@@ -1,4 +1,5 @@
 use crate::envelope::new_env::{self, BreakPoint, Envelope};
+use alloc::{slice, boxed::Box, vec};
 
 #[repr(C)]
 pub struct EnvelopeOpaque;
@@ -19,9 +20,9 @@ pub extern "C" fn envelope_new(
   c_len: usize,
   samplerate: f32,
 ) -> *mut EnvelopeOpaque {
-  let v = unsafe {std::slice::from_raw_parts(value, v_len)};
-  let d = unsafe {std::slice::from_raw_parts(duration, d_len)};
-  let c = unsafe {std::slice::from_raw_parts(curve, c_len)};
+  let v = unsafe {slice::from_raw_parts(value, v_len)};
+  let d = unsafe {slice::from_raw_parts(duration, d_len)};
+  let c = unsafe {slice::from_raw_parts(curve, c_len)};
   let mut x = vec!();
   for (value, (duration, curve)) in v.iter().zip(d.iter().zip(c.iter())) {
     x.push(BreakPoint{value: *value, duration: *duration, curve: Some(*curve)});

@@ -1,3 +1,5 @@
+extern crate alloc;
+
 mod wavetables_bench;
 mod grain_bench;
 mod midi_input_bench;

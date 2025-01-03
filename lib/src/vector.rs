@@ -1,4 +1,6 @@
 use crate::interpolation::Interpolation;
+#[cfg(not(feature="std"))]
+use alloc::{vec, vec::Vec};
 
 /// Interpolating oscillator
 ///

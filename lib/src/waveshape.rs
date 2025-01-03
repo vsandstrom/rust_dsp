@@ -1,5 +1,7 @@
-use std::f32::consts::{PI, TAU};
+use core::f32::consts::{PI, TAU};
 use crate::dsp::buffer::scale;
+#[cfg(not(feature="std"))]
+use alloc::{vec::Vec, borrow::ToOwned};
 
 /// Create a complex waveform from amplitudes and phases of sine partials
 /// (tip: normalize amplitudes to get waveform within -1.0 - 1.0)
@@ -298,6 +300,7 @@ pub mod traits {
 
 #[cfg(test)]
 mod tests {
+  use super::*;
   use crate::waveshape::traits::Waveshape;
   #[test]
   fn test_phasor() {

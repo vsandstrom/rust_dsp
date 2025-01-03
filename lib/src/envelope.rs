@@ -1,6 +1,11 @@
 use crate::interpolation::Interpolation;
 use crate::buffer::Buffer;
-use std::sync::Arc;
+use alloc::borrow::ToOwned;
+use alloc::string::ToString;
+use alloc::sync::Arc;
+use alloc::{vec, vec::Vec};
+use alloc::string::String;
+
 
 #[derive(Clone, Copy)]
 pub struct BreakPoints<const N: usize, const M: usize> {
@@ -198,6 +203,7 @@ impl Clone for Envelope {
 }
 
 pub mod new_env {
+  use super::*;
   use crate::envelope::Arc;
 
 

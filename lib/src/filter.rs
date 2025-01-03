@@ -1,3 +1,5 @@
+#[cfg(not(feature="std"))]
+use alloc::{vec, vec::Vec};
 
 pub trait Filter {
   fn process(&mut self, sample: f32) -> f32;
@@ -326,6 +328,7 @@ pub mod biquad {
     prev_out: f32
   }
   
+  #[allow(clippy::new_without_default)]
   impl<const N: usize> BiquadN<N> {
     pub fn new() -> Self {
       Self {
@@ -434,12 +437,12 @@ pub mod biquad {
     }
 
     fn set_coeffs(&mut self, coeffs: [BiquadCoeffs; N]) {
-      for i in 0..N {
-        self.bank[i].a1 = coeffs[i].a1;
-        self.bank[i].a2 = coeffs[i].a2;
-        self.bank[i].b0 = coeffs[i].b0;
-        self.bank[i].b1 = coeffs[i].b1;
-        self.bank[i].b2 = coeffs[i].b2;
+      for (i, c) in coeffs.iter().enumerate().take(N) {
+        self.bank[i].a1 = c.a1;
+        self.bank[i].a2 = c.a2;
+        self.bank[i].b0 = c.b0;
+        self.bank[i].b1 = c.b1;
+        self.bank[i].b2 = c.b2;
       }
     }
   }

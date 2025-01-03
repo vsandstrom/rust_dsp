@@ -1,4 +1,5 @@
 use crate::interpolation::Interpolation;
+use alloc::{vec, vec::Vec};
 
 pub trait DelayTrait {
   fn new(length: usize) -> Self;
@@ -19,8 +20,6 @@ impl Delay {
     while time < 0.0  { time += len };
     let out = T::interpolate(time, &self.buffer, self.buffer.len());
     self.position %= self.buffer.len();
-
-  
     self.buffer[self.position] = input + (out * feedback);
     self.position += 1;
     out

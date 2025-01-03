@@ -1,4 +1,5 @@
 use crate::interpolation::Interpolation;
+use alloc::{vec, vec::Vec};
 
 pub struct Buffer<const N: usize> {
   pub buffer: Vec<f32>,

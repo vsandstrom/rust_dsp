@@ -1,4 +1,4 @@
-use std::{f32::consts::PI, usize};
+use core::{f32::consts::PI, usize};
 
 pub struct Linear { }
 pub struct Cubic { }
@@ -75,7 +75,8 @@ impl Interpolation for Floor {
  
 #[cfg(test)]
 mod tests {
-  use crate::interpolation::{Linear, Cubic, Floor, Interpolation};
+  use alloc::vec;
+  use super::*;
   use crate::waveshape::sine;
 
     #[test]

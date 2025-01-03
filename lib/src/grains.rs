@@ -1,5 +1,6 @@
 use crate::envelope::{EnvType, Envelope};
 use crate::interpolation::Interpolation;
+use alloc::{vec, vec::Vec};
 
 pub trait GrainTrait {
   fn record(&mut self, sample: f32) -> Option<f32>;

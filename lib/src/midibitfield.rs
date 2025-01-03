@@ -1,5 +1,8 @@
-#[derive(Default)]
+#[cfg(not(feature="std"))]
+use alloc::{format, string::String};
 
+
+#[derive(Default)]
 pub struct MidiBitField { data: u128 /* default: 0 */ }
 
 impl MidiBitField {

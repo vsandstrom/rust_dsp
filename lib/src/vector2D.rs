@@ -1,6 +1,5 @@
 use crate::interpolation::Interpolation;
-use core::ops::Add;
-use std::{f32::consts::SQRT_2, ops::AddAssign};
+use core::{f32::consts::SQRT_2, ops::{Add, AddAssign}};
 
 
 #[derive(Clone, Copy)]

@@ -1,4 +1,5 @@
 use crate::dsp;
+use crate::alloc::slice;
 
 // SIGNAL NAMESPACE
 
@@ -48,7 +49,7 @@ pub extern "C" fn signal_pan_lin2(pan:f32) -> *const f32 {
 /// Reads a raw pointer into a rust slice.
 #[no_mangle]
 pub unsafe extern "C" fn buffer_range(values: *mut f32, len: usize, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> *const f32 {
-  let x = std::slice::from_raw_parts_mut(values, len);
+  let x = slice::from_raw_parts_mut(values, len);
   dsp::buffer::range(x, in_min, in_max, out_min, out_max).as_ptr()
 }
 
@@ -58,7 +59,7 @@ pub unsafe extern "C" fn buffer_range(values: *mut f32, len: usize, in_min: f32,
 /// Reads a raw pointer into a rust slice.
 #[no_mangle]
 pub unsafe extern "C" fn buffer_sum(values: *const f32, len: usize) -> f32 {
-  let values = std::slice::from_raw_parts(values, len);
+  let values = slice::from_raw_parts(values, len);
   crate::dsp::buffer::sum(values)
 }
   
@@ -67,7 +68,7 @@ pub unsafe extern "C" fn buffer_sum(values: *const f32, len: usize) -> f32 {
 /// Reads a raw pointer into a rust slice.
 #[no_mangle]
 pub unsafe extern "C" fn buffer_normalize(values: *mut f32, len: usize) {
-  let values = std::slice::from_raw_parts_mut(values, len);
+  let values = slice::from_raw_parts_mut(values, len);
   crate::dsp::buffer::normalize(values)
 }
 
@@ -77,7 +78,7 @@ pub unsafe extern "C" fn buffer_normalize(values: *mut f32, len: usize) {
 /// (should mutate contents of array in place)
 #[no_mangle]
 pub unsafe extern "C" fn buffer_scale(values: *mut f32, len: usize, outmin: f32, outmax: f32) {
-  let values = std::slice::from_raw_parts_mut(values, len);
+  let values = slice::from_raw_parts_mut(values, len);
   crate::dsp::buffer::scale(values, outmin, outmax);
 }
 

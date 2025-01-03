@@ -1,4 +1,5 @@
 use crate::{delay::{Delay, FixedDelay, DelayTrait}, interpolation::{Linear, Cubic}};
+use alloc::boxed::Box;
 
 #[repr(C)]
 // ```

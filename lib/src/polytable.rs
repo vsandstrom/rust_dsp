@@ -1,3 +1,5 @@
+use core::array;
+
 use crate::{
   vector::VectorOscillator,
   wavetable::shared::WaveTable,
@@ -16,7 +18,7 @@ pub struct PolyTable<const VOICES: usize> {
 
 impl<const VOICES: usize> Default for PolyTable<VOICES> {
   fn default() -> Self {
-    let voices = std::array::from_fn(|_| {
+    let voices = array::from_fn(|_| {
       Token{
         voice: WaveTable::new(),
         freq: 0.0,
@@ -31,7 +33,7 @@ impl<const VOICES: usize> Default for PolyTable<VOICES> {
 
 impl<const VOICES: usize> PolyTable<VOICES> {
   pub fn new() -> Self {
-    let voices = std::array::from_fn(|_| {
+    let voices = array::from_fn(|_| {
       Token{
         voice: WaveTable::new(),
         freq: 0.0,
@@ -81,7 +83,7 @@ pub struct PolyVector<const VOICES: usize> {
 
 impl<const VOICES: usize> PolyVector<VOICES> {
   pub fn new(samplerate: f32) -> Self {
-    let voices = std::array::from_fn(|_| {
+    let voices = array::from_fn(|_| {
       Token{
         voice: VectorOscillator::new(samplerate),
         freq: 0.0,

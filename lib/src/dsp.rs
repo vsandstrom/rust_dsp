@@ -1,3 +1,9 @@
+#[cfg(feature="no_std")]
+extern crate alloc;
+// #[cfg(feature="no_std")]
+
+use alloc::vec::Vec;
+
 pub mod signal {
   use core::f32::consts::{FRAC_1_SQRT_2, FRAC_PI_4};
 
@@ -113,6 +119,8 @@ pub mod buffer {
 
 
   pub mod traits {
+    
+    use crate::dsp::Vec;
     use crate::dsp::{buffer::{range, sum}, signal::traits::SignalFloat};
     /// DSP specific trait for manipulating arrays/vectors. 
     /// For chaining method calls Vec<f32>
@@ -204,7 +212,7 @@ pub mod buffer {
 }
 
 pub mod math {
-    use std::f32::consts::PI;
+    use core::f32::consts::PI;
 
   /// Find next pow of two for quick wrap
   #[inline]
@@ -273,8 +281,8 @@ mod test {
 
   #[test]
   fn pan_center() {
-    assert_eq!(std::f32::consts::FRAC_1_SQRT_2, pan_exp2(0.0).0);
-    assert_eq!(std::f32::consts::FRAC_1_SQRT_2, pan_exp2(0.0).1);
+    assert_eq!(core::f32::consts::FRAC_1_SQRT_2, pan_exp2(0.0).0);
+    assert_eq!(core::f32::consts::FRAC_1_SQRT_2, pan_exp2(0.0).1);
   }
 
   #[test]

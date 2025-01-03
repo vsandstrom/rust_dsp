@@ -1,6 +1,7 @@
 use crate::{
   grains::{GrainTrait, Granulator}, interpolation::{Cubic, Linear}, waveshape::hanning
 };
+use alloc::{boxed::Box};
 
 #[repr(C)]
 // /* Underlying Structure */

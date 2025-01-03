@@ -1,5 +1,6 @@
 use crate::interpolation::Interpolation;
-use std::debug_assert;
+use core::debug_assert;
+use alloc::vec::Vec;
 
 pub mod owned {
   use super::*;
@@ -64,8 +65,10 @@ pub mod owned {
   }
 }
 
+#[cfg(feature="std")]
 pub mod arc {
   use super::*;
+  
   use std::sync::{Arc, RwLock};
 
   pub struct WaveTable{
@@ -179,6 +182,8 @@ pub mod shared {
 
 #[cfg(test)]
 mod tests {
+  use alloc::{slice, boxed::Box, vec};
+  use super::*;
   use crate::{
     interpolation::{Floor, Linear},
     waveshape::traits::Waveshape,
@@ -227,20 +232,20 @@ mod tests {
     ], shape)
   }
 
-  #[test]
-  fn freq_test_simple() {
-    const SIZE: usize = 8;
-    let mut table = [0.0; SIZE];
-    let table = Box::new(table.triangle());
-    let mut wt = WaveTable::new();
-    wt.set_samplerate(SAMPLERATE);
-    let mut shape = vec!();
-    for _ in 0..20 { 
-      let out = wt.play::<Linear>(table.as_ref(), SAMPLERATE / SIZE as f32, 1.0);
-      shape.push(out) 
-    } 
-    println!("{:?}", shape);
-  }
+  // #[test]
+  // fn freq_test_simple() {
+  //   const SIZE: usize = 8;
+  //   let mut table = [0.0; SIZE];
+  //   let table = Box::new(table.triangle());
+  //   let mut wt = WaveTable::new();
+  //   wt.set_samplerate(SAMPLERATE);
+  //   let mut shape = vec!();
+  //   for _ in 0..20 { 
+  //     let out = wt.play::<Linear>(table.as_ref(), SAMPLERATE / SIZE as f32, 1.0);
+  //     shape.push(out) 
+  //   } 
+  //   println!("{:?}", shape);
+  // }
 
   #[test]
   fn linear_test_simple() {
@@ -254,7 +259,7 @@ mod tests {
     for _ in 0..(SIZE * dilude) {
       shape.push(wt.play::<Linear>(&table, SAMPLERATE / SIZE as f32 * 0.5, 0.0));
     }
-    println!("{:?}", shape);
+    // println!("{:?}", shape);
     assert_eq!(vec![
        0.5,  1.0,  0.5, 0.0,
       -0.5, -1.0, -0.5, 0.0

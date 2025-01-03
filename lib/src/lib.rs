@@ -1,3 +1,8 @@
+// #![cfg_attr(not(feature="default"), no_std)]
+#![no_std]
+// #[cfg(not(feature="std"))]
+extern crate alloc;
+
 pub mod dsp;
 pub mod grains;
 pub mod trig;
@@ -7,6 +12,7 @@ pub mod vector;
 pub mod buffer;
 pub mod waveshape;
 pub mod envelope;
+pub mod adsr;
 pub mod polytable;
 pub mod delay;
 pub mod filter;

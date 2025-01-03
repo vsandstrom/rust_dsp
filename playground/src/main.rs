@@ -1,26 +1,15 @@
 use std::{
   sync::mpsc::channel,
-  thread, 
-  time::{self, Instant}, 
-  ops::Add,
+  thread,
+  time::Duration
 };
 
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
-use rand::Rng;
-use rust_dsp::{
-  delay::{Delay, DelayTrait, FixedDelay}, 
-  dsp::buffer::traits::SignalVector,
-  envelope::new_env::{BreakPoint, Envelope},
-  grains::{stereo::Granulator, GrainTrait},
-  interpolation::{self, Cubic, Linear},
-  polytable::{PolyTable, PolyVector},
-  trig::{Dust, Impulse, TrigTrait},
-  waveshape::traits::Waveshape,
-  wavetable::shared::WaveTable 
-};
+use rust_dsp::adsr::{ADSREnvelope, Reset};
 
-type Frame = [f32; 2];
+// type Frame = [f32; 2];
+
 
 fn main() -> anyhow::Result<()> {
     // List all audio devices
@@ -48,53 +37,12 @@ fn main() -> anyhow::Result<()> {
     let sr = config.sample_rate.0 as f32;
 
     // SETUP YOUR AUDIO PROCESSING STRUCTS HERE !!!! <-------------------------
-    const SIZE: usize = 1 << 12;
-
-
-    let mut triggers = [false; 9];
-    let trig = Impulse::new(sr);
-
-    let t1 = [0.0; SIZE].complex_sine(
-      [1.0, 0.2, 0.5, 0.8],
-      [0.0, 0.1, 0.8, 1.2]
-    );
-    
-    let t2 = [0.0; SIZE].sine();
-    let t3 = [0.0; SIZE].triangle();
-    let t4 = [0.0; SIZE].sawtooth();
-
-    let tables = [t1, t2, t3, t4];
-
-    let mut env = Envelope::new([
-      BreakPoint{value: 0.0, duration: 0.2, curve: None},
-      BreakPoint{value: 1.0, duration: 0.2, curve: None},
-      BreakPoint{value: 0.8, duration: 2.2, curve: None},
-      BreakPoint{value: 0.4, duration: 0.8, curve: None},
-      BreakPoint{value: 0.3, duration: 1.2, curve: None},
-      BreakPoint{value: 0.0, duration: 1.2, curve: None},
-    ], sr).unwrap();
-
-    let mut position_env = Envelope::new([
-      BreakPoint{value: 0.0, duration: 0.1, curve: None}, 
-      BreakPoint{value: 0.2, duration: 0.1, curve: None}, 
-      BreakPoint{value: 0.8, duration: 0.1, curve: None}, 
-      BreakPoint{value: 0.1, duration: 0.1, curve: None}, 
-    ], sr).unwrap();
-    position_env.set_loopable(true);
-
-    let mut envs = [env; 5];
-
-
-    let mut wv = WaveTable::new();
-    wv.set_samplerate(sr);
-
-    let mut pv: PolyVector<5> = PolyVector::new(sr);
-    // pv.set_samplerate(sr);
+    let mut env = ADSREnvelope::new(sr);
+    let mut t = true;
+    let mut c = 0;
 
     // Create a channel to send and receive samples
     let (tx, _rx) = channel::<f32>();
-    let time = Instant::now();
-
     // Callbacks
     let input_callback = move 
       | data: &[f32], _: &cpal::InputCallbackInfo | {
@@ -112,56 +60,19 @@ fn main() -> anyhow::Result<()> {
 
     let output_callback = move 
       | data: &mut [f32], _: &cpal::OutputCallbackInfo | {
-      let inner_time = Instant::now().duration_since(time).as_secs_f32();
-      if inner_time > 2.5 && !triggers[0] {
-        triggers[0]=true;
-        pv.trigger(Some(300.0));
-        envs[0].trig();
-      } else if inner_time > 3.7 && !triggers[1] {
-        triggers[1] = true;
-        pv.trigger(Some(225.0));
-        envs[1].trig();
-      } else if inner_time > 4.0 && !triggers[2] {
-        triggers[2] = true;
-        pv.trigger(Some(450.0));
-        envs[2].trig();
-      } else if inner_time > 5.2 && !triggers[3] {
-        triggers[3] = true;
-        pv.trigger(Some(800.0));
-        envs[3].trig();
-      } else if inner_time > 6.3 && !triggers[4] {
-        triggers[4] = true;
-        pv.trigger(Some(350.0));
-        envs[4].trig();
-      } else if inner_time > 7.4 && !triggers[5] {
-        triggers[5] = true;
-        pv.trigger(Some(500.0));
-        envs[0].trig();
-      } else if inner_time > 8.5 && !triggers[6] {
-        triggers[6] = true;
-        pv.trigger(Some(377.0));
-        envs[1].trig();
-      } else if inner_time > 9.6 && !triggers[7] {
-        triggers[7] = true;
-        envs[2].trig();
-        pv.trigger(Some(275.0));
-        envs[3].trig();
-      } else if inner_time > 10.7 && !triggers[8] {
-        triggers[8] = true;
-        pv.trigger(Some(900.0/2.9));
-        envs[4].trig();
-      } 
       // Process output data
       for frame in data.chunks_mut(2) {
+        let out = env.play(t, false);
+        t = false;
+
+        if c == 48000*2 {
+          t = true;
+        }
+        c+=1;
+
         frame.iter_mut().for_each(
           |sample| {
-          let pos = position_env.play();
-          *sample = 
-            pv.play::<SIZE, Linear>(
-              &tables,
-              &[pos; 5],
-              &[0.0; 5], 
-              &mut |sig, i| {sig * envs[i].play()})
+          *sample = out
           })
       };
     };
@@ -189,7 +100,7 @@ fn main() -> anyhow::Result<()> {
 
 
     loop{
-      thread::sleep(time::Duration::from_secs(40));
+      thread::sleep(Duration::from_secs(40));
     }
 
     // allow running forever
