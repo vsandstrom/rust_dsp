@@ -4,3 +4,4 @@ mod grains;
 mod wavetable;
 mod delay;
 mod env;
+mod adsr;

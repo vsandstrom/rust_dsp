@@ -1,7 +1,5 @@
 use core::f32;
-
 #[derive(Debug, Default)]
-
 pub enum Reset {
   Hard, 
   #[default] Soft
