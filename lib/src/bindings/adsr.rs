@@ -45,34 +45,47 @@ pub unsafe extern "C" fn delay_delete(delay: *mut ADSREnvelopeOpaque) {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn adsr_set_attack_val (adsr: *mut ADSREnvelopeOpaque,    atk_value: f32) {
+pub unsafe extern "C" fn adsr_set_attack_val (adsr: *mut ADSREnvelopeOpaque, atk_value: f32) {
   (*(adsr as *mut ADSREnvelope)).set_attack_val(atk_value);
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn adsr_set_attack_dur (adsr: *mut ADSREnvelopeOpaque, atk_duration: f32) {
-  (*(adsr as *mut ADSREnvelope)).set_attack_dur(atk_duration); }
+  (*(adsr as *mut ADSREnvelope)).set_attack_dur(atk_duration); 
+}
 
 #[no_mangle]
-pub unsafe extern "C" fn adsr_set_attack_cur (adsr: *mut ADSREnvelopeOpaque,    atk_curve: f32) { (*(adsr as *mut ADSREnvelope)).set_attack_cur(atk_curve); }
+pub unsafe extern "C" fn adsr_set_attack_cur (adsr: *mut ADSREnvelopeOpaque, atk_curve: f32) { 
+  (*(adsr as *mut ADSREnvelope)).set_attack_cur(atk_curve); 
+}
 
 #[no_mangle]
-pub unsafe extern "C" fn adsr_set_decay_dur  (adsr: *mut ADSREnvelopeOpaque, dec_duration: f32) { (*(adsr as *mut ADSREnvelope)).set_decay_dur(dec_duration); }
+pub unsafe extern "C" fn adsr_set_decay_dur  (adsr: *mut ADSREnvelopeOpaque, dec_duration: f32) {
+  (*(adsr as *mut ADSREnvelope)).set_decay_dur(dec_duration); 
+}
 
 #[no_mangle]
-pub unsafe extern "C" fn adsr_set_decay_cur  (adsr: *mut ADSREnvelopeOpaque,    dec_curve: f32) { (*(adsr as *mut ADSREnvelope)).set_decay_cur(dec_curve); }
+pub unsafe extern "C" fn adsr_set_decay_cur  (adsr: *mut ADSREnvelopeOpaque, dec_curve: f32) {
+  (*(adsr as *mut ADSREnvelope)).set_decay_cur(dec_curve); 
+}
 
 #[no_mangle]
-pub unsafe extern "C" fn adsr_set_sustain_val(adsr: *mut ADSREnvelopeOpaque,    sus_value: f32) { (*(adsr as *mut ADSREnvelope)).set_sustain_val(sus_value); }
+pub unsafe extern "C" fn adsr_set_sustain_val(adsr: *mut ADSREnvelopeOpaque, sus_value: f32) {
+  (*(adsr as *mut ADSREnvelope)).set_sustain_val(sus_value); 
+}
 
 #[no_mangle]
-pub unsafe extern "C" fn adsr_set_release_dur(adsr: *mut ADSREnvelopeOpaque, rel_duration: f32) { (*(adsr as *mut ADSREnvelope)).set_release_dur(rel_duration); }
+pub unsafe extern "C" fn adsr_set_release_dur(adsr: *mut ADSREnvelopeOpaque, rel_duration: f32) {
+  (*(adsr as *mut ADSREnvelope)).set_release_dur(rel_duration); 
+}
 
 #[no_mangle]
-pub unsafe extern "C" fn adsr_set_release_cur(adsr: *mut ADSREnvelopeOpaque,    rel_curve: f32) { (*(adsr as *mut ADSREnvelope)).set_release_cur(rel_curve); }
+pub unsafe extern "C" fn adsr_set_release_cur(adsr: *mut ADSREnvelopeOpaque, rel_curve: f32) {
+  (*(adsr as *mut ADSREnvelope)).set_release_cur(rel_curve); 
+}
 
 #[no_mangle]
-pub unsafe extern "C" fn adsr_set_reset_type (adsr: *mut ADSREnvelopeOpaque, reset: Reset)      {
+pub unsafe extern "C" fn adsr_set_reset_type (adsr: *mut ADSREnvelopeOpaque, reset: Reset) {
   (*(adsr as *mut ADSREnvelope)).set_reset_type(reset); 
 }
 

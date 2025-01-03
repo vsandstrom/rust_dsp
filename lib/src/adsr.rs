@@ -1,4 +1,5 @@
 use core::f32;
+#[repr(C)]
 #[derive(Debug, Default)]
 pub enum Reset {
   Hard, 
