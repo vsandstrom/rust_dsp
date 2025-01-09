@@ -6,7 +6,7 @@ use std::{
 
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
-use rust_dsp::adsr::{ADSREnvelope, Reset};
+use rust_dsp::{adsr::{ADSREnvelope, Reset}, interpolation, waveshape::sine, wavetable::shared::WaveTable, dsp::signal::map};
 
 // type Frame = [f32; 2];
 
@@ -38,7 +38,19 @@ fn main() -> anyhow::Result<()> {
 
     // SETUP YOUR AUDIO PROCESSING STRUCTS HERE !!!! <-------------------------
     let mut env = ADSREnvelope::new(sr);
+    let mut w = vec![0.0; 512];
+    sine(&mut w);
+
+    let mut lfo0 = WaveTable::new();
+    let mut lfo1 = WaveTable::new();
+    let mut lfo2 = WaveTable::new();
+
+    lfo0.set_samplerate(sr);
+    lfo1.set_samplerate(sr);
+    lfo2.set_samplerate(sr);
+
     let mut t = true;
+    let mut sustain = true;
     let mut c = 0;
 
     // Create a channel to send and receive samples
@@ -62,13 +74,21 @@ fn main() -> anyhow::Result<()> {
       | data: &mut [f32], _: &cpal::OutputCallbackInfo | {
       // Process output data
       for frame in data.chunks_mut(2) {
-        let out = env.play(t, false);
+        let out = env.play(t, sustain);
         t = false;
+        env.set_attack_dur(map(&mut lfo0.play::<interpolation::Linear>(&w, 0.1, 0.0), -1.0, 1.0, 0.01, 0.5));
+        env.set_decay_dur(map(&mut lfo1.play::<interpolation::Linear>(&w, 0.2, 0.0), -1.0, 1.0, 0.1, 0.8));
+        env.set_attack_cur(map(&mut lfo2.play::<interpolation::Linear>(&w, 0.45, 0.0), -1.0, 1.0, 0.5, 1.5));
 
-        if c == 48000*2 {
+        if c == (48000.0*1.5) as usize { sustain = false; }
+        if c == (48000.0 * 2.0) as usize {
           t = true;
+          sustain = true;
+          c = 0;
         }
         c+=1;
+
+        
 
         frame.iter_mut().for_each(
           |sample| {

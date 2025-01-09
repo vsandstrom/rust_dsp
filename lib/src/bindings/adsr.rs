@@ -32,15 +32,15 @@ pub struct ADSREnvelopeOpaque;
 
 #[no_mangle]
 /// Constructor
-pub extern "C" fn delay_new(samplerate: f32) -> *mut ADSREnvelopeOpaque {
+pub extern "C" fn adsr_new(samplerate: f32) -> *mut ADSREnvelopeOpaque {
   Box::into_raw(Box::new(ADSREnvelope::new(samplerate))) as *mut ADSREnvelopeOpaque
 }
 
 #[no_mangle]
 /// Destructor
-pub unsafe extern "C" fn delay_delete(delay: *mut ADSREnvelopeOpaque) {
-  if !delay.is_null() {
-    drop(Box::from_raw(delay as *mut ADSREnvelope))
+pub unsafe extern "C" fn adsr_delete(adsr: *mut ADSREnvelopeOpaque) {
+  if !adsr.is_null() {
+    drop(Box::from_raw(adsr as *mut ADSREnvelope))
   }
 }
 
