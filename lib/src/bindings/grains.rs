@@ -4,19 +4,21 @@ use crate::{
 use alloc::{boxed::Box};
 
 #[repr(C)]
-// /* Underlying Structure */
-// pub struct Granulator {
-//   buffer: Vec<f32>,
-//   buf_size: usize,
-//   envelope: Vec<f32>,
-//   env_size: usize,
-//   rec_pos: usize,
-//   pub recording: bool,
-//   next_grain: usize,
-//   grains: Vec<Grain>,
-//   samplerate: f32,
-//   sr_recip: f32,
-// }
+/// /* Underlying Structure */
+/// ```ignore
+/// pub struct Granulator {
+///   buffer: Vec<f32>,
+///   buf_size: usize,
+///   envelope: Vec<f32>,
+///   env_size: usize,
+///   rec_pos: usize,
+///   pub recording: bool,
+///   next_grain: usize,
+///   grains: Vec<Grain>,
+///   samplerate: f32,
+///   sr_recip: f32,
+/// }
+/// ```
 pub struct GranulatorOpaque;
 
 #[no_mangle]

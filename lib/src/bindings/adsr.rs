@@ -2,7 +2,7 @@ use crate::adsr::{ADSREnvelope, Reset};
 use alloc::boxed::Box;
 
 #[repr(C)]
-/// ```
+/// ```ignore
 /// Underlying structure:
 /// #[derive(Debug)]
 /// struct ADSREnvelope {

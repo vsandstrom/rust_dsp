@@ -14,7 +14,7 @@ enum EnvStage {
   Rel
 }
 
-#[derive(Debug, Copy)]
+#[derive(Debug, Copy, Clone)]
 pub struct ADSREnvelope {
   atk_value: f32,
   atk_duration: f32,
