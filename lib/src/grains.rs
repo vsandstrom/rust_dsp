@@ -3,11 +3,11 @@ use crate::interpolation::Interpolation;
 use alloc::{vec, vec::Vec};
 
 pub trait GrainTrait {
-  fn record(&mut self, sample: f32) -> Option<f32>;
+  fn record(&mut self, _sample: f32) -> Option<f32> {None}
   fn update_envelope(&mut self, shape: Vec<f32>);
   fn set_samplerate(&mut self, samplerate: f32);
   fn reset_record(&mut self);
-  fn set_buffersize(&mut self, size: usize);
+  fn set_buffersize(&mut self, size: usize) {}
 }
 
 struct Grain {
@@ -75,7 +75,11 @@ impl Granulator {
       // accumulate output of active grains
       if g.active {
         let sig = BufferInterpolation::interpolate(g.buf_position, &self.buffer, self.buf_size);
-        let env = EnvelopeInterpolation::interpolate(g.env_position, &self.envelope, self.env_size);
+        // inline lerp of grain envelope
+        let env_a = self.envelope[g.env_position as usize];
+        let env_b = self.envelope[(g.env_position as usize + 1) % self.env_size];
+        let x = g.env_position.fract();
+        let env = env_a + x * ( env_b - env_a );
         g.buf_position += g.rate;
         g.env_position += g.duration;
         out += sig * env;
@@ -169,7 +173,7 @@ pub mod stereo {
   }
 
   pub struct Granulator {
-    buffer: Vec<f32>,
+    buffer: &'static [f32],
     buf_size: usize,
     out: [f32; 2],
 
@@ -186,9 +190,9 @@ pub mod stereo {
   }
 
   impl Granulator {
-    pub fn new(shape: Vec<f32>, samplerate: f32, num_grains: usize, buf_size: usize) -> Self {
+    pub fn new(buffer: &'static [f32], shape: Vec<f32>, samplerate: f32, num_grains: usize) -> Self {
     // Buffer to hold recorded audio
-    let buffer = vec![0.0; buf_size];
+    let buf_size = buffer.len();
 
     let grains = vec![
       Grain {
@@ -270,12 +274,12 @@ pub mod stereo {
 
   impl GrainTrait for Granulator {
     #[inline]
-    fn record(&mut self, sample: f32) -> Option<f32> {
-      if self.rec_pos == self.buf_size { return None; }
-      self.buffer[self.rec_pos] = sample;
-      self.rec_pos += 1;
-      Some(sample)
-    }
+    // fn record(&mut self, sample: f32) -> Option<f32> {
+    //   if self.rec_pos == self.buf_size { return None; }
+    //   self.buffer[self.rec_pos] = sample;
+    //   self.rec_pos += 1;
+    //   Some(sample)
+    // }
 
     #[inline]
     fn update_envelope(&mut self, shape: Vec<f32>) {
@@ -292,11 +296,11 @@ pub mod stereo {
       self.rec_pos = 0;
     }
 
-    #[inline]
-    fn set_buffersize(&mut self, size: usize) {
-      self.buffer = vec![0.0; size];
-      self.buf_size = size;
-    }
+    // #[inline]
+    // fn set_buffersize(&mut self, size: usize) {
+    //   self.buffer = vec![0.0; size];
+    //   self.buf_size = size;
+    // }
   }
 }
   
