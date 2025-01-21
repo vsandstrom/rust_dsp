@@ -15,7 +15,10 @@ impl Interpolation for Linear {
   fn interpolate(position: f32, buffer: &[f32], buffer_size: usize) -> f32 {
     let pos = position as usize;
     let x = position.fract();
-    buffer[pos % buffer_size] * (1.0-x) + buffer[(pos+1) % buffer_size] * x 
+    let a = buffer[pos%buffer_size];
+    let b = buffer[(pos+1)%buffer_size];
+    a + x * (b - a)
+    // buffer[pos % buffer_size] * (1.0-x) + buffer[(pos+1) % buffer_size] * x 
   }
 }
 
@@ -39,11 +42,12 @@ impl Interpolation for Cubic {
 impl Interpolation for Cosine {
   fn interpolate(position: f32, buffer: &[f32], buffer_size: usize) -> f32 {
     let diff = position.fract();
-    let a1 = position as usize;
-    let b1 = match a1 + 1 >= buffer_size {true => (a1+1) % buffer_size, false => a1+1};
-    let bw = (1.0 - f32::cos(diff*PI)) / 2.0;
-    let aw = 1.0 - bw;
-    buffer[a1] * aw + buffer[b1] * bw
+    let n = position as usize;
+    let m = if n + 1 >= buffer_size { n - (buffer_size - 1) } else { n + 1 };
+    let a = buffer[n];
+    let b = buffer[m];
+    let x = (1.0 - f32::cos(diff*PI)) / 2.0;
+    a + x * (b - a)
   } 
 }
 

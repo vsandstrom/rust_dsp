@@ -31,6 +31,36 @@ struct EnvelopeOpaque {
 
 };
 
+/// ```
+/// Underlying structure:
+/// #[derive(Debug)]
+/// struct ADSREnvelope {
+///   atk_value: f32,
+///   atk_duration: f32,
+///   atk_curve: f32,
+///
+///   dec_duration: f32,
+///   dec_curve: f32,
+///
+///   sus_value: f32,
+///
+///   rel_duration: f32,
+///   rel_curve: f32,
+///
+///   stage: EnvStage,
+///   start: f32,
+///   prev: f32,
+///   next: f32,
+///   playing: bool,
+///   reset: Reset,
+///   count: usize,
+///   sr: f32
+/// }
+/// ```
+struct ADSREnvelopeOpaque {
+
+};
+
 extern "C" {
 
 float clamp_signal(float signal, float bottom, float top);
@@ -185,5 +215,31 @@ float envelope_play(EnvelopeOpaque *env);
 void envelope_set_reset_type(EnvelopeOpaque *env, Reset reset_type);
 
 void envelope_loopable(EnvelopeOpaque *env, bool loopable);
+
+/// Constructor
+ADSREnvelopeOpaque *adsr_new(float samplerate);
+
+/// Destructor
+void adsr_delete(ADSREnvelopeOpaque *delay);
+
+void adsr_set_attack_val(ADSREnvelopeOpaque *adsr, float atk_value);
+
+void adsr_set_attack_dur(ADSREnvelopeOpaque *adsr, float atk_duration);
+
+void adsr_set_attack_cur(ADSREnvelopeOpaque *adsr, float atk_curve);
+
+void adsr_set_decay_dur(ADSREnvelopeOpaque *adsr, float dec_duration);
+
+void adsr_set_decay_cur(ADSREnvelopeOpaque *adsr, float dec_curve);
+
+void adsr_set_sustain_val(ADSREnvelopeOpaque *adsr, float sus_value);
+
+void adsr_set_release_dur(ADSREnvelopeOpaque *adsr, float rel_duration);
+
+void adsr_set_release_cur(ADSREnvelopeOpaque *adsr, float rel_curve);
+
+void adsr_set_reset_type(ADSREnvelopeOpaque *adsr, Reset reset);
+
+float adsr_play(ADSREnvelopeOpaque *adsr, bool trig, bool sustain);
 
 }  // extern "C"

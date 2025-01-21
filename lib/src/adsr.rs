@@ -1,12 +1,12 @@
 use core::f32;
 #[repr(C)]
-#[derive(Debug, Default)]
+#[derive(Clone, Copy, Debug, Default)]
 pub enum Reset {
   Hard, 
   #[default] Soft
 }
 
-#[derive(Debug, Default)]
+#[derive(Clone, Copy, Debug, Default)]
 enum EnvStage {
   #[default] Atk,
   Dec,
@@ -14,7 +14,7 @@ enum EnvStage {
   Rel
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct ADSREnvelope {
   atk_value: f32,
   atk_duration: f32,

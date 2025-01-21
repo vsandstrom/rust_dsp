@@ -4,13 +4,14 @@ use alloc::{slice, boxed::Box};
 
 #[repr(C)]
 pub struct WavetableOpaque;
-// Underlying structure:
-// pub struct WaveTable {
-//   position: f32,
-//   samplerate: f32,
-//   sr_recip: f32,
-// }
-// ```
+/// Underlying structure:
+/// ```ignore
+/// pub struct WaveTable {
+///   position: f32,
+///   samplerate: f32,
+///   sr_recip: f32,
+/// }
+/// ```
 
 #[no_mangle]
 /// Constructor

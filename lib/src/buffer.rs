@@ -2,7 +2,7 @@ use crate::interpolation::Interpolation;
 use alloc::{vec, vec::Vec};
 
 pub struct Buffer<const N: usize> {
-  pub buffer: Vec<f32>,
+  pub buffer: [f32; N],
   pub size: usize,
   pub samplerate: f32,
   pub position: f32,
@@ -10,7 +10,7 @@ pub struct Buffer<const N: usize> {
 
 impl<const N: usize> Buffer<N> {
   pub fn new(samplerate: f32) -> Self {
-    let buffer = vec![0.0; N];
+    let buffer = [0.0; N];
     Buffer{
       buffer, 
       size: N,
@@ -21,7 +21,7 @@ impl<const N: usize> Buffer<N> {
 
   pub fn from_buffer(buffer: [f32;N], samplerate: f32) -> Self {
     Buffer {
-      buffer: buffer.to_vec(), 
+      buffer, 
       size: N,
       position: 0.0,
       samplerate,
