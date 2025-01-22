@@ -144,5 +144,6 @@ impl ADSREnvelope {
   pub fn set_release_dur(&mut self, rel_duration: f32) { self.rel_duration = rel_duration; }
   pub fn set_release_cur(&mut self,    rel_curve: f32) { self.rel_curve    = rel_curve; }
   pub fn set_reset_type (&mut self, reset: Reset)      { self.reset        = reset; }
+  pub fn set_samplerate (&mut self, samplerate: f32)   { self.sr = samplerate; }
 }
 
