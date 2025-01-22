@@ -66,6 +66,17 @@ impl ADSREnvelope {
     debug_assert!(self.sr > f32::EPSILON, "forgotten to set the samplerate?");
     if trig { self.handle_trig(); }
     if !self.playing { return 0.0; }
+    if !sustain {
+      match self.stage {
+        EnvStage::Rel => (),
+        _ => {
+          // Aborts any stage if sustain is false, and immediately enters the Release stage.
+          self.stage = EnvStage::Rel;
+          self.prev = self.next;
+          self.count = 0;
+        }
+      }
+    }
 
     let env = match self.stage {
       EnvStage::Atk => {
@@ -81,16 +92,16 @@ impl ADSREnvelope {
       },
       EnvStage::Rel => {
         self.count += 1;
-        self.process(self.prev, 0.0001f32, self.rel_duration, self.rel_curve, self.count)
+        self.process(self.prev, f32::EPSILON, self.rel_duration, self.rel_curve, self.count)
       }
-    };
+  };
 
-    match self.stage {
-      EnvStage::Atk => {
-        if self.count >= (self.atk_duration * self.sr) as usize { 
-          self.stage = EnvStage::Dec; 
-          self.count = 0;
-          self.prev = env;
+  match self.stage {
+    EnvStage::Atk => {
+      if self.count >= (self.atk_duration * self.sr) as usize { 
+        self.stage = EnvStage::Dec; 
+        self.count = 0;
+        self.prev = env;
         }
       },
       EnvStage::Dec => {
@@ -100,13 +111,7 @@ impl ADSREnvelope {
           self.prev = env;
         }
       },
-      EnvStage::Sus => {
-        if !sustain { 
-          self.stage = EnvStage::Rel;
-          self.count = 0;
-          self.prev = env;
-        }
-      },
+      EnvStage::Sus => (),
       EnvStage::Rel => {
         if self.count >= (self.rel_duration * self.sr) as usize { 
           self.stage = EnvStage::Atk; 
@@ -117,14 +122,16 @@ impl ADSREnvelope {
     }
     self.next = env;
     env
-  }
-
+}
+  
+  #[inline]
   fn process(&self, start: f32, end: f32, dur: f32, curve: f32, count: usize) -> f32 {
     let t = count as f32 / (dur * self.sr);
     if start > end { start - f32::powf(t, curve) * (start - end) }
     else           { start + f32::powf(t, curve) * (end - start) }
   }
 
+  #[inline]
   fn handle_trig(&mut self) {
     match self.reset {
       Reset::Hard => { self.start = 0f32; },
