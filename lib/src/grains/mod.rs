@@ -11,9 +11,10 @@ use crate::dsp::signal::pan_exp2;
 
 pub trait GrainTrait {
   fn record(&mut self, _sample: f32) -> Option<f32> {None}
-  fn update_envelope(&mut self, shape: Vec<f32>);
   fn set_samplerate(&mut self, samplerate: f32);
   fn reset_record(&mut self);
+  // optional traits
+  fn update_envelope(&mut self, _shape: Vec<f32>){}
   fn set_buffersize(&mut self, _size: usize) {}
 }
 

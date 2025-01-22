@@ -6,3 +6,4 @@
 Cargo.lock
 .DS_Store
 target
+lib/rust_dsp.h

@@ -1,7 +1,4 @@
 use crate::interpolation::Interpolation;
-#[cfg(not(feature="std"))]
-use alloc::{vec, vec::Vec};
-
 /// Interpolating oscillator
 ///
 /// Linearly interpolating through an array tables. 
@@ -78,6 +75,7 @@ impl VectorOscillator {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use alloc::vec;
   use crate::waveshape::traits::Waveshape;
   use crate::interpolation::Linear;
 
