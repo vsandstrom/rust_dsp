@@ -61,10 +61,8 @@ impl ADSREnvelope {
   }
 
 
-
-  pub fn play(&mut self, trig: bool, sustain: bool) -> f32 {
+  pub fn play(&mut self, sustain: bool) -> f32 {
     debug_assert!(self.sr > f32::EPSILON, "forgotten to set the samplerate?");
-    if trig { self.handle_trig(); }
     if !self.playing { return 0.0; }
     if !sustain {
       match self.stage {
@@ -122,7 +120,7 @@ impl ADSREnvelope {
     }
     self.next = env;
     env
-}
+  }
   
   #[inline]
   fn process(&self, start: f32, end: f32, dur: f32, curve: f32, count: usize) -> f32 {
@@ -132,7 +130,7 @@ impl ADSREnvelope {
   }
 
   #[inline]
-  fn handle_trig(&mut self) {
+  pub fn trig(&mut self) {
     match self.reset {
       Reset::Hard => { self.start = 0f32; },
       Reset::Soft => { self.start = self.next; }
