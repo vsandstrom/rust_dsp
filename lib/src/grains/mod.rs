@@ -1,5 +1,6 @@
 // mod grains;
 pub mod stereo;
+pub mod shared;
 pub mod static_stereo;
 
 // pub use stereo;

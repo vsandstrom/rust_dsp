@@ -4,16 +4,15 @@ use criterion::Criterion;
 
 use rust_dsp::{
   wavetable::{
-    shared::WaveTable as ShareTable,
-    owned::WaveTable as OwnTable,
+    shared::Wavetable as ShareTable,
+    owned::Wavetable as OwnTable,
 
   }, waveshape::traits::Waveshape,
   interpolation::Linear,
 };
     
 #[cfg(feature="std")]
-use rust_dsp::wavetable::arc::WaveTable as ArcTable;
-#[cfg(not(feature="std"))]
+use rust_dsp::wavetable::arc::Wavetable as ArcTable;
 use std::sync::RwLock;
 
 
@@ -54,16 +53,15 @@ pub fn criterion_benchmark_tables(c: &mut Criterion) {
   let table = [0.0; SIZE].sine();
   let mut wt = ShareTable::new();
   wt.set_samplerate(48000.0);
-  
-  #[cfg(feature="std")]
-  {
-    let atable = Arc::new(RwLock::new([0.0;SIZE].sine().to_vec()));
-    let mut awt = ArcTable::new(atable, 48000.0);
-  }
+  let mut group = c.benchmark_group("tables");
+
   let otable = [0.0;SIZE].sine();
   let mut owt = OwnTable::new(&otable, 48000.0);
 
-  let mut group = c.benchmark_group("tables");
+  group.bench_function(
+    "wt owned",
+    |b| b.iter(|| {run_table_own(&mut owt)}) 
+  );
 
   group.bench_function(
     "wt shared",
@@ -71,13 +69,13 @@ pub fn criterion_benchmark_tables(c: &mut Criterion) {
   );
 
   #[cfg(feature="std")]
+  let mut  awt = {
+    let atable = Arc::new(RwLock::new([0.0;SIZE].sine().to_vec()));
+    ArcTable::new(atable, 48000.0)
+  };
   group.bench_function(
     "wt arc",
     |b| b.iter(|| {run_table_arc(&mut awt)}) 
   );
   
-  group.bench_function(
-    "wt owned",
-    |b| b.iter(|| {run_table_own(&mut owt)}) 
-  );
 }

@@ -1,20 +1,9 @@
-use core::array;
 use crate::waveshape::traits::Waveshape;
+use super::{stereo::Grain, Interpolation, };
+use super::{calc_duration, pan_exp2, wrap_position};
 
-use super::{
-  Interpolation,
-  pan_exp2,
-  calc_duration,
-  wrap_position,
-  stereo::Grain,
-  GrainTrait
-};
-
-pub struct Granulator<const BUFSIZE: usize, const NUMGRAINS: usize> {
-  buffer: [f32;BUFSIZE],
-  buf_size: usize,
+pub struct Granulator<const NUMGRAINS: usize> {
   out: [f32; 2],
-
   envelope: [f32; 512],
   env_size: usize,
   env_mask: usize,
@@ -28,14 +17,14 @@ pub struct Granulator<const BUFSIZE: usize, const NUMGRAINS: usize> {
   sr_recip: f32,
 }
 
-impl<const BUFSIZE: usize, const NUMGRAINS: usize> Granulator<BUFSIZE, NUMGRAINS> {
+
+
+
+impl<const NUMGRAINS: usize> Granulator<NUMGRAINS> {
   pub fn new(samplerate: f32) -> Self {
   // Buffer to hold recorded audio
-  let buffer = [0.0; BUFSIZE];
   let shape = [0.0; 512].hanning();
-
-
-  let grains = array::from_fn(|_|
+  let grains = core::array::from_fn(|_|
     Grain {
       duration: 0.0,
       buf_position: 0.0,
@@ -46,8 +35,6 @@ impl<const BUFSIZE: usize, const NUMGRAINS: usize> Granulator<BUFSIZE, NUMGRAINS
     });
 
   Self {
-    buffer,
-    buf_size: BUFSIZE,
     env_size: 512,
     env_mask: 511,
     out: [0.0; 2],
@@ -62,7 +49,7 @@ impl<const BUFSIZE: usize, const NUMGRAINS: usize> Granulator<BUFSIZE, NUMGRAINS
 }
 
 #[inline]
-pub fn play<BufferInterpolation, EnvelopeInterpolation>( &mut self) -> &[f32; 2]
+pub fn play<BufferInterpolation, EnvelopeInterpolation>( &mut self, buffer: &[f32]) -> &[f32; 2]
 where BufferInterpolation: Interpolation,
       EnvelopeInterpolation: Interpolation {
   self.out = [0.0;2];
@@ -71,7 +58,7 @@ where BufferInterpolation: Interpolation,
     if g.env_position >= self.env_size as f32 { g.active = false; continue;}
     // accumulate output of active grains
     if g.active {
-      let sig = BufferInterpolation::interpolate(g.buf_position, &self.buffer, self.buf_size);
+      let sig = BufferInterpolation::interpolate(g.buf_position, buffer, buffer.len());
       let env_a = self.envelope[g.env_position as usize];
       let env_b = self.envelope[(g.env_position as usize + 1) & self.env_mask];
       let x = g.env_position.fract();
@@ -87,6 +74,7 @@ where BufferInterpolation: Interpolation,
 
 #[inline]
 pub fn trigger_new(&mut self,
+  buf_size: usize,
   position: f32,
   duration: f32,
   pan: f32,
@@ -97,7 +85,7 @@ pub fn trigger_new(&mut self,
     // guard for triggering already active grain
     if g.active { return false }
     // set parameters for grain
-    g.buf_position = wrap_position(position + jitter, self.buf_size);
+    g.buf_position = wrap_position(position + jitter, buf_size);
     g.env_position = 0.0;
     g.rate         = rate;
     g.pan          = pan_exp2(pan);
@@ -113,13 +101,4 @@ pub fn trigger_new(&mut self,
   self.next_grain = (self.next_grain + 1) % self.grains.len();
   true
 }
-}
-
-
-impl<const BUFSIZE: usize, const NUMGRAINS: usize> GrainTrait for Granulator<BUFSIZE, NUMGRAINS> {
-  #[inline]
-  fn set_samplerate(&mut self, samplerate: f32) {
-    self.samplerate = samplerate;
-    self.sr_recip = 1.0 / samplerate;
-  }
 }

@@ -1,6 +1,4 @@
-#[cfg(not(feature="std"))]
 use alloc::{vec, vec::Vec};
-
 pub trait Filter {
   fn process(&mut self, sample: f32) -> f32;
   fn set_damp(&mut self, damp: f32);
