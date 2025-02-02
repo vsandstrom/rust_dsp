@@ -1,6 +1,6 @@
 [package]
 name = "rust_dsp"
-version = "0.1.14-adsr"
+version = "0.1.141"
 edition = "2021"
 
 [dependencies]
