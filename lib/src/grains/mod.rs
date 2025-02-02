@@ -9,6 +9,7 @@ pub mod static_stereo;
 use crate::interpolation::Interpolation;
 use alloc::{vec, vec::Vec};
 use crate::dsp::signal::pan_exp2;
+pub use shared::Granulator;
 
 pub trait GrainTrait {
   fn record(&mut self, _sample: f32) -> Option<f32> {None}
