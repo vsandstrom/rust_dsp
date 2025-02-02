@@ -17,9 +17,6 @@ pub struct Granulator<const NUMGRAINS: usize> {
   sr_recip: f32,
 }
 
-
-
-
 pub impl<const NUMGRAINS: usize> Granulator<NUMGRAINS> {
   pub fn new(samplerate: f32) -> Self {
   // Buffer to hold recorded audio

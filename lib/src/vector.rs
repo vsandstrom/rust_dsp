@@ -1,4 +1,5 @@
 use crate::interpolation::Interpolation;
+
 /// Interpolating oscillator
 ///
 /// Linearly interpolating through an array tables. 
