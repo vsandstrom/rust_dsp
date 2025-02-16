@@ -17,8 +17,8 @@ pub struct Comb {
 }
 
 impl Comb {
-  pub fn new<const N: usize>(samplerate: f32, feedforward: f32, feedback: f32) -> Self {
-    Comb{
+  pub fn new<const N: usize>(feedforward: f32, feedback: f32) -> Self {
+    Self {
       buffer: vec![0.0;N],
       previous: 0.0,
       damp: 0.0,

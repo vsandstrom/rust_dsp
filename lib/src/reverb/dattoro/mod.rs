@@ -8,12 +8,10 @@ use crate::interpolation::Linear;
 
 pub struct DattVerb {
   predelay_line: PreDelay,
-  prev: f32,
-  
   diffuser: [Comb; 4],
 
   pub predelay: f32,
-  pub bandwidth: f32,
+  bandwidth: Onepole,
   pub decay: f32,
   input_diffusion_1: f32,
   input_diffusion_2: f32,
@@ -24,13 +22,14 @@ pub struct DattVerb {
 
 impl Default for DattVerb {
   fn default() -> Self {
+    let mut bandwidth = Onepole::new();
+    bandwidth.set_damp(0.9995);
     Self {
       // Predelay
       predelay_line: PreDelay::new(48000),
       predelay: 0.1,
       // Bandwidth filter
-      bandwidth: 0.9995,
-      prev: 0.0,
+      bandwidth,
       // Input Diffuser
       input_diffusion_1: 0.75,
       input_diffusion_2: 0.625,
@@ -69,32 +68,30 @@ impl DattVerb {
     let input_diffusion_2 = 0.625;
     let decay_diffusion_1 = 0.7;
     let decay_diffusion_2 = 0.5;
+    let mut bandwidth = Onepole::new();
+    bandwidth.set_damp(0.9995);
+
 
     Self {
       // Predelay
       predelay_line: PreDelay::new(48000),
       predelay: 0.1,
       // Bandwidth filter
-      bandwidth: 0.9995,
-      prev: 0.0,
+      bandwidth,
       // Input Diffuser
       input_diffusion_1: 0.75,
       input_diffusion_2: 0.625,
       diffuser: [
         Comb::new::<142>(
-          0.0, 
           input_diffusion_1, 
           input_diffusion_1),
         Comb::new::<107>(
-          0.0,
           input_diffusion_1,
           input_diffusion_1),
         Comb::new::<379>(
-          0.0,
           input_diffusion_2,
           input_diffusion_2),
         Comb::new::<277>(
-          0.0,
           input_diffusion_2,
           input_diffusion_2)
       ],
@@ -116,10 +113,7 @@ impl DattVerb {
     let mut sig = samples.sum().mul(0.5);
     sig = self.predelay_line.play::<Linear>(sig, self.predelay);
     // Bandwidth
-    let temp = sig;
-    sig = sig * self.bandwidth + (self.prev * self.bandwidth * -1.0);
-    self.prev = temp;
-
+    sig = self.bandwidth.process(sig);
     // Input diffusers:
     for c in self.diffuser.iter_mut() {
       sig = c.process(sig);
@@ -128,6 +122,12 @@ impl DattVerb {
     // TANK
     sig
   }
+
+
+  // pub fn set_samplerate(&mut self, samplerate: f32) {
+  //   self.diffuser.iter_mut().for_each(|c| );
+  //
+  // }
 }
 
 
@@ -178,6 +178,7 @@ impl Onepole {
       damp: 0.0
     }
   }
+
   fn process(&mut self, sample: f32) -> f32 {
     self.prev = (self.damp * sample) + ((1.0 - self.damp) * self.prev);
     self.prev
