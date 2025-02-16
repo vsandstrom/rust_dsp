@@ -1,15 +1,17 @@
-use std::{
+use std::{ 
   sync::mpsc::channel,
   thread,
-  time::Duration
+  time::Duration 
 };
 
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use rust_dsp::{ 
+  dsp::signal::map, interpolation::{Floor, Linear}, waveshape::{self, sawtooth, phasor}, wavetable::shared::WaveTable
+};
 
-use rust_dsp::{adsr::{ADSREnvelope, Reset}, interpolation, waveshape::sine, wavetable::shared::WaveTable, dsp::signal::map};
+use mattias_osc::Osc;
 
 // type Frame = [f32; 2];
-
 
 fn main() -> anyhow::Result<()> {
     // List all audio devices
@@ -37,21 +39,36 @@ fn main() -> anyhow::Result<()> {
     let sr = config.sample_rate.0 as f32;
 
     // SETUP YOUR AUDIO PROCESSING STRUCTS HERE !!!! <-------------------------
-    let mut env = ADSREnvelope::new(sr);
-    let mut w = vec![0.0; 512];
-    sine(&mut w);
+    let mut w = vec![0.0; 513];
+    let mut e = vec![0.0; 513];
+    w[512]=0.0;
+    e[512]=0.0;
+    waveshape::phasor(&mut w[0..512]);
+    waveshape::hanning(&mut e[0..512]);
 
-    let mut lfo0 = WaveTable::new();
-    let mut lfo1 = WaveTable::new();
-    let mut lfo2 = WaveTable::new();
+    let mut lfo: [WaveTable; 5] = std::array::from_fn(|_| WaveTable::new());
+    lfo.iter_mut().for_each(|w| w.set_samplerate(sr));
+    let mut env = WaveTable::new();
 
-    lfo0.set_samplerate(sr);
-    lfo1.set_samplerate(sr);
-    lfo2.set_samplerate(sr);
+    env.set_samplerate(sr);
+    let mut osc: [Osc<10>; 4] = [
+      Osc::new(config.sample_rate.0, 1.0),
+      Osc::new(config.sample_rate.0, 1.0),
+      Osc::new(config.sample_rate.0, 1.0),
+      Osc::new(config.sample_rate.0, 1.0),
+    ];
 
-    let mut t = true;
-    let mut sustain = true;
+    let fund = 400.0;
+    let freq = [
+      [fund * 2.0/5.0, fund * 3.0/2.0, fund * 8.0/5.0, fund * 12.0/5.0],
+      [fund * 1.0/2.0, fund * 6.0/2.0, fund * 10.0/9.0, fund * 6.0/5.0],
+      [fund * 1.0/3.0, fund * 7.0/6.0, fund * 7.0/4.0, fund * 12.0/8.0],
+      [fund * 3.0/8.0, fund * 9.0/6.0, fund * 9.0/4.0, fund * 10.0/8.0],
+    ];
+  
     let mut c = 0;
+    let mut j = 0;
+
 
     // Create a channel to send and receive samples
     let (tx, _rx) = channel::<f32>();
@@ -74,26 +91,57 @@ fn main() -> anyhow::Result<()> {
       | data: &mut [f32], _: &cpal::OutputCallbackInfo | {
       // Process output data
       for frame in data.chunks_mut(2) {
-        let out = env.play(t, sustain);
-        t = false;
-        env.set_attack_dur(map(&mut lfo0.play::<interpolation::Linear>(&w, 0.1, 0.0), -1.0, 1.0, 0.01, 0.5));
-        env.set_decay_dur(map(&mut lfo1.play::<interpolation::Linear>(&w, 0.2, 0.0), -1.0, 1.0, 0.1, 0.8));
-        env.set_attack_cur(map(&mut lfo2.play::<interpolation::Linear>(&w, 0.45, 0.0), -1.0, 1.0, 0.5, 1.5));
+        let a = map(
+          &mut lfo[0].play::<Linear>(&w, 0.2, 0.0), 
+          -1.0,
+          1.0,
+          1.0,
+          2.0
+        );
 
-        if c == (48000.0*1.5) as usize { sustain = false; }
-        if c == (48000.0 * 2.0) as usize {
-          t = true;
-          sustain = true;
-          c = 0;
-        }
-        c+=1;
+        let w1 = map(
+          &mut lfo[1].play::<Linear>(&w, 0.2, 1.0),
+          -1.0,
+          1.0,
+          0.0,
+          1.0
+        );
 
-        
+        let w2 = map(
+          &mut lfo[2].play::<Linear>(&w, 0.2, 1.0),
+          -1.0,
+          1.0,
+          1.0,
+          0.0
+        );
+        let w3 = map(
+          &mut lfo[3].play::<Linear>(&w, 0.2, 1.0),
+          -1.0,
+          1.0,
+          0.0,
+          1.0
+        );
+        let w4 = map(
+          &mut lfo[4].play::<Linear>(&w, 0.2, 1.0),
+          -1.0,
+          1.0,
+          1.0,
+          0.0
+        );
+        let wx = [w1, w2, w3, w4];
 
-        frame.iter_mut().for_each(
-          |sample| {
-          *sample = out
-          })
+        let mut prev = 0.0;
+        let out = osc.iter_mut().enumerate().map(|(i, o)| 
+          {
+            let t = o.process(freq[j][i], 1.0, 1.0);//wx[i] + (prev * 0.12));
+            prev = t;
+            t
+          }
+        ).sum::<f32>().tanh() * env.play::<Floor>(&e, 1.0/5.0, 0.0);
+        c+=1; 
+        if c == config.sample_rate.0 * 5 { j+=1; j %= freq.len(); c = 0;}
+
+        frame.iter_mut().for_each( |sample| { *sample = out })
       };
     };
 
@@ -117,11 +165,7 @@ fn main() -> anyhow::Result<()> {
 
     input_stream.play().expect("FAILED INPUT STREAM");
     output_stream.play().expect("FAILED OUTPUT STREAM");
-
-
-    loop{
-      thread::sleep(Duration::from_secs(40));
-    }
+    loop{ thread::sleep(Duration::from_secs(40)); }
 
     // allow running forever
     #[allow(unreachable_code)]

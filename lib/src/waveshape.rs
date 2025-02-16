@@ -80,6 +80,15 @@ pub fn reverse_sawtooth(table: &mut [f32]) {
     angle -= inc;
   }
 }
+    
+pub fn phasor(table: &mut [f32]) {
+  let mut angle: f32 = 0.0;
+  let inc: f32 = 1.0 / (table.len() as f32 - 1.0);
+  for sample in table.iter_mut() {
+    *sample = angle;
+    angle += inc;
+  }
+}
 
 pub mod traits {
   use super::*;
