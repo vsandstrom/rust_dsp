@@ -1,15 +1,15 @@
 use rust_dsp::interpolation::*;
-use rust_dsp::wavetable::shared::WaveTable;
+use rust_dsp::wavetable::shared::Wavetable;
 use simple_plot::plot;
 
 
 pub fn plot_buffer<const N:usize>(buffer: &[f32; N]) {
   const FREQ: f32 = 48000.0 / 10000.0;
-  let mut wt1 = WaveTable::new();
-  let mut wt2 = WaveTable::new();
-  let mut wt3 = WaveTable::new();
-  let mut wt4 = WaveTable::new();
-  let mut wt5 = WaveTable::new();
+  let mut wt1 = Wavetable::new();
+  let mut wt2 = Wavetable::new();
+  let mut wt3 = Wavetable::new();
+  let mut wt4 = Wavetable::new();
+  let mut wt5 = Wavetable::new();
   wt1.set_samplerate(48000.0);
   wt2.set_samplerate(48000.0);
   wt3.set_samplerate(48000.0);

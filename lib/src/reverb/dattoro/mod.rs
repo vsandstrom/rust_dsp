@@ -6,6 +6,11 @@ use crate::filter::{Filter, Comb};
 use super::Interpolation;
 use crate::interpolation::Linear;
 
+// REMEMBER!!! Dattoros reverb uses wack samplerate!
+//
+// might need to recalculate the delayline constansts
+
+
 pub struct DattVerb {
   predelay_line: PreDelay,
   diffuser: [Comb; 4],
@@ -22,6 +27,12 @@ pub struct DattVerb {
 
 impl Default for DattVerb {
   fn default() -> Self {
+    let input_diffusion_1 = 0.75;
+    let input_diffusion_2 = 0.625;
+    let decay_diffusion_1 = 0.7;
+    let decay_diffusion_2 = 0.5;
+
+
     let mut bandwidth = Onepole::new();
     bandwidth.set_damp(0.9995);
     Self {
@@ -35,19 +46,15 @@ impl Default for DattVerb {
       input_diffusion_2: 0.625,
       diffuser: [
         Comb::new::<142>(
-          0.0, 
           input_diffusion_1, 
           input_diffusion_1),
         Comb::new::<107>(
-          0.0,
           input_diffusion_1,
           input_diffusion_1),
         Comb::new::<379>(
-          0.0,
           input_diffusion_2,
           input_diffusion_2),
         Comb::new::<277>(
-          0.0,
           input_diffusion_2,
           input_diffusion_2)
       ],
@@ -119,7 +126,13 @@ impl DattVerb {
       sig = c.process(sig);
     }
 
-    // TANK
+    // LEFT TANK
+
+
+
+    // RIGHT TANK
+
+
     sig
   }
 
@@ -129,12 +142,6 @@ impl DattVerb {
   //
   // }
 }
-
-
-  // /// Set delay time in samples
-  // fn set_time(&mut self, delay: f32) {
-  //   self.delay = delay;
-  // }
 
 struct PreDelay { 
   buffer: Vec<f32>,
@@ -188,3 +195,6 @@ impl Onepole {
     self.damp = damp;
   }
 }
+
+
+

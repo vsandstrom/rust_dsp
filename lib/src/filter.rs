@@ -1,19 +1,19 @@
 use alloc::{vec, vec::Vec};
 pub trait Filter {
   fn process(&mut self, sample: f32) -> f32;
-  fn set_damp(&mut self, damp: f32);
+}
+
+trait InverseComb {
+  fn process_inverse(&mut self, sample: f32) -> f32;
 }
 
 pub struct Comb {
   buffer: Vec<f32>,
-  damp: f32,
   previous: f32,
   feedforward: f32,
   feedback: f32,
   position: usize,
   delay: usize,
-  previous_in: f32,
-  previous_out: f32,
 }
 
 impl Comb {
@@ -21,38 +21,46 @@ impl Comb {
     Self {
       buffer: vec![0.0;N],
       previous: 0.0,
-      damp: 0.0,
       position: 0,
       feedforward,
       feedback,
       delay: N,
-      previous_in: 0.0,
-      previous_out: 0.0
     }
   }
 }
 
 impl Filter for Comb {
-  /// Set optional LowPass damping, [0.0 - 1.0], 0.0 is off
-  fn set_damp(&mut self, damp: f32) {
-    self.damp = damp;
-  }
 
   /// IIR: feedback > 0.0, feedforward == 0.0
   /// FIR: feedback == 0.0, feedforward > 0.0
   /// AllPass:  feedback == feedforward > 0.0
   fn process(&mut self, sample: f32) -> f32 {
-    let delayed = self.buffer[self.position];
-    let dc_blocked = sample - self.previous_in + 0.995 * self.previous_out;
+    let buf = self.buffer[self.position];
 
-    self.previous_in = sample;
-    self.previous_out = dc_blocked;
-
-    self.previous = delayed * (1.0 * self.damp) + self.previous * self.damp;
-    let fb = dc_blocked - self.feedback * self.previous;
+    let fb = sample - self.feedback * buf;
     self.buffer[self.position] = fb;
-    self.position = (self.position + 1) % self.delay;
-    self.feedforward * fb + delayed
+
+    let out = self.feedforward * fb + buf;
+    self.position += 1;
+    if self.position >= self.delay {
+      self.position -= self.delay;
+    }
+    out
+  }
+}
+
+impl InverseComb for Comb {
+  fn process_inverse(&mut self, sample: f32) -> f32 {
+    let buf = self.buffer[self.position];
+    let fb = sample + self.feedback * buf;
+    self.buffer[self.position] = fb;
+
+    let out = self.feedforward * fb - buf;
+    self.position += 1;
+    if self.position >= self.delay {
+      self.position -= self.delay;
+    }
+    out
   }
 }
   
@@ -99,6 +107,9 @@ impl Onepole {
       damp: 0.0
     }
   }
+  pub fn set_damp(&mut self, damp: f32) {
+    self.damp = damp;
+  }
 }
 
 impl Filter for Onepole {
@@ -107,9 +118,6 @@ impl Filter for Onepole {
     self.prev
   }
 
-  fn set_damp(&mut self, damp: f32) {
-    self.damp = damp;
-  }
 }
 
 pub mod biquad {

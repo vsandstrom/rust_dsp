@@ -71,7 +71,7 @@ use crate::interpolation::Interpolation;
 //
 
 pub trait Verb {
-  fn new(samplerate: f32) -> Self;
+  fn new() -> Self;
   fn process<T: Interpolation>(&mut self, sample: f32) -> f32;
 }
 
