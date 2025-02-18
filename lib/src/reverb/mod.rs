@@ -1,5 +1,6 @@
 pub mod schroeder;
 pub mod chowning;
+pub mod freeverb;
 pub mod dattoro;
 
 // use crate::delay::{Delay, DelayTrait, FixedDelay};

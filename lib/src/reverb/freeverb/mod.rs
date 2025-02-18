@@ -1,0 +1,62 @@
+use crate::filter::{Comb, Filter, LPComb};
+use super::Verb;
+use std::arch::asm;
+
+
+struct Freeverb {
+  lpc: [LPComb; 8],
+  ap: [Comb; 4],
+}
+
+impl Verb for Freeverb {
+  fn new() -> Self {
+    let mut lpc =  [
+      LPComb::new::<1557>(0.0, 0.84),
+      LPComb::new::<1617>(0.0, 0.84),
+      LPComb::new::<1491>(0.0, 0.84),
+      LPComb::new::<1422>(0.0, 0.84),
+      LPComb::new::<1277>(0.0, 0.84),
+      LPComb::new::<1356>(0.0, 0.84),
+      LPComb::new::<1188>(0.0, 0.84),
+      LPComb::new::<1116>(0.0, 0.84),
+    ];
+
+    lpc.iter_mut().for_each(|l| l.set_damp(0.2));
+    Self {
+      lpc,
+      ap: [
+        Comb::new::<225>(0.5, 0.5),
+        Comb::new::<556>(0.5, 0.5),
+        Comb::new::<441>(0.5, 0.5),
+        Comb::new::<241>(0.5, 0.5)
+      ]
+    }
+  }
+
+  #[cfg(target_arch="x86")]
+  fn process<T: crate::interpolation::Interpolation>(&mut self, sample: f32) -> f32 {
+    let mut out = self.lpc
+      .iter_mut()
+      .fold(0.0, |acc, lpcomb| 
+        acc + lpcomb.process(sample));
+
+    out = self.ap[0].process(out);
+    out = self.ap[1].process(out);
+    out = self.ap[2].process(out);
+    self.ap[3].process(out)
+  }
+
+  #[cfg(not(target_arch="x86"))]
+  fn process<T: crate::interpolation::Interpolation>(&mut self, sample: f32) -> f32 {
+    let mut out = self.lpc
+      .iter_mut()
+      .fold(0.0, |acc, lpcomb| 
+        acc + lpcomb.process(sample));
+
+    out = self.ap[0].process(out);
+    out = self.ap[1].process(out);
+    out = self.ap[2].process(out);
+    self.ap[3].process(out)
+      
+  }
+}

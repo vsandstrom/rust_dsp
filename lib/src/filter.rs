@@ -93,6 +93,58 @@ impl InverseComb for Comb {
   //            ╙────────( * -aM ) <─╜
   //
   //       where: b0 == aM
+pub struct LPComb {
+  buffer: Vec<f32>,
+  damp: f32,
+  previous: f32,
+  feedforward: f32,
+  feedback: f32,
+  position: usize,
+  delay: usize,
+  previous_in: f32,
+  previous_out: f32,
+}
+
+impl LPComb {
+  pub fn new<const N: usize>(feedforward: f32, feedback: f32) -> Self {
+    Self {
+      buffer: vec![0.0;N],
+      previous: 0.0,
+      damp: 0.0,
+      position: 0,
+      feedforward,
+      feedback,
+      delay: N,
+      previous_in: 0.0,
+      previous_out: 0.0
+    }
+  }
+  
+  /// Set optional LowPass damping, [0.0 - 1.0], 0.0 is off
+  pub fn set_damp(&mut self, damp: f32) {
+    self.damp = damp;
+  }
+}
+
+impl Filter for LPComb {
+
+  /// IIR: feedback > 0.0, feedforward == 0.0
+  /// FIR: feedback == 0.0, feedforward > 0.0
+  /// AllPass:  feedback == feedforward > 0.0
+  fn process(&mut self, sample: f32) -> f32 {
+    let delayed = self.buffer[self.position];
+    let dc_blocked = sample - self.previous_in + 0.995 * self.previous_out;
+
+    self.previous_in = sample;
+    self.previous_out = dc_blocked;
+
+    self.previous = delayed * (1.0 * self.damp) + self.previous * self.damp;
+    let fb = dc_blocked - self.feedback * self.previous;
+    self.buffer[self.position] = fb;
+    self.position = (self.position + 1) % self.delay;
+    self.feedforward * fb + delayed
+  }
+}
 
 #[derive(Default)]
 pub struct Onepole {
