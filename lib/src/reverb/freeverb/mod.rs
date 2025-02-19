@@ -3,7 +3,7 @@ use super::Verb;
 use std::arch::asm;
 
 
-struct Freeverb {
+pub struct Freeverb {
   lpc: [LPComb; 8],
   ap: [Comb; 4],
 }
@@ -21,7 +21,7 @@ impl Verb for Freeverb {
       LPComb::new::<1116>(0.0, 0.84),
     ];
 
-    lpc.iter_mut().for_each(|l| l.set_damp(0.2));
+    lpc.iter_mut().for_each(|l| l.set_damp(0.33));
     Self {
       lpc,
       ap: [

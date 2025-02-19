@@ -138,7 +138,8 @@ impl Filter for LPComb {
     self.previous_in = sample;
     self.previous_out = dc_blocked;
 
-    self.previous = delayed * (1.0 * self.damp) + self.previous * self.damp;
+    self.previous = delayed + self.damp * ( self.previous - delayed );
+
     let fb = dc_blocked - self.feedback * self.previous;
     self.buffer[self.position] = fb;
     self.position = (self.position + 1) % self.delay;
@@ -566,7 +567,3 @@ pub mod biquad {
 }
 
 
-#[cfg(test)]
-mod tests {
-
-}

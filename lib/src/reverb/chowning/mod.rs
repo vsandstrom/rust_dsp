@@ -1,9 +1,8 @@
-use crate::filter::Onepole;
 
+use crate::filter::Onepole;
 use super::Verb;
 use super::{Filter, Comb};
 use super::Interpolation;
-
 pub struct ChownVerb {
   c: [Comb; 4],
   l: [Onepole; 4],
