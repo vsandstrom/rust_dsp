@@ -1,4 +1,4 @@
-use core::{f32::consts::PI, usize};
+use core::f32::consts::PI;
 
 pub struct Linear { }
 pub struct Cubic { }
@@ -12,13 +12,22 @@ pub trait Interpolation {
 
 /// Linear interpolation - read position is interpolated between 2 points
 impl Interpolation for Linear {
+  #[cfg(not(feature="fma"))]
   fn interpolate(position: f32, buffer: &[f32], buffer_size: usize) -> f32 {
     let pos = position as usize;
     let x = position.fract();
     let a = buffer[pos%buffer_size];
     let b = buffer[(pos+1)%buffer_size];
     a + x * (b - a)
-    // buffer[pos % buffer_size] * (1.0-x) + buffer[(pos+1) % buffer_size] * x 
+  }
+  
+  #[cfg(feature="fma")]
+  fn interpolate(position: f32, buffer: &[f32], buffer_size: usize) -> f32 {
+    let pos = position as usize;
+    let x = position.fract();
+    let a = buffer[pos%buffer_size];
+    let b = buffer[(pos+1)%buffer_size];
+    f32::mul_add(x, b, f32::mul_add(-x, a, a))
   }
 }
 

@@ -1,5 +1,5 @@
 
-use crate::filter::Onepole;
+use crate::filter::onepole::Onepole;
 use super::Verb;
 use super::{Filter, Comb};
 use super::Interpolation;
@@ -13,7 +13,7 @@ pub struct ChownVerb {
 impl Verb for ChownVerb {
   fn new() -> Self {
     let mut l = std::array::from_fn(|_| Onepole::new());
-    l.iter_mut().for_each(|l| l.set_damp(0.3));
+    l.iter_mut().for_each(|l| l.set_coeff(-0.2));
     Self {
       l,
       c: [

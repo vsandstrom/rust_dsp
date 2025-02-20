@@ -1,4 +1,4 @@
-use crate::filter::{Comb, Filter, LPComb};
+use crate::filter::{Filter, comb::{Comb, LPComb}};
 use super::Verb;
 use std::arch::asm;
 
@@ -6,6 +6,15 @@ use std::arch::asm;
 pub struct Freeverb {
   lpc: [LPComb; 8],
   ap: [Comb; 4],
+}
+
+impl Freeverb {
+  /// values of `[damp]` should be 0.0 < damp < 1.0
+  /// to have a stable behavior.
+  /// values below 0.0 will explode the reverb.
+  fn set_damp(&mut self, damp: f32) {
+    self.lpc.iter_mut().for_each(|x| x.set_damp(damp));
+  }
 }
 
 impl Verb for Freeverb {
@@ -21,7 +30,7 @@ impl Verb for Freeverb {
       LPComb::new::<1116>(0.0, 0.84),
     ];
 
-    lpc.iter_mut().for_each(|l| l.set_damp(0.33));
+    lpc.iter_mut().for_each(|l| l.set_damp(0.0));
     Self {
       lpc,
       ap: [
@@ -32,6 +41,7 @@ impl Verb for Freeverb {
       ]
     }
   }
+
 
   #[cfg(target_arch="x86")]
   fn process<T: crate::interpolation::Interpolation>(&mut self, sample: f32) -> f32 {

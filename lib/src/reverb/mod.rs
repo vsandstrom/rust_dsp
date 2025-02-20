@@ -4,7 +4,7 @@ pub mod freeverb;
 pub mod dattoro;
 
 // use crate::delay::{Delay, DelayTrait, FixedDelay};
-use crate::filter::{Filter, Comb};
+use crate::filter::{Filter, comb::Comb};
 use crate::interpolation::Interpolation;
 
 

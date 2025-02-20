@@ -2,7 +2,7 @@ use core::ops::Mul;
 
 use crate::delay::{Delay, DelayTrait, FixedDelay};
 use crate::dsp::buffer::traits::SignalVector;
-use crate::filter::{Filter, Comb};
+use crate::filter::{Filter, comb::Comb};
 use super::Interpolation;
 use crate::interpolation::Linear;
 

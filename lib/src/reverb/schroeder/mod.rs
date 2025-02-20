@@ -1,4 +1,4 @@
-use crate::filter::Onepole;
+use crate::filter::onepole::Onepole;
 use super::Verb;
 use super::{Filter, Comb};
 use super::Interpolation;
@@ -13,7 +13,7 @@ pub struct SchroederVerb {
 impl Verb for SchroederVerb {
   fn new() -> Self {
     let mut l = std::array::from_fn(|_| Onepole::new());
-    l.iter_mut().for_each(|l| l.set_damp(0.3));
+    l.iter_mut().for_each(|l| l.set_coeff(0.8));
 
     Self {
       c: [

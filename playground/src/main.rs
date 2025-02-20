@@ -6,7 +6,7 @@ use std::{
 
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
-use rust_dsp::delay::DelayLine;
+use rust_dsp::{delay::DelayLine, interpolation::Linear, reverb::{chowning::ChownVerb, freeverb::Freeverb, schroeder::SchroederVerb, Verb}};
 
 // type Frame = [f32; 2];
 
@@ -37,10 +37,12 @@ fn main() -> anyhow::Result<()> {
     let sr = config.sample_rate.0 as f32;
 
     // SETUP YOUR AUDIO PROCESSING STRUCTS HERE !!!! <-------------------------
-    let mut d: DelayLine<{1<<17}> = match DelayLine::new((1.0 * sr) as usize) {
-      Ok(dline) => dline,
-      Err(e) => panic!("{}", e)
-    };
+    // let mut d: DelayLine<{1<<17}> = match DelayLine::new((1.0 * sr) as usize) {
+    //   Ok(dline) => dline,
+    //   Err(e) => panic!("{}", e)
+    // };
+    
+    let mut sc = Freeverb::new();
 
     // Create a channel to send and receive samples
     let (tx, rx) = channel::<Vec<f32>>();
@@ -48,23 +50,24 @@ fn main() -> anyhow::Result<()> {
     let input_callback = move 
       | data: &[f32], _: &cpal::InputCallbackInfo | {
         // Process input data
-      tx.send(data.to_vec());
     };
+
+    let mut impulse = 1.0;
 
 
     let output_callback = move 
       | data: &mut [f32], _: &cpal::OutputCallbackInfo | {
       // Process output data
-      if let Ok(input) = rx.recv() {
-        for (out_frame, in_frame) in data.chunks_mut(2).zip(input.chunks(2)) {
-          let out = d.read_and_write(in_frame[0]);
-          out_frame.iter_mut().for_each(
-            |sample| {
-            *sample = out
-            })
-        };
 
-      }
+      for out_frame in data.chunks_mut(2) {
+        let out = sc.process::<Linear>(impulse);
+        impulse = 0.0;
+        out_frame.iter_mut().for_each(
+          |sample| {
+          *sample = out
+          })
+      };
+
     };
 
     let err_callback = |err: cpal::StreamError| {
