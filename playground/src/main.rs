@@ -1,12 +1,13 @@
 use std::{
-  sync::mpsc::channel,
-  thread,
-  time::Duration
+  f32::consts::TAU, sync::mpsc::channel, thread, time::Duration
 };
 
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
-use rust_dsp::delay::DelayLine;
+use rust_dsp::{
+  filter::biquad::{twopole::Biquad, fourpole::Biquad4, BiquadCoeffs, BiquadTrait}, interpolation::Hermetic, waveshape::sawtooth, wavetable::shared::Wavetable
+
+};
 
 // type Frame = [f32; 2];
 
@@ -37,10 +38,14 @@ fn main() -> anyhow::Result<()> {
     let sr = config.sample_rate.0 as f32;
 
     // SETUP YOUR AUDIO PROCESSING STRUCTS HERE !!!! <-------------------------
-    let mut d: DelayLine<{1<<17}> = match DelayLine::new((1.0 * sr) as usize) {
-      Ok(dline) => dline,
-      Err(e) => panic!("{}", e)
-    };
+    let mut bq= Biquad4::new();
+    bq.calc_bpf((TAU * 1000.0) / sr, 5.0);
+
+    let mut wt = Wavetable::new();
+    wt.set_samplerate(sr);
+
+    let mut table = [0.0f32; 512];
+    sawtooth(&mut table);
 
     // Create a channel to send and receive samples
     let (tx, rx) = channel::<Vec<f32>>();
@@ -48,23 +53,20 @@ fn main() -> anyhow::Result<()> {
     let input_callback = move 
       | data: &[f32], _: &cpal::InputCallbackInfo | {
         // Process input data
-      tx.send(data.to_vec());
+      // tx.send(data.to_vec());
     };
 
 
     let output_callback = move 
       | data: &mut [f32], _: &cpal::OutputCallbackInfo | {
       // Process output data
-      if let Ok(input) = rx.recv() {
-        for (out_frame, in_frame) in data.chunks_mut(2).zip(input.chunks(2)) {
-          let out = d.read_and_write(in_frame[0]);
-          out_frame.iter_mut().for_each(
-            |sample| {
-            *sample = out
-            })
-        };
-
-      }
+      for out_frame in data.chunks_mut(2) {
+        let mut out = 0.0;
+        let sig = wt.play::<Hermetic>(&table, 200.0, 0.0);
+        out = bq.process(sig);
+        out_frame[0] = out;
+        out_frame[1] = sig;
+      };
     };
 
     let err_callback = |err: cpal::StreamError| {

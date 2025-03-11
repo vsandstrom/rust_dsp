@@ -27,15 +27,16 @@ fn grain_old(og: &mut OldGranulator<32, 240000>) -> f32 {
   }
   out
 }
-fn grain_new(ng: &mut NewGranulator) -> f32 {
-  let mut out = 0.0;
+
+fn grain_new(ng: &mut NewGranulator<32>, buffer: &[f32]) -> f32 {
+  let mut out = &[0.0,0.0];
   for i in 0..256 {
-    out = ng.play::<Linear, Linear>();
+    out = ng.play::<Linear, Linear>(buffer);
     if i % 64 == 0 {
-      ng.trigger_new(0.5, 0.5, 1.0, 0.1);
+      ng.trigger_new(buffer.len(), 0.5, 3.5, 0.5, 1.0, 0.1);
     }
   }
-  out
+  out[0]
 }
 
 fn grain_stereo(sg: &mut StereoGranulator, buffer: &[f32]) -> f32 {
@@ -66,12 +67,12 @@ pub fn criterion_benchmark_grains(c: &mut Criterion) {
   );
 
   let shape = [0.0;SIZE].hanning().to_vec();
-  let mut g = NewGranulator::new(shape.clone(), 48000.0, 32, BUFSIZE);
+  let mut g = NewGranulator::<32>::new(48000.0);
 
   let mut sg = StereoGranulator::new(shape, 48000.0, 32);
 
   while og.record(thread_rng().gen_range(0.0..1.0)).is_some() {continue;}
-  while g.record(thread_rng().gen_range(0.0..1.0)).is_some() {continue;}
+  // while g.record(thread_rng().gen_range(0.0..1.0)).is_some() {continue;}
   while sg.record(thread_rng().gen_range(0.0..1.0)).is_some() {continue;}
 
 

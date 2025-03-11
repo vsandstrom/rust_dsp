@@ -15,10 +15,10 @@ pub struct SchroederVerb {
 
 impl Verb for SchroederVerb {
   fn new(samplerate: f32) -> Self {
-    let mut c1 = Comb::new::<4799>(samplerate, 0.95, 0.0);
-    let mut c2 = Comb::new::<4999>(samplerate, 0.95, 0.0);
-    let mut c3 = Comb::new::<5399>(samplerate, 0.95, 0.0);
-    let mut c4 = Comb::new::<5801>(samplerate, 0.95, 0.0);
+    let mut c1 = Comb::new::<4799>(0.95, 0.0);
+    let mut c2 = Comb::new::<4999>(0.95, 0.0);
+    let mut c3 = Comb::new::<5399>(0.95, 0.0);
+    let mut c4 = Comb::new::<5801>(0.95, 0.0);
 
     c1.set_damp(0.3);
     c2.set_damp(0.3);
@@ -26,9 +26,9 @@ impl Verb for SchroederVerb {
     c4.set_damp(0.3);
 
 
-    let a1 = Comb::new::<1051>(samplerate, 0.7, 0.7);
-    let a2 = Comb::new::<337>(samplerate, 0.7, 0.7);
-    let a3 = Comb::new::<113>(samplerate, 0.7, 0.7);
+    let a1 = Comb::new::<1051>(0.7, 0.7);
+    let a2 = Comb::new::<337>(0.7, 0.7);
+    let a3 = Comb::new::<113>(0.7, 0.7);
 
     SchroederVerb{
       c1, c2, c3, c4, 

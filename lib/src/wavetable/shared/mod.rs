@@ -5,6 +5,7 @@ use super::*;
 /// Performance lies between owned and Arc<RwLock>, and is preferred when
 /// trying to keep allocated data at a minimum. Beware of stack overflow when
 /// creating too many big arrays. 
+#[derive(Clone, Copy)]
 pub struct Wavetable {
   position: f32,
   samplerate: f32,
