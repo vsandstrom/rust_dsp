@@ -49,4 +49,9 @@ impl Verb for ChownVerb {
     out = self.a3.process(out);
     out
   }
+
+  fn set_damp(&mut self, damp: f32) {
+    let damp = if damp < 0.0 { 0.0 } else { damp };
+    self.l.iter_mut().for_each(|op| op.set_coeff(damp));
+  }
 }

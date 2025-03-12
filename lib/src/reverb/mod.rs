@@ -1,6 +1,7 @@
 pub mod schroeder;
 pub mod chowning;
 pub mod dattoro;
+pub mod vikverb;
 
 // use crate::delay::{Delay, DelayTrait, FixedDelay};
 use crate::filter::{Filter, Comb};
@@ -73,6 +74,7 @@ use crate::interpolation::Interpolation;
 pub trait Verb {
   fn new(samplerate: f32) -> Self;
   fn process<T: Interpolation>(&mut self, sample: f32) -> f32;
+  fn set_damp(&mut self, damp: f32) {}
 }
 
 

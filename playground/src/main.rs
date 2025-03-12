@@ -5,7 +5,7 @@ use std::{
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
 use rust_dsp::{
-  filter::biquad::{twopole::Biquad, fourpole::Biquad4, BiquadCoeffs, BiquadTrait}, interpolation::Hermetic, waveshape::sawtooth, wavetable::shared::Wavetable
+  filter::biquad::{twopole::Biquad, fourpole::Biquad4, BiquadCoeffs, BiquadTrait}, interpolation::Hermite, waveshape::sawtooth, wavetable::shared::Wavetable
 
 };
 
@@ -62,7 +62,7 @@ fn main() -> anyhow::Result<()> {
       // Process output data
       for out_frame in data.chunks_mut(2) {
         let mut out = 0.0;
-        let sig = wt.play::<Hermetic>(&table, 200.0, 0.0);
+        let sig = wt.play::<Hermite>(&table, 200.0, 0.0);
         out = bq.process(sig);
         out_frame[0] = out;
         out_frame[1] = sig;

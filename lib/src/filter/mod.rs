@@ -1,6 +1,7 @@
 pub mod biquad;
 
 use alloc::{vec, vec::Vec};
+use crate::interpolation::Interpolation;
 
 
 pub trait Filter {
@@ -116,7 +117,9 @@ impl Filter for Onepole {
   }
 }
 
-
+pub trait InterpolatingFilter {
+  fn process<I: Interpolation>(&mut self, sample: f32, position: f32) -> f32;
+}
 
 #[cfg(test)]
 mod tests {

@@ -41,7 +41,9 @@ impl Verb for SchroederVerb {
       a1, a2, a3 
     }            
   }              
+}
 
+impl Verb for SchroederVerb {
   fn process<T:Interpolation>(&mut self, sample: f32) -> f32 {
     let mut out;
     out = self.a1.process(sample);
@@ -55,4 +57,64 @@ impl Verb for SchroederVerb {
 
     out
   }
+
+
+  fn set_damp(&mut self, damp: f32) {
+    let damp = if damp < 0.0 { 0.0 } else { damp };
+    self.l.iter_mut().for_each(|op| op.set_coeff(damp));
+  }
 }
+
+pub struct ColorlessVerb<const N: usize = 3, const M: usize = 5> {
+  delayline: [DelayLine; N], 
+  dl_coeff: [f32; N],
+  allpass: [LPComb; M],
+  prev: f32,
+  g: f32,
+}
+
+impl ColorlessVerb {
+  pub fn new(samplerate: usize) -> Self {
+    let mut allpass = [
+      LPComb::new::<513>(0.7, 0.7),
+      LPComb::new::<899>(0.7, 0.7),
+      LPComb::new::<228>(0.7, 0.7),
+      LPComb::new::<1197>(0.7, 0.7),
+      LPComb::new::<487>(0.7, 0.7)
+    ];
+
+    allpass.iter_mut().for_each(|ap| ap.set_damp(0.5));
+    let n = next_pow2((samplerate as f32 * 0.005) as usize);
+    Self {
+      delayline: [
+        DelayLine::new( 87, 128).unwrap(),
+        DelayLine::new( 59, 128).unwrap(),
+        DelayLine::new( 33, 128).unwrap(),
+      ],
+      dl_coeff: [0.707, 0.625, 0.404],
+      allpass,
+      prev: 0.0,
+      // do NOT set `g` higher that 0.83
+      g: 0.7,
+    }
+  }
+}
+
+impl Verb for ColorlessVerb {
+  fn process<T: Interpolation>(&mut self, sample: f32) -> f32 {
+    let mut sig = self.delayline[0].read_and_write(sample) + (self.prev * self.g) ;
+    sig = self.delayline[1].read_and_write(sig * self.dl_coeff[0]);
+    sig = self.delayline[2].read_and_write(sig * self.dl_coeff[1]) * self.dl_coeff[2];
+    self.prev = self.allpass[0].process(sig);
+    self.prev += self.allpass[1].process(sig);
+    self.prev += self.allpass[2].process(sig);
+    self.prev += self.allpass[3].process(sig);
+    self.prev += self.allpass[4].process(sig);
+    self.prev *= 0.2;
+    self.prev * (1.0 - (self.g * self.g)) + sample * self.g
+  }
+}
+
+
+
+

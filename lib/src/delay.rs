@@ -14,6 +14,8 @@ pub struct Delay {
 
 
 impl Delay {
+  // delay is set in number of samples, but restricted to floats for interpolation 
+  // enabling the process.
   pub fn play<T: Interpolation>(&mut self, input: f32, delay: f32, feedback: f32) -> f32 {
     let len = self.buffer.len() as f32;
     let mut time = self.position as f32 + delay;
@@ -25,6 +27,7 @@ impl Delay {
     self.position += 1;
     out
   }
+
 }
 
 impl DelayTrait for Delay {
@@ -93,25 +96,25 @@ pub fn delay(buffer: &mut [f32], pos: &mut usize, input: f32, feedback: f32) -> 
 
 
 
-pub struct DelayLine<const N: usize> {
-  data: [f32; N],
+pub struct DelayLine {
+  data: Vec<f32>,
   mask: usize,
   read_ptr: usize,
   write_ptr: usize,
 }
 
-impl<const N :usize> DelayLine<N> {
-  pub fn new(offset: usize) -> Result<Self, &'static str> {
-    if !is_pow2(N) {
+impl DelayLine {
+  pub fn new(offset: usize, size: usize) -> Result<Self, &'static str> {
+    if !is_pow2(size) {
       return Err("Size of buffer is not a power of 2");
     }
-    if N <= offset {
+    if size <= offset {
       return Err("Offset needs to be smaller than N")
     }
     Ok(Self {
-      data: [0.0; N],
-      mask: N-1,
-      read_ptr: N - offset,
+      data: vec![0.0; size],
+      mask: size-1,
+      read_ptr: size - offset,
       write_ptr: 0,
     })
   }
