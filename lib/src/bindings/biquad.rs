@@ -1,10 +1,11 @@
 use crate::filter::biquad::{
-  BiquadTrait,
   BiquadCoeffs,
   eightpole::Biquad8,
   fourpole::Biquad4,
   twopole::Biquad,
 };
+  
+use crate::filter::MultiModeTrait;
 
 #[repr(C)]
 pub struct BiquadOpaque;

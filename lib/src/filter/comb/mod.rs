@@ -1,6 +1,5 @@
 use super::{Filter, InterpolatingFilter};
 
-
 pub struct Comb {
   buffer: Vec<f32>,
   feedforward: f32,

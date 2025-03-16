@@ -1,4 +1,5 @@
-use super::{BiquadCoeffs, BiquadTrait};
+use crate::filter::MultiModeTrait;
+use super::BiquadCoeffs;
 
 #[derive(Clone, Copy)]
 pub struct Biquad {
@@ -25,9 +26,13 @@ impl Biquad {
       - self.bq.a1 * self.y1
       - self.bq.a2 * self.y1
   }
+  
+  pub fn set_coeffs(&mut self, coeffs: BiquadCoeffs) {
+    self.bq = coeffs;
+  }
 }
 
-impl BiquadTrait for Biquad {
+impl MultiModeTrait for Biquad {
   // Direct form I
   fn process(&mut self, sample: f32) -> f32 {
     let output = {
@@ -43,10 +48,6 @@ impl BiquadTrait for Biquad {
     self.y2 = self.y1;
     self.y1 = output;
     output
-  }
-
-  fn set_coeffs(&mut self, coeffs: BiquadCoeffs) {
-    self.bq = coeffs;
   }
 
   #[inline]

@@ -5,15 +5,15 @@ pub mod eightpole;
 #[derive(Clone, Copy)]
 #[repr(C)]
 pub struct BiquadCoeffs {a1: f32, a2: f32, b0: f32, b1: f32, b2: f32}
-pub trait BiquadTrait {
-  fn process(&mut self, sample: f32) -> f32;
-  fn set_coeffs(&mut self, coeffs: BiquadCoeffs);
-  fn calc_lpf(&mut self, w: f32, q: f32);
-  fn calc_hpf(&mut self, w: f32, q: f32);
-  fn calc_bpf(&mut self, w: f32, q: f32);
-  fn calc_peq(&mut self, w: f32, q: f32, gain: f32);
-  fn calc_notch(&mut self, w: f32, q: f32);
-}
+// pub trait BiquadTrait {
+//   fn process(&mut self, sample: f32) -> f32;
+//   fn set_coeffs(&mut self, coeffs: BiquadCoeffs);
+//   fn calc_lpf(&mut self, w: f32, q: f32);
+//   fn calc_hpf(&mut self, w: f32, q: f32);
+//   fn calc_bpf(&mut self, w: f32, q: f32);
+//   fn calc_peq(&mut self, w: f32, q: f32, gain: f32);
+//   fn calc_notch(&mut self, w: f32, q: f32);
+// }
 
 
 pub mod calc {

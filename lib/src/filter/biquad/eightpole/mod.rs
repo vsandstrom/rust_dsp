@@ -1,4 +1,6 @@
-use super::{BiquadCoeffs, BiquadTrait};
+use crate::filter::MultiModeTrait;
+
+use super::BiquadCoeffs;
 
 #[derive(Clone, Copy)]
 pub struct Biquad8 {
@@ -19,13 +21,17 @@ impl Biquad8 {
       bq: BiquadCoeffs{a1: 0.0, a2: 0.0, b0: 0.0, b1: 0.0, b2: 0.0},
     }
   }
+  
+  pub fn set_coeffs(&mut self, coeffs: BiquadCoeffs) {
+    self.bq = coeffs;
+  }
 }
 
 impl Default for Biquad8 {
   fn default() -> Self { Self::new() }
 }
 
-impl BiquadTrait for Biquad8 {
+impl MultiModeTrait for Biquad8 {
   fn process(&mut self, sample: f32) -> f32 {
     let mut output = 
         self.bq.b0 * sample 
@@ -54,9 +60,6 @@ impl BiquadTrait for Biquad8 {
       
   }
 
-  fn set_coeffs(&mut self, coeffs: BiquadCoeffs) {
-    self.bq = coeffs;
-  }
   #[inline]
   fn calc_lpf(&mut self, w: f32, q: f32) {
     let alpha = w.sin() / (2.0 * q);
