@@ -15,15 +15,15 @@ pub trait InterpolatingFilter {
   fn process<I: Interpolation>(&mut self, sample: f32, position: f32) -> f32;
 }
 
-pub trait MultiModeTrait {
+pub trait SVFTrait {
   fn process(&mut self, sample: f32) -> f32;
   fn calc_lpf(&mut self, w: f32, q: f32);
   fn calc_hpf(&mut self, w: f32, q: f32);
   fn calc_bpf(&mut self, w: f32, q: f32);
   fn calc_peq(&mut self, w: f32, q: f32, gain: f32);
   fn calc_notch(&mut self, w: f32, q: f32);
-  fn calc_high_shelf(&mut self, w: f32, q: f32) {}
-  fn calc_low_shelf(&mut self, w: f32, q: f32) {}
+  fn calc_high_shelf(&mut self, w: f32, q: f32, gain: f32) {}
+  fn calc_low_shelf(&mut self, w: f32, q: f32, gain: f32) {}
 }
 
 // pub struct Comb {

@@ -1,6 +1,5 @@
-use crate::filter::MultiModeTrait;
-
-use super::BiquadCoeffs;
+use super::{BiquadCoeffs, BiquadTrait};
+use crate::filter::Filter;
 
 #[derive(Clone, Copy)]
 pub struct Biquad8 {
@@ -9,6 +8,10 @@ pub struct Biquad8 {
   x3_1: f32, x3_2: f32, y3_1: f32, y3_2: f32,
   x4_1: f32, x4_2: f32, y4_1: f32, y4_2: f32,
   bq: BiquadCoeffs,
+}
+
+impl Default for Biquad8 {
+  fn default() -> Self { Self::new() }
 }
 
 impl Biquad8 {
@@ -21,17 +24,10 @@ impl Biquad8 {
       bq: BiquadCoeffs{a1: 0.0, a2: 0.0, b0: 0.0, b1: 0.0, b2: 0.0},
     }
   }
-  
-  pub fn set_coeffs(&mut self, coeffs: BiquadCoeffs) {
-    self.bq = coeffs;
-  }
 }
 
-impl Default for Biquad8 {
-  fn default() -> Self { Self::new() }
-}
 
-impl MultiModeTrait for Biquad8 {
+impl Filter for Biquad8 {
   fn process(&mut self, sample: f32) -> f32 {
     let mut output = 
         self.bq.b0 * sample 
@@ -56,68 +52,37 @@ impl MultiModeTrait for Biquad8 {
     self.x2_1 = self.y1_1;
     self.y2_2 = self.y2_1;
     self.y2_1 = output;
-    output
+    
+    output = 
+        self.bq.b0 * output 
+      + self.bq.b1 * self.x3_1 
+      + self.bq.b2 * self.x3_2
+      - self.bq.a1 * self.y3_1
+      - self.bq.a2 * self.y3_2;
+
+    self.x3_2 = self.x3_1;
+    self.x3_1 = self.y2_1;
+    self.y3_2 = self.y3_1;
+    self.y3_1 = output;
       
-  }
+    output = 
+        self.bq.b0 * output 
+      + self.bq.b1 * self.x4_1 
+      + self.bq.b2 * self.x4_2
+      - self.bq.a1 * self.y4_1
+      - self.bq.a2 * self.y4_2;
 
-  #[inline]
-  fn calc_lpf(&mut self, w: f32, q: f32) {
-    let alpha = w.sin() / (2.0 * q);
-    let a0 = 1.0 + alpha;
-    self.bq.a1 = (-2.0 * w.cos()) / a0 ;
-    self.bq.a2 = (1.0 - alpha) / a0;
-
-    self.bq.b1 = (1.0 - w.cos()) / a0;
-    self.bq.b0 = self.bq.b1 / 2.0 / a0;
-    self.bq.b2 = self.bq.b0;
-  }
-    
-  #[inline]
-  fn calc_bpf(&mut self, w: f32, q: f32) {
-    let alpha = w.sin() / (2.0 * q);
-    
-    let a0 = 1.0 + alpha;
-    self.bq.a1 = (-2.0 * w.cos()) / a0;
-    self.bq.a2 = (1.0 - alpha) / a0;
-            
-    self.bq.b0 = alpha / a0;
-    self.bq.b1 = 0.0;
-    self.bq.b2 = -alpha / a0;
-  }
-
-  #[inline]
-  fn calc_hpf(&mut self, w: f32, q: f32) {
-    let alpha = w.sin() / (2.0 * q);
-    let a0 = 1.0 + alpha;
-    self.bq.a1 = -2.0 * w.cos() / a0;
-    self.bq.a2 = 1.0 - alpha / a0;
-            
-    self.bq.b0 = (1.0 + w.cos()) / 2.0 / a0;
-    self.bq.b1 = -(self.bq.b0 * 2.0);
-    self.bq.b2 = self.bq.b0;
-  }
-
-  #[inline]
-   fn calc_notch(&mut self, w: f32, q: f32) {
-    let alpha = w.sin() / (2.0 * q);
-    let a0 = 1.0 + alpha;
-    self.bq.a1 = -2.0 * w.cos() / a0;
-    self.bq.a2 = (1.0 - alpha) / a0;
-            
-    self.bq.b0 = 1.0 / a0;
-    self.bq.b1 = self.bq.a1;
-    self.bq.b2 = self.bq.b0;
-  }
-
-  #[inline]
-  fn calc_peq(&mut self, w: f32, q: f32, gain: f32) {
-    let alpha = w.sin() / (2.0 * q);
-    let a = f32::powf(10.0, gain/40.0);
-    let a0 = (1.0 + alpha) / a;       //  1 + alpha
-    self.bq.a1 = -2.0 * w.cos() / a0;  // -2 * cos(omega)
-    self.bq.a2 = (1.0 - alpha) / a / a0;  //  1 - alpha / A
-    self.bq.b0 = (1.0 + alpha) * a / a0;  // 1 + alpha * A
-    self.bq.b1 = self.bq.a1;                    // -2 * cos(omega)
-    self.bq.b2 = (1.0 - alpha) * a / a0;  // 1 - alpha * A 
+    self.x4_2 = self.x4_1;
+    self.x4_1 = self.y3_1;
+    self.y4_2 = self.y4_1;
+    self.y4_1 = output;
+    output
   }
 }
+
+impl BiquadTrait for Biquad8 {
+  fn update(&mut self, bq: BiquadCoeffs) {
+      self.bq = bq;
+  }
+}
+

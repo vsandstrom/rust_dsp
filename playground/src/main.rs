@@ -6,9 +6,9 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
 use rust_dsp::{
   dsp::buffer::range, filter::{
-    biquad::twopole::Biquad,
-    svf::SVFilter,
-    MultiModeTrait
+    Filter,
+    biquad::{BiquadCoeffs, twopole::Biquad, BiquadTrait},
+    svf::{SVFilter, SVFCoeffs, SVFTrait},
   }, interpolation::Linear, 
   noise::Noise,
   waveshape::triangle,
@@ -43,8 +43,6 @@ fn main() -> anyhow::Result<()> {
     // SETUP YOUR AUDIO PROCESSING STRUCTS HERE !!!! <-------------------------
     let mut bq= Biquad::new();
     let mut svf = SVFilter::new();
-    bq.calc_lpf((TAU * 200.0) / sr, 5.0);
-    svf.calc_lpf((TAU * 200.0) / sr, 5.0);
     
 
     let mut table_1 = [0.0f32; 512];
@@ -52,8 +50,8 @@ fn main() -> anyhow::Result<()> {
     triangle(&mut table_1);
     triangle(&mut table_2);
 
-    range(&mut table_1, -1.0, 1.0, (TAU * 100.0) / sr, (TAU * 1000.0) / sr);
-    range(&mut table_2, -1.0, 1.0, 5.0, 125.0);
+    range(&mut table_1, -1.0, 1.0, (TAU * 100.0) / sr, (TAU * 20000.0) / sr);
+    range(&mut table_2, -1.0, 1.0, 0.1, 15.0);
 
     let mut lfo_freq = Wavetable::new(&table_1, sr);
     let mut lfo_q = Wavetable::new(&table_2, sr);
@@ -76,16 +74,19 @@ fn main() -> anyhow::Result<()> {
       | data: &mut [f32], _: &cpal::OutputCallbackInfo | {
       // Process output data
       for out_frame in data.chunks_mut(16) {
-        let sig = noise.play(1.0/10000.0);
+        let sig = noise.play(1.0/sr);
 
         let freq = lfo_freq.play::<Linear>(0.2, 0.0);
         let q = lfo_q.play::<Linear>(0.15, 0.0);
-        bq.calc_lpf(freq, q);
-        svf.calc_lpf(freq, q);
+        bq.update(BiquadCoeffs::bpf(freq, q));
+        svf.update(SVFCoeffs::bpf(freq, q));
+        let sig = sig * 0.1;
+        let filter_bq = bq.process(sig) * 0.1;
+        let filter_svf = svf.process(sig) * 0.1;
 
-        out_frame[0] = sig * 0.1; 
-        out_frame[1] = bq.process(sig) * 0.1;
-        out_frame[2] = svf.process(sig) * 0.1;
+        out_frame[0] = sig; 
+        out_frame[1] = filter_bq;
+        out_frame[2] = filter_svf;
       };
     };
 
