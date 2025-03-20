@@ -91,6 +91,6 @@ pub unsafe extern "C" fn adsr_set_reset_type (adsr: *mut ADSREnvelopeOpaque, res
 
 #[no_mangle]
 pub unsafe extern "C" fn adsr_play(adsr: *mut ADSREnvelopeOpaque, trig: bool, sustain: bool) -> f32 {
-  (*(adsr as *mut ADSREnvelope)).play(trig, sustain)
+  (*(adsr as *mut ADSREnvelope)).play(sustain)
 }
 

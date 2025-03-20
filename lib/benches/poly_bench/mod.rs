@@ -1,14 +1,14 @@
 use rust_dsp::{
   vector::VectorOscillator,
-  wavetable::shared::WaveTable,
+  wavetable::shared::Wavetable,
   envelope::Envelope,
   interpolation::Interpolation
 };
 
 use criterion::Criterion;
 
-pub fn run_poly();
-pub fn run_poly_arc();
+// pub fn run_poly();
+// pub fn run_poly_arc();
 
 struct Token<T> {
   voice: T,
@@ -17,7 +17,7 @@ struct Token<T> {
 }
 
 pub struct PolyTable<const VOICES: usize> {
-  voices: [Token<WaveTable>; VOICES],
+  voices: [Token<Wavetable>; VOICES],
   next: usize,
 }
 
@@ -27,7 +27,7 @@ mod old {
     fn default() -> Self {
       let voices = std::array::from_fn(|_| {
         Token{
-          voice: WaveTable::new(),
+          voice: Wavetable::new(),
           freq: 0.0,
           env_pos: 0.0
         }
@@ -43,7 +43,7 @@ mod old {
     pub fn new() -> Self {
       let voices = std::array::from_fn(|_| {
         Token{
-          voice: WaveTable::new(),
+          voice: Wavetable::new(),
           freq: 0.0,
           env_pos: 0.0
         }

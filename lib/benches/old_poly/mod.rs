@@ -3,11 +3,11 @@ use rust_dsp::interpolation::Interpolation;
 use rust_dsp::envelope::Envelope;
 
 pub mod table {
-  use rust_dsp::wavetable::shared::WaveTable;
+  use rust_dsp::wavetable::shared::Wavetable;
   use super::{ Interpolation, Arc, RwLock, Envelope };
   /// Polysynth using only wavetables 
   pub struct PolyTable<const VOICES: usize> {
-    voices: [WaveTable; VOICES],
+    voices: [Wavetable; VOICES],
     table: Arc<RwLock<Vec<f32>>>,
     frequencies: [f32; VOICES],
     env_positions: [f32; VOICES],
@@ -18,7 +18,7 @@ pub mod table {
   impl<const VOICES: usize> PolyTable<VOICES> {
     pub fn new<const TABLESIZE: usize>(samplerate: f32) -> Self {
       let table = Arc::new(RwLock::new([0.0; TABLESIZE].to_vec()));
-      let mut voices = std::array::from_fn(|_| { WaveTable::new() });
+      let mut voices = std::array::from_fn(|_| { Wavetable::new() });
       let envelope = Envelope::default();
       for v in voices.iter_mut() {
         v.set_samplerate(samplerate);
@@ -34,7 +34,7 @@ pub mod table {
     }
 
     #[inline]
-    pub fn play<T: Interpolation, U: Interpolation>(&mut self, note: Option<f32>, phases: &[f32;VOICES]) -> f32 {
+    pub fn play<T: Interpolation, U: Interpolation>(&mut self, table: &[f32], note: Option<f32>, phases: &[f32;VOICES]) -> f32 {
       let mut sig = 0.0;
       if let Some(freq) = note {
         self.frequencies[self.next_voice] = freq;
@@ -44,7 +44,7 @@ pub mod table {
 
       for (i, voice) in self.voices.iter_mut().enumerate() {
         if (self.env_positions[i] as usize) < self.envelope.len() {
-          sig += voice.play::<T>(self.frequencies[i], phases[i]) * 
+          sig += voice.play::<T>(table, self.frequencies[i], phases[i]) * 
             self.envelope.read::<U>(self.env_positions[i]);
           self.env_positions[i] += 1.0;
         } 
@@ -82,13 +82,13 @@ pub mod table {
 
 
 pub mod vector {
-  use crate::envelope::{EnvType, Envelope};
-  use crate::vector::VectorOscillator;
+  use rust_dsp::envelope::{EnvType, Envelope};
+  use rust_dsp::vector::VectorOscillator;
   use std::sync::{Arc, RwLock};
-  use crate::interpolation::Interpolation;
+  use rust_dsp::interpolation::Interpolation;
 
   pub struct PolyVector<const VOICES: usize, const TABLESIZE: usize> {
-    voices: [VectorOscillator<TABLESIZE>; VOICES],
+    voices: [VectorOscillator; VOICES],
     frequencies: [f32; VOICES],
     next_voice: usize,
     envelope: Envelope,
@@ -99,7 +99,7 @@ pub mod vector {
   impl<const VOICES: usize, const TABLESIZE: usize> PolyVector<VOICES, TABLESIZE> {
     pub fn new(tables: Arc<RwLock<Vec<[f32; TABLESIZE]>>>, samplerate: f32) -> Self {
       let voices = std::array::from_fn(|_| {
-        VectorOscillator::new(tables.clone(), samplerate)
+        VectorOscillator::new(samplerate)
       });
       Self {
         voices,
@@ -152,14 +152,12 @@ pub mod vector {
   }
 }
 
-pub mod simple {
-    use std::marker::PhantomData;
-
-    use crate::{
+pub mod owned {
+    use rust_dsp::{
       envelope::Envelope,
       interpolation::Interpolation,
-      vector::simple,
-      wavetable::simple::WaveTable
+      vector::VectorOscillator,
+      wavetable::shared::Wavetable
     };
 
     struct Token<T> {
@@ -170,7 +168,7 @@ pub mod simple {
 
 
   pub struct PolyTable<const VOICES: usize> {
-    voices: [Token<WaveTable>; VOICES],
+    voices: [Token<Wavetable>; VOICES],
     // voices: [WaveTable; VOICES],
     // freqs: [f32; VOICES],
     // env_pos: [f32; VOICES],
@@ -181,7 +179,7 @@ pub mod simple {
     pub fn new() -> Self {
       let voices = std::array::from_fn(|_| {
         Token{
-          voice: WaveTable::new(),
+          voice: Wavetable::new(),
           freq: 0.0,
           env_pos: 0.0
         }
@@ -221,7 +219,7 @@ pub mod simple {
   }
 
   pub struct PolyVector<const VOICES: usize> {
-    voices: [Token<simple::VectorOscillator>; VOICES],
+    voices: [Token<VectorOscillator>; VOICES],
     // voices: [simple::VectorOscillator; VOICES],
     // freqs: [f32; VOICES],
     next: usize,
@@ -234,7 +232,7 @@ pub mod simple {
     pub fn new(samplerate: f32) -> Self {
       let voices = std::array::from_fn(|_| {
         Token{
-          voice: simple::VectorOscillator::new(samplerate),
+          voice: VectorOscillator::new(samplerate),
           freq: 0.0,
           env_pos: 0.0,
         }

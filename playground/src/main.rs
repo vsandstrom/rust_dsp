@@ -9,9 +9,16 @@ use rust_dsp::{
   dsp::signal::map, interpolation::{Floor, Linear}, waveshape::{self, sawtooth, phasor}, wavetable::shared::WaveTable
 };
 
-use mattias_osc::Osc;
-
-// type Frame = [f32; 2];
+use rust_dsp::{
+  dsp::buffer::range, filter::{
+    Filter,
+    biquad::{BiquadCoeffs, twopole::Biquad, BiquadTrait},
+    svf::{SVFilter, SVFCoeffs, SVFTrait},
+  }, interpolation::Linear, 
+  noise::Noise,
+  waveshape::triangle,
+  wavetable::owned::Wavetable
+};
 
 fn main() -> anyhow::Result<()> {
     // List all audio devices
@@ -39,109 +46,52 @@ fn main() -> anyhow::Result<()> {
     let sr = config.sample_rate.0 as f32;
 
     // SETUP YOUR AUDIO PROCESSING STRUCTS HERE !!!! <-------------------------
-    let mut w = vec![0.0; 513];
-    let mut e = vec![0.0; 513];
-    w[512]=0.0;
-    e[512]=0.0;
-    waveshape::phasor(&mut w[0..512]);
-    waveshape::hanning(&mut e[0..512]);
+    let mut bq= Biquad::new();
+    let mut svf = SVFilter::new();
+    
 
-    let mut lfo: [WaveTable; 5] = std::array::from_fn(|_| WaveTable::new());
-    lfo.iter_mut().for_each(|w| w.set_samplerate(sr));
-    let mut env = WaveTable::new();
+    let mut table_1 = [0.0f32; 512];
+    let mut table_2 = [0.0f32; 512];
+    triangle(&mut table_1);
+    triangle(&mut table_2);
 
-    env.set_samplerate(sr);
-    let mut osc: [Osc<10>; 4] = [
-      Osc::new(config.sample_rate.0, 1.0),
-      Osc::new(config.sample_rate.0, 1.0),
-      Osc::new(config.sample_rate.0, 1.0),
-      Osc::new(config.sample_rate.0, 1.0),
-    ];
+    range(&mut table_1, -1.0, 1.0, (TAU * 100.0) / sr, (TAU * 20000.0) / sr);
+    range(&mut table_2, -1.0, 1.0, 0.1, 15.0);
 
-    let fund = 400.0;
-    let freq = [
-      [fund * 2.0/5.0, fund * 3.0/2.0, fund * 8.0/5.0, fund * 12.0/5.0],
-      [fund * 1.0/2.0, fund * 6.0/2.0, fund * 10.0/9.0, fund * 6.0/5.0],
-      [fund * 1.0/3.0, fund * 7.0/6.0, fund * 7.0/4.0, fund * 12.0/8.0],
-      [fund * 3.0/8.0, fund * 9.0/6.0, fund * 9.0/4.0, fund * 10.0/8.0],
-    ];
-  
-    let mut c = 0;
-    let mut j = 0;
+    let mut lfo_freq = Wavetable::new(&table_1, sr);
+    let mut lfo_q = Wavetable::new(&table_2, sr);
+    lfo_freq.set_samplerate(sr);
+    lfo_q.set_samplerate(sr);
 
+    let mut noise = Noise::new(sr);
 
     // Create a channel to send and receive samples
-    let (tx, _rx) = channel::<f32>();
+    let (tx, rx) = channel::<Vec<f32>>();
     // Callbacks
     let input_callback = move 
       | data: &[f32], _: &cpal::InputCallbackInfo | {
         // Process input data
-      let mut output_fell_behind = false;
-      for &sample in data {
-          // Send input data to the output callback, or do any processing
-        if tx.send(sample).is_err() {
-          output_fell_behind = true;
-        }
-      }
-      if output_fell_behind { eprintln!("Output fell behind"); }
+      // tx.send(data.to_vec());
     };
 
 
     let output_callback = move 
       | data: &mut [f32], _: &cpal::OutputCallbackInfo | {
       // Process output data
-      for frame in data.chunks_mut(2) {
-        let a = map(
-          &mut lfo[0].play::<Linear>(&w, 0.2, 0.0), 
-          -1.0,
-          1.0,
-          1.0,
-          2.0
-        );
+      for out_frame in data.chunks_mut(16) {
+        let sig = noise.play(1.0/sr);
 
-        let w1 = map(
-          &mut lfo[1].play::<Linear>(&w, 0.2, 1.0),
-          -1.0,
-          1.0,
-          0.0,
-          1.0
-        );
+        let freq = lfo_freq.play::<Linear>(0.2, 0.0);
+        let q = lfo_q.play::<Linear>(0.15, 0.0);
+        bq.update(BiquadCoeffs::bpf(freq, q));
+        svf.update(SVFCoeffs::bpf(freq, q));
+        let sig = sig * 0.1;
+        let filter_bq = bq.process(sig) * 0.1;
+        let filter_svf = svf.process(sig) * 0.1;
 
-        let w2 = map(
-          &mut lfo[2].play::<Linear>(&w, 0.2, 1.0),
-          -1.0,
-          1.0,
-          1.0,
-          0.0
-        );
-        let w3 = map(
-          &mut lfo[3].play::<Linear>(&w, 0.2, 1.0),
-          -1.0,
-          1.0,
-          0.0,
-          1.0
-        );
-        let w4 = map(
-          &mut lfo[4].play::<Linear>(&w, 0.2, 1.0),
-          -1.0,
-          1.0,
-          1.0,
-          0.0
-        );
-        let wx = [w1, w2, w3, w4];
-
-        let mut prev = 0.0;
-        let out = osc.iter_mut().enumerate().map(|(i, o)| 
-          {
-            let t = o.process(freq[j][i], 1.0, 1.0);//wx[i] + (prev * 0.12));
-            prev = t;
-            t
-          }
-        ).sum::<f32>().tanh() * env.play::<Floor>(&e, 1.0/5.0, 0.0);
-        c+=1; 
-        if c == config.sample_rate.0 * 5 { j+=1; j %= freq.len(); c = 0;}
-
-        frame.iter_mut().for_each( |sample| { *sample = out })
+        out_frame[0] = sig; 
+        out_frame[1] = filter_bq;
+        out_frame[2] = filter_svf;
       };
     };
 
