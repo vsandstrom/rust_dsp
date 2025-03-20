@@ -1,15 +1,24 @@
-use std::{
+use std::{ 
   sync::mpsc::channel,
   thread,
-  time::Duration
+  time::Duration 
 };
 
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use rust_dsp::{ 
+  dsp::signal::map, interpolation::{Floor, Linear}, waveshape::{self, sawtooth, phasor}, wavetable::shared::WaveTable
+};
 
-use rust_dsp::adsr::{ADSREnvelope, Reset};
-
-// type Frame = [f32; 2];
-
+use rust_dsp::{
+  dsp::buffer::range, filter::{
+    Filter,
+    biquad::{BiquadCoeffs, twopole::Biquad, BiquadTrait},
+    svf::{SVFilter, SVFCoeffs, SVFTrait},
+  }, interpolation::Linear, 
+  noise::Noise,
+  waveshape::triangle,
+  wavetable::owned::Wavetable
+};
 
 fn main() -> anyhow::Result<()> {
     // List all audio devices
@@ -37,43 +46,52 @@ fn main() -> anyhow::Result<()> {
     let sr = config.sample_rate.0 as f32;
 
     // SETUP YOUR AUDIO PROCESSING STRUCTS HERE !!!! <-------------------------
-    let mut env = ADSREnvelope::new(sr);
-    let mut t = true;
-    let mut c = 0;
+    let mut bq= Biquad::new();
+    let mut svf = SVFilter::new();
+    
+
+    let mut table_1 = [0.0f32; 512];
+    let mut table_2 = [0.0f32; 512];
+    triangle(&mut table_1);
+    triangle(&mut table_2);
+
+    range(&mut table_1, -1.0, 1.0, (TAU * 100.0) / sr, (TAU * 20000.0) / sr);
+    range(&mut table_2, -1.0, 1.0, 0.1, 15.0);
+
+    let mut lfo_freq = Wavetable::new(&table_1, sr);
+    let mut lfo_q = Wavetable::new(&table_2, sr);
+    lfo_freq.set_samplerate(sr);
+    lfo_q.set_samplerate(sr);
+
+    let mut noise = Noise::new(sr);
 
     // Create a channel to send and receive samples
-    let (tx, _rx) = channel::<f32>();
+    let (tx, rx) = channel::<Vec<f32>>();
     // Callbacks
     let input_callback = move 
       | data: &[f32], _: &cpal::InputCallbackInfo | {
         // Process input data
-      let mut output_fell_behind = false;
-      for &sample in data {
-          // Send input data to the output callback, or do any processing
-        if tx.send(sample).is_err() {
-          output_fell_behind = true;
-        }
-      }
-      if output_fell_behind { eprintln!("Output fell behind"); }
+      // tx.send(data.to_vec());
     };
 
 
     let output_callback = move 
       | data: &mut [f32], _: &cpal::OutputCallbackInfo | {
       // Process output data
-      for frame in data.chunks_mut(2) {
-        let out = env.play(t, false);
-        t = false;
+      for out_frame in data.chunks_mut(16) {
+        let sig = noise.play(1.0/sr);
 
-        if c == 48000*2 {
-          t = true;
-        }
-        c+=1;
+        let freq = lfo_freq.play::<Linear>(0.2, 0.0);
+        let q = lfo_q.play::<Linear>(0.15, 0.0);
+        bq.update(BiquadCoeffs::bpf(freq, q));
+        svf.update(SVFCoeffs::bpf(freq, q));
+        let sig = sig * 0.1;
+        let filter_bq = bq.process(sig) * 0.1;
+        let filter_svf = svf.process(sig) * 0.1;
 
-        frame.iter_mut().for_each(
-          |sample| {
-          *sample = out
-          })
+        out_frame[0] = sig; 
+        out_frame[1] = filter_bq;
+        out_frame[2] = filter_svf;
       };
     };
 
@@ -97,11 +115,7 @@ fn main() -> anyhow::Result<()> {
 
     input_stream.play().expect("FAILED INPUT STREAM");
     output_stream.play().expect("FAILED OUTPUT STREAM");
-
-
-    loop{
-      thread::sleep(Duration::from_secs(40));
-    }
+    loop{ thread::sleep(Duration::from_secs(40)); }
 
     // allow running forever
     #[allow(unreachable_code)]

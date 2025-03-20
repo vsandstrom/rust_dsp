@@ -1,1 +1,8 @@
+language = "C++"
+
+include_guard = "RUST_DSP_H"
+pragma_once=true
+
 usize_is_size_t=true
+namespace = "rustdsp"
+cpp_compat = true

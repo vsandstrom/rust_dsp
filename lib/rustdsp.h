@@ -1,9 +1,16 @@
+#ifndef RUST_DSP_H
+#define RUST_DSP_H
+
+#pragma once
+
 #include <cstdarg>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <ostream>
 #include <new>
+
+namespace rustdsp {
 
 enum class Reset {
   Hard,
@@ -220,7 +227,7 @@ void envelope_loopable(EnvelopeOpaque *env, bool loopable);
 ADSREnvelopeOpaque *adsr_new(float samplerate);
 
 /// Destructor
-void adsr_delete(ADSREnvelopeOpaque *delay);
+void adsr_delete(ADSREnvelopeOpaque *adsr);
 
 void adsr_set_attack_val(ADSREnvelopeOpaque *adsr, float atk_value);
 
@@ -243,3 +250,7 @@ void adsr_set_reset_type(ADSREnvelopeOpaque *adsr, Reset reset);
 float adsr_play(ADSREnvelopeOpaque *adsr, bool trig, bool sustain);
 
 }  // extern "C"
+
+}  // namespace rustdsp
+
+#endif  // RUST_DSP_H

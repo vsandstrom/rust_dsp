@@ -3,7 +3,7 @@ use core::{f32::consts::PI, usize};
 pub struct Linear { }
 pub struct Cubic { }
 pub struct Cosine { }
-pub struct Hermetic { }
+pub struct Hermite { }
 pub struct Floor { }
 
 pub trait Interpolation {
@@ -52,8 +52,8 @@ impl Interpolation for Cosine {
 }
 
 
-/// Hermetic interpolation - read position is interpolated between 4 points
-impl Interpolation for Hermetic {
+/// Hermite interpolation - read position is interpolated between 4 points
+impl Interpolation for Hermite {
   fn interpolate(position: f32, buffer: &[f32], buffer_size: usize) -> f32 {
     let diff = position.fract();
     let a2 = position as usize % buffer_size;

@@ -38,9 +38,9 @@ pub extern "C" fn adsr_new(samplerate: f32) -> *mut ADSREnvelopeOpaque {
 
 #[no_mangle]
 /// Destructor
-pub unsafe extern "C" fn adsr_delete(delay: *mut ADSREnvelopeOpaque) {
-  if !delay.is_null() {
-    drop(Box::from_raw(delay as *mut ADSREnvelope))
+pub unsafe extern "C" fn adsr_delete(adsr: *mut ADSREnvelopeOpaque) {
+  if !adsr.is_null() {
+    drop(Box::from_raw(adsr as *mut ADSREnvelope))
   }
 }
 
@@ -91,6 +91,6 @@ pub unsafe extern "C" fn adsr_set_reset_type (adsr: *mut ADSREnvelopeOpaque, res
 
 #[no_mangle]
 pub unsafe extern "C" fn adsr_play(adsr: *mut ADSREnvelopeOpaque, trig: bool, sustain: bool) -> f32 {
-  (*(adsr as *mut ADSREnvelope)).play(trig, sustain)
+  (*(adsr as *mut ADSREnvelope)).play(sustain)
 }
 

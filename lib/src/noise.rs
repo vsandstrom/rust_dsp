@@ -8,7 +8,16 @@ pub struct Noise {
   samplerate: f32,
   sr_recip: f32,
 }
+
 impl Noise {
+  /// duration is in seconds. 
+  /// if you want to play audiorate, use the reciprocal of the frequency you want
+  /// ```
+  /// use rust_dsp::noise::Noise;
+  ///
+  /// let mut noise = Noise::new(48000.0);
+  /// let out = noise.play(1.0/440.0); // ≈ 0.00227272727
+  /// ```
   pub fn play(&mut self, duration: f32) -> f32 {
     self.counter += 1;
     if self.counter >= self.duration_in_samples {

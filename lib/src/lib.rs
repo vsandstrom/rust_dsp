@@ -1,5 +1,4 @@
-// #![cfg_attr(not(feature="default"), no_std)]
-#![no_std]
+#![cfg_attr(not(feature="std"), no_std)]
 // #[cfg(not(feature="std"))]
 extern crate alloc;
 
@@ -16,7 +15,7 @@ pub mod adsr;
 pub mod polytable;
 pub mod delay;
 pub mod filter;
-pub mod reverb;
+// pub mod reverb;
 pub mod midibitfield;
 // pub mod karplus;
 pub mod noise;

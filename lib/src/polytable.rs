@@ -2,7 +2,7 @@ use core::array;
 
 use crate::{
   vector::VectorOscillator,
-  wavetable::shared::WaveTable,
+  wavetable::shared::Wavetable,
   interpolation::Interpolation
 };
 
@@ -12,7 +12,7 @@ struct Token<T> {
 }
 
 pub struct PolyTable<const VOICES: usize> {
-  voices: [Token<WaveTable>; VOICES],
+  voices: [Token<Wavetable>; VOICES],
   next: usize,
 }
 
@@ -20,7 +20,7 @@ impl<const VOICES: usize> Default for PolyTable<VOICES> {
   fn default() -> Self {
     let voices = array::from_fn(|_| {
       Token{
-        voice: WaveTable::new(),
+        voice: Wavetable::new(),
         freq: 0.0,
       }
     });
@@ -35,7 +35,7 @@ impl<const VOICES: usize> PolyTable<VOICES> {
   pub fn new() -> Self {
     let voices = array::from_fn(|_| {
       Token{
-        voice: WaveTable::new(),
+        voice: Wavetable::new(),
         freq: 0.0,
       }
     });

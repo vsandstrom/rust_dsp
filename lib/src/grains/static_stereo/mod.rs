@@ -2,7 +2,7 @@ use core::array;
 use crate::waveshape::traits::Waveshape;
 
 use super::{
-  Vec, Interpolation,
+  Interpolation,
   pan_exp2,
   calc_duration,
   wrap_position,
@@ -118,25 +118,8 @@ pub fn trigger_new(&mut self,
 
 impl<const BUFSIZE: usize, const NUMGRAINS: usize> GrainTrait for Granulator<BUFSIZE, NUMGRAINS> {
   #[inline]
-  fn record(&mut self, sample: f32) -> Option<f32> {
-    if self.rec_pos == self.buf_size { return None; }
-    self.buffer[self.rec_pos] = sample;
-    self.rec_pos += 1;
-    Some(sample)
-  }
-
-  #[inline]
-  fn update_envelope(&mut self, shape: Vec<f32>) {
-    self.env_size = shape.len();
-    self.envelope = shape;
-  }
-
   fn set_samplerate(&mut self, samplerate: f32) {
     self.samplerate = samplerate;
     self.sr_recip = 1.0 / samplerate;
-  }
-
-  fn reset_record(&mut self) {
-    self.rec_pos = 0;
   }
 }

@@ -113,6 +113,10 @@ pub fn trigger_new(&mut self,
   self.next_grain = (self.next_grain + 1) % self.grains.len();
   true
 }
+ 
+  pub fn reset_record(&mut self) {
+    self.rec_pos = 0;
+  }
 }
 
 
@@ -136,9 +140,6 @@ impl GrainTrait for Granulator {
     self.sr_recip = 1.0 / samplerate;
   }
 
-  fn reset_record(&mut self) {
-    self.rec_pos = 0;
-  }
 
   // #[inline]
   // fn set_buffersize(&mut self, size: usize) {

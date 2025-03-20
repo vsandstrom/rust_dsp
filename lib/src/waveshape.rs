@@ -1,6 +1,5 @@
 use core::f32::consts::{PI, TAU};
 use crate::dsp::buffer::scale;
-#[cfg(not(feature="std"))]
 use alloc::{vec::Vec, borrow::ToOwned};
 
 /// Create a complex waveform from amplitudes and phases of sine partials
@@ -79,6 +78,15 @@ pub fn reverse_sawtooth(table: &mut [f32]) {
   for sample in table.iter_mut() {
     *sample = angle + 1.0;
     angle -= inc;
+  }
+}
+    
+pub fn phasor(table: &mut [f32]) {
+  let mut angle: f32 = 0.0;
+  let inc: f32 = 1.0 / (table.len() as f32 - 1.0);
+  for sample in table.iter_mut() {
+    *sample = angle;
+    angle += inc;
   }
 }
 
