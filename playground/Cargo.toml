@@ -10,4 +10,4 @@ cpal = "0.15.2"
 anyhow = "1.0.79"
 rand = "0.8.5"
 rust_dsp = { path = "../lib" }
-mattias_osc = { path = "../../mattias_osc" }
+# mattias_osc = { path = "../../mattias_osc" }

@@ -10,17 +10,21 @@ use cpal::traits::{
   HostTrait,
   StreamTrait
 };
-
-use rust_dsp::{
+use rust_dsp::{ 
+  dsp::signal::map, 
   dsp::buffer::range, filter::{
     biquad::{
       twopole::Biquad, BiquadCoeffs, BiquadTrait
     }, svf::{
       SVFCoeffs, SVFTrait, SVFilter
-    }, Filter
-  }, fold::{Fold, Abs}, interpolation::Linear, 
-  waveshape::{sine, triangle}, 
-  wavetable::shared::Wavetable
+    }, 
+    Filter
+  }, 
+  fold::{Fold, Abs}, 
+  interpolation::{Floor, Linear},
+  waveshape::*,
+  wavetable::shared::WaveTable,
+  noise::Noise,
 };
 
 fn main() -> anyhow::Result<()> {
@@ -52,8 +56,6 @@ fn main() -> anyhow::Result<()> {
     // SETUP YOUR AUDIO PROCESSING STRUCTS HERE !!!! <-------------------------
     // let mut bq= Biquad::new();
     // let mut svf = SVFilter::new();
-    
-
     let mut table_1 = [0.0f32; 512];
     let mut table_2 = [0.0f32; 512];
     sine(&mut table_1);
@@ -79,11 +81,8 @@ fn main() -> anyhow::Result<()> {
       | data: &mut [f32], _: &cpal::OutputCallbackInfo | {
       // Process output data
       for out_frame in data.chunks_mut(ch.into()) {
-        // let sig = noise.play(1.0/sr);
-
         let sig = wt.play::<Linear>(&table_1, 200.2, 0.0);
         let sig = Fold::process::<Abs>(sig, 1.0 + (0.5 * lfo.play::<Linear>(&table_2, 0.4, 0.0)));
-
         out_frame[0] = sig*0.2; 
         out_frame[1] = sig*0.2;
       };
