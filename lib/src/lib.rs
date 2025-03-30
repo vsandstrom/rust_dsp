@@ -22,4 +22,4 @@ pub mod noise;
 #[allow(non_snake_case)]
 pub mod vector2D;
 pub mod bindings;
-
+pub mod fold;

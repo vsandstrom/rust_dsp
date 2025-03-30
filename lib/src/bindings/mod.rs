@@ -7,3 +7,4 @@ mod biquad;
 mod delay;
 mod env;
 mod adsr;
+mod fold;

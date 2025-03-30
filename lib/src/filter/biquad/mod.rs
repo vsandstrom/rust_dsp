@@ -95,7 +95,38 @@ impl BiquadCoeffs {
   //   let b1 = a * 2.0 * (a_m + sign *   a_p_o)        * a0;
   //   let b2 = a *       (a_p + sign * ( a_m_o   - x)) * a0;
   //   Self{a1, a2, b0, b1, b2}
-  // }
+ 
+  #[inline]
+  pub fn low_shelf(w: f32, q: f32, gain: f32) -> Self {
+    let alpha = w.sin() / (2.0 * q);
+    let omega = w.cos();
+    let a = 10.0f32.powf(gain / 40.0);
+    
+    let a_m1 = a - 1.0;
+    let a_p1 = a + 1.0;
+    let a_m1_omega = a_m1 * omega;
+    let a_p1_omega = a_p1 * omega;
+    let x = 2.0 * (a.sqrt() * alpha);
+
+    if gain >= 0.0 {
+        // Boost Case
+        let a0_inv = 1.0 / (a_p1 + a_m1_omega + x);
+        let b0 = a * (a_p1 - a_m1_omega + x) * a0_inv;
+        let b1 = 2.0 * a * (a_m1 - a_p1_omega) * a0_inv;
+        let b2 = a * (a_p1 - a_m1_omega - x) * a0_inv;
+        let a1 = -2.0 * (a_p1 + a_m1_omega) * a0_inv;
+        let a2 = (a_p1 + a_m1_omega - x) * a0_inv;
+        return Self{a1,a2,b0,b1,b2};
+    } 
+    // Cut Case
+    let a0_inv = 1.0 / (a_p1 - a_m1_omega + x);
+    let b0 = a * (a_p1 + a_m1_omega + x) * a0_inv;
+    let b1 = -2.0 * a * (a_m1 + a_p1_omega) * a0_inv;
+    let b2 = a * (a_p1 + a_m1_omega - x) * a0_inv;
+    let a1 = -2.0 * (a_p1 - a_m1_omega) * a0_inv;
+    let a2 = (a_p1 - a_m1_omega - x) * a0_inv;
+    Self {a1,a2,b0,b1,b2}
+  } 
 }
 
 

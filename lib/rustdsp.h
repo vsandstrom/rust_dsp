@@ -17,11 +17,46 @@ enum class Reset {
   Soft,
 };
 
+/// /* Underlying Structure */
+/// ```ignore
+/// pub struct Granulator {
+///   buffer: Vec<f32>,
+///   buf_size: usize,
+///   envelope: Vec<f32>,
+///   env_size: usize,
+///   rec_pos: usize,
+///   pub recording: bool,
+///   next_grain: usize,
+///   grains: Vec<Grain>,
+///   samplerate: f32,
+///   sr_recip: f32,
+/// }
+/// ```
 struct GranulatorOpaque {
 
 };
 
 struct WavetableOpaque {
+
+};
+
+struct BiquadOpaque {
+
+};
+
+struct BiquadCoeffs {
+  float a1;
+  float a2;
+  float b0;
+  float b1;
+  float b2;
+};
+
+struct Biquad4Opaque {
+
+};
+
+struct Biquad8Opaque {
 
 };
 
@@ -38,7 +73,7 @@ struct EnvelopeOpaque {
 
 };
 
-/// ```
+/// ```ignore
 /// Underlying structure:
 /// #[derive(Debug)]
 /// struct ADSREnvelope {
@@ -175,6 +210,14 @@ float granulator_play_cubic(GranulatorOpaque *granulator);
 /// Record into buffer
 bool granulator_record(GranulatorOpaque *granulator, float sample);
 
+/// Underlying structure:
+/// ```ignore
+/// pub struct Wavetable {
+///   position: f32,
+///   samplerate: f32,
+///   sr_recip: f32,
+/// }
+/// ```
 /// Constructor
 WavetableOpaque *wavetable_new();
 
@@ -182,6 +225,12 @@ WavetableOpaque *wavetable_new();
 void wavetable_delete(WavetableOpaque *wavetable);
 
 void wavetable_set_samplerate(WavetableOpaque *wavetable, float samplerate);
+
+float wavetable_play_floor(WavetableOpaque *wavetable,
+                           const float *table,
+                           size_t table_length,
+                           float frequency,
+                           float phase);
 
 float wavetable_play_linear(WavetableOpaque *wavetable,
                             const float *table,
@@ -194,6 +243,76 @@ float wavetable_play_cubic(WavetableOpaque *wavetable,
                            size_t table_length,
                            float frequency,
                            float phase);
+
+/// Constructor
+BiquadOpaque *biquad_new();
+
+/// Destructor
+void biquad_delete(BiquadOpaque *biquad);
+
+float biquad_process(BiquadOpaque *biquad, float sample);
+
+void biquad_update(BiquadOpaque *biquad, BiquadCoeffs coeffs);
+
+void biquad_calc_lpf(BiquadOpaque *biquad, float w, float q);
+
+void biquad_calc_bpf(BiquadOpaque *biquad, float w, float q);
+
+void biquad_calc_hpf(BiquadOpaque *biquad, float w, float q);
+
+void biquad_calc_notch(BiquadOpaque *biquad, float w, float q);
+
+void biquad_calc_peq(BiquadOpaque *biquad, float w, float q, float gain);
+
+/// Constructor
+Biquad4Opaque *biquad4_new();
+
+/// Destructor
+void biquad4_delete(Biquad4Opaque *biquad4);
+
+float biquad4_process(Biquad4Opaque *biquad4, float sample);
+
+void biquad4_update(Biquad4Opaque *biquad4, BiquadCoeffs coeffs);
+
+void biquad4_calc_lpf(Biquad4Opaque *biquad4, float w, float q);
+
+void biquad4_calc_bpf(Biquad4Opaque *biquad4, float w, float q);
+
+void biquad4_calc_hpf(Biquad4Opaque *biquad4, float w, float q);
+
+void biquad4_calc_notch(Biquad4Opaque *biquad4, float w, float q);
+
+void biquad4_calc_peq(Biquad4Opaque *biquad4, float w, float q, float gain);
+
+/// Constructor
+Biquad8Opaque *biquad8_new();
+
+/// Destructor
+void biquad8_delete(Biquad8Opaque *biquad8);
+
+float biquad8_process(Biquad8Opaque *biquad8, float sample);
+
+void biquad8_update(Biquad8Opaque *biquad8, BiquadCoeffs coeffs);
+
+void biquad8_calc_lpf(Biquad8Opaque *biquad8, float w, float q);
+
+void biquad8_calc_bpf(Biquad8Opaque *biquad8, float w, float q);
+
+void biquad8_calc_hpf(Biquad8Opaque *biquad8, float w, float q);
+
+void biquad8_calc_notch(Biquad8Opaque *biquad8, float w, float q);
+
+void biquad8_calc_peq(Biquad8Opaque *biquad8, float w, float q, float gain);
+
+BiquadCoeffs calc_lpf(float w, float q);
+
+BiquadCoeffs calc_bpf(float w, float q);
+
+BiquadCoeffs calc_hpf(float w, float q);
+
+BiquadCoeffs calc_notch(float w, float q);
+
+BiquadCoeffs calc_peq(float w, float q, float gain);
 
 /// Constructor
 DelayOpaque *delay_new(size_t length);
@@ -248,6 +367,8 @@ void adsr_set_release_cur(ADSREnvelopeOpaque *adsr, float rel_curve);
 void adsr_set_reset_type(ADSREnvelopeOpaque *adsr, Reset reset);
 
 float adsr_play(ADSREnvelopeOpaque *adsr, bool trig, bool sustain);
+
+float fold_process(float input, float amount);
 
 }  // extern "C"
 

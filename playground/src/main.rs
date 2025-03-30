@@ -1,23 +1,26 @@
 use std::{ 
   sync::mpsc::channel,
   thread,
-  time::Duration 
+  time::Duration,
+  f32::consts::TAU
 };
 
-use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use rust_dsp::{ 
-  dsp::signal::map, interpolation::{Floor, Linear}, waveshape::{self, sawtooth, phasor}, wavetable::shared::WaveTable
+use cpal::traits::{
+  DeviceTrait,
+  HostTrait,
+  StreamTrait
 };
 
 use rust_dsp::{
   dsp::buffer::range, filter::{
-    Filter,
-    biquad::{BiquadCoeffs, twopole::Biquad, BiquadTrait},
-    svf::{SVFilter, SVFCoeffs, SVFTrait},
-  }, interpolation::Linear, 
-  noise::Noise,
-  waveshape::triangle,
-  wavetable::owned::Wavetable
+    biquad::{
+      twopole::Biquad, BiquadCoeffs, BiquadTrait
+    }, svf::{
+      SVFCoeffs, SVFTrait, SVFilter
+    }, Filter
+  }, fold::Fold, interpolation::Linear, 
+  waveshape::{sine, triangle}, 
+  wavetable::shared::Wavetable
 };
 
 fn main() -> anyhow::Result<()> {
@@ -43,27 +46,24 @@ fn main() -> anyhow::Result<()> {
 
     // Use default config from input device
     let config: cpal::StreamConfig = input_device.default_input_config()?.into();
+    let ch = config.channels;
     let sr = config.sample_rate.0 as f32;
 
     // SETUP YOUR AUDIO PROCESSING STRUCTS HERE !!!! <-------------------------
-    let mut bq= Biquad::new();
-    let mut svf = SVFilter::new();
+    // let mut bq= Biquad::new();
+    // let mut svf = SVFilter::new();
     
 
     let mut table_1 = [0.0f32; 512];
     let mut table_2 = [0.0f32; 512];
-    triangle(&mut table_1);
+    sine(&mut table_1);
     triangle(&mut table_2);
 
-    range(&mut table_1, -1.0, 1.0, (TAU * 100.0) / sr, (TAU * 20000.0) / sr);
-    range(&mut table_2, -1.0, 1.0, 0.1, 15.0);
+    let mut wt = Wavetable::new();
+    let mut lfo = Wavetable::new();
 
-    let mut lfo_freq = Wavetable::new(&table_1, sr);
-    let mut lfo_q = Wavetable::new(&table_2, sr);
-    lfo_freq.set_samplerate(sr);
-    lfo_q.set_samplerate(sr);
-
-    let mut noise = Noise::new(sr);
+    wt.set_samplerate(sr);
+    lfo.set_samplerate(sr);
 
     // Create a channel to send and receive samples
     let (tx, rx) = channel::<Vec<f32>>();
@@ -78,20 +78,14 @@ fn main() -> anyhow::Result<()> {
     let output_callback = move 
       | data: &mut [f32], _: &cpal::OutputCallbackInfo | {
       // Process output data
-      for out_frame in data.chunks_mut(16) {
-        let sig = noise.play(1.0/sr);
+      for out_frame in data.chunks_mut(ch.into()) {
+        // let sig = noise.play(1.0/sr);
 
-        let freq = lfo_freq.play::<Linear>(0.2, 0.0);
-        let q = lfo_q.play::<Linear>(0.15, 0.0);
-        bq.update(BiquadCoeffs::bpf(freq, q));
-        svf.update(SVFCoeffs::bpf(freq, q));
-        let sig = sig * 0.1;
-        let filter_bq = bq.process(sig) * 0.1;
-        let filter_svf = svf.process(sig) * 0.1;
+        let sig = wt.play::<Linear>(&table_1, 200.2, 0.0);
+        let sig = Fold::process(sig, 1.0 + (0.5 * lfo.play::<Linear>(&table_2, 0.4, 0.0)));
 
-        out_frame[0] = sig; 
-        out_frame[1] = filter_bq;
-        out_frame[2] = filter_svf;
+        out_frame[0] = sig*0.2; 
+        out_frame[1] = sig*0.2;
       };
     };
 
@@ -120,4 +114,24 @@ fn main() -> anyhow::Result<()> {
     // allow running forever
     #[allow(unreachable_code)]
     Ok(())
+}
+
+fn fold(sig: f32, min: f32, max: f32  ) -> f32 {
+  let mut s1 = sig;
+  let x = s1 - min;
+  if s1 >= max {
+    s1 = max + max - s1;
+    if s1 >= min {return s1}
+  } else if s1 < min {
+    s1 = min + min - s1;
+    if s1 < max {return s1}
+  }
+  
+  if max == min {return min;}
+  // ok do the divide
+  let range = max - min;
+  let range2 = range + range;
+  let mut c = x - range2 * f32::floor(x / range2);
+  if c >= range { c = range2 - c }
+  c + min
 }
