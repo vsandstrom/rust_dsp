@@ -18,7 +18,7 @@ use rust_dsp::{
     }, svf::{
       SVFCoeffs, SVFTrait, SVFilter
     }, Filter
-  }, fold::Fold, interpolation::Linear, 
+  }, fold::{Fold, Abs}, interpolation::Linear, 
   waveshape::{sine, triangle}, 
   wavetable::shared::Wavetable
 };
@@ -82,7 +82,7 @@ fn main() -> anyhow::Result<()> {
         // let sig = noise.play(1.0/sr);
 
         let sig = wt.play::<Linear>(&table_1, 200.2, 0.0);
-        let sig = Fold::process(sig, 1.0 + (0.5 * lfo.play::<Linear>(&table_2, 0.4, 0.0)));
+        let sig = Fold::process::<Abs>(sig, 1.0 + (0.5 * lfo.play::<Linear>(&table_2, 0.4, 0.0)));
 
         out_frame[0] = sig*0.2; 
         out_frame[1] = sig*0.2;
