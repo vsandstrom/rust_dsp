@@ -1,8 +1,12 @@
-use core::f32::consts::PI;
-use std::f32::consts::FRAC_PI_2 as P2;
 
 #[repr(C)]
+pub enum FoldType {
+  Abs,
+  Sin,
+  Tanh
+}
 
+#[repr(C)]
 /// Uses f32::abs() as non-linear function
 /// ```
 /// let x = input.sin() * (amount + 1.0) * 10.0;
@@ -31,18 +35,21 @@ pub trait FoldTrait {
 }
 
 impl FoldTrait for Abs {
+  #[inline]
   fn fold(y: f32) -> f32 {
     4.0 * ((y - y.round()).abs() - 0.25)
   }
 }
 
 impl FoldTrait for Sin {
+  #[inline]
   fn fold(y: f32) -> f32 {
     4.0 * ((y - y.round()).sin())
   }
 }
 
 impl FoldTrait for Tanh {
+  #[inline]
   fn fold(y: f32) -> f32 {
     4.0 * ((y - y.round()).tanh())
   }
@@ -59,5 +66,15 @@ impl Fold {
     let x = input.sin() * (amount + 1.0) * 10.0;
     let y = 0.25 * x - 0.25;
     FoldType::fold(y)
+  }
+
+  pub fn process_dyn(input: f32, amount: f32, foldtype: FoldType) -> f32 {
+    let x = input.sin() * (amount + 1.0) * 10.0;
+    let y = 0.25 * x - 0.25;
+    match foldtype {
+      FoldType::Abs => Abs::fold(y),
+      FoldType::Sin => Sin::fold(y),
+      FoldType::Tanh => Tanh::fold(y),
+    }
   }
 }
