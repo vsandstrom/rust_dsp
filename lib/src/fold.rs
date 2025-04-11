@@ -1,3 +1,4 @@
+use std::f32::consts::PI;
 
 #[repr(C)]
 pub enum FoldType {
@@ -77,4 +78,16 @@ impl Fold {
       FoldType::Tanh => Tanh::fold(y),
     }
   }
+}
+
+pub fn sin_fold(sig: f32, a: f32) -> f32 {
+  f32::sin(f32::sin(sig.sin() * 0.25 * a) * a) * 0.5 * a
+}
+
+pub fn tanh_fold(sig: f32, a: f32) -> f32 {
+  f32::tanh(f32::tanh(sig.tanh() * 0.25 * a) * a) * 0.5 * a
+}
+
+pub fn mix_fold(sig: f32, a: f32) -> f32 {
+  -f32::cos(f32::abs(f32::sin(sig*a) * 0.5 * a + 0.5 * PI) * a) * 0.5 * a
 }
