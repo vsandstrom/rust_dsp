@@ -2,6 +2,8 @@
 // #[cfg(not(feature="std"))]
 extern crate alloc;
 
+pub use crate::waveshape::macros::*;
+
 pub mod dsp;
 pub mod grains;
 pub mod trig;
@@ -9,6 +11,7 @@ pub mod wavetable;
 pub mod interpolation;
 pub mod vector;
 pub mod buffer;
+#[macro_use]
 pub mod waveshape;
 pub mod envelope;
 pub mod adsr;
