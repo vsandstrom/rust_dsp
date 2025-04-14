@@ -51,7 +51,7 @@ impl Wavetable {
     debug_assert!(self.samplerate > f32::EPSILON, "samplerate has not been set");
     if frequency > self.samplerate * 0.5 { return 0.0; }
     let len = table.len() as f32;
-    self.position += (len * self.sr_recip * frequency) + (phase * len);
+    self.position += len * (self.sr_recip * frequency + phase);
     while self.position > len { self.position -= len; }
     TableInterpolation::interpolate(self.position, table, table.len())
   }

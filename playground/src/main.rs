@@ -1,3 +1,5 @@
+#[macro_use] extern crate rust_dsp;
+
 use std::{ 
   sync::mpsc::channel,
   thread,
@@ -22,8 +24,8 @@ use rust_dsp::{
   }, 
   fold::{Fold, Abs}, 
   interpolation::{Floor, Linear},
-  waveshape::*,
-  wavetable::shared::WaveTable,
+  waveshape::traits::Waveshape,
+  wavetable::shared::Wavetable,
   noise::Noise,
 };
 
@@ -56,10 +58,8 @@ fn main() -> anyhow::Result<()> {
     // SETUP YOUR AUDIO PROCESSING STRUCTS HERE !!!! <-------------------------
     // let mut bq= Biquad::new();
     // let mut svf = SVFilter::new();
-    let mut table_1 = [0.0f32; 512];
-    let mut table_2 = [0.0f32; 512];
-    sine(&mut table_1);
-    triangle(&mut table_2);
+    let table_1 = sine![0.0f32; 512];
+    let table_2 = triangle![0.0f32; 512];
 
     let mut wt = Wavetable::new();
     let mut lfo = Wavetable::new();
@@ -82,9 +82,9 @@ fn main() -> anyhow::Result<()> {
       // Process output data
       for out_frame in data.chunks_mut(ch.into()) {
         let sig = wt.play::<Linear>(&table_1, 200.2, 0.0);
-        let sig = Fold::process::<Abs>(sig, 1.0 + (0.5 * lfo.play::<Linear>(&table_2, 0.4, 0.0)));
-        out_frame[0] = sig*0.2; 
-        out_frame[1] = sig*0.2;
+        // let sig = Fold::process::<Abs>(sig, 1.0 + (0.5 * lfo.play::<Linear>(&table_2, 0.4, 0.0)));
+        out_frame[0] = sig*0.02; 
+        out_frame[1] = sig*0.02;
       };
     };
 
