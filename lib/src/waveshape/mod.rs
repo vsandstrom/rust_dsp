@@ -515,12 +515,20 @@ macro_rules! complex_sine {
     let _: &[f32] = $phases;
     let len = $size as f32;
     let mut arr = [0.0f32; $size];
+    let mut min = 0.0f32;
+    let mut max = 0.0f32;
     for (n, (a, p)) in $amps.iter().zip($phases.iter()).enumerate() {
       let inc = TAU * (n+1) as f32 / len as f32;
       let mut angle = inc * (len * p);
-      arr.iter_mut().for_each(|sample| { *sample += angle.sin() * a; angle += inc; })
+      arr.iter_mut().for_each(|sample| { 
+        *sample += angle.sin() * a;
+        angle += inc;
+        if *sample < min { min = *sample };
+        if *sample > max { max = *sample };
+      })
     }
-    scale(&mut arr, -1.0, 1.0);
+    // //scale
+    arr.iter_mut().for_each(|sample| { *sample = 2.0 * (*sample - min) / (max - min) -1.0; });
     arr
   }};
   ($amps: expr, $size: literal) => {{
@@ -528,14 +536,20 @@ macro_rules! complex_sine {
     let _: &[f32] = $amps;
     let len = $size as f32;
     let mut arr = [0.0f32; $size];
+    let mut min = 0.0f32;
+    let mut max = 0.0f32;
     for (n, a) in $amps.iter().enumerate() {
       let inc = TAU * (n+1) as f32 / len as f32;
       let mut angle = 0.0f32;
-      arr.iter_mut().for_each(|sample| { *sample += angle.sin() * a; angle += inc; })
+      arr.iter_mut().for_each(|sample| { 
+        *sample += angle.sin() * a; 
+        angle += inc; 
+        if *sample < min { min = *sample };
+        if *sample > max { max = *sample };
+      })
     }
-    scale(&mut arr, -1.0, 1.0);
+    arr.iter_mut().for_each(|sample| { *sample = 2.0 * (*sample - min) / (max - min) -1.0; });
     arr
-
   }}
 }
 }

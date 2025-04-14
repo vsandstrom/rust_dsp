@@ -58,7 +58,7 @@ fn main() -> anyhow::Result<()> {
     // SETUP YOUR AUDIO PROCESSING STRUCTS HERE !!!! <-------------------------
     // let mut bq= Biquad::new();
     // let mut svf = SVFilter::new();
-    let table_1 = sine![0.0f32; 512];
+    let table_1 = complex_sine!(&[1.0, 0.2, 0.3], 512);
     let table_2 = triangle![0.0f32; 512];
 
     let mut wt = Wavetable::new();
@@ -83,8 +83,8 @@ fn main() -> anyhow::Result<()> {
       for out_frame in data.chunks_mut(ch.into()) {
         let sig = wt.play::<Linear>(&table_1, 200.2, 0.0);
         // let sig = Fold::process::<Abs>(sig, 1.0 + (0.5 * lfo.play::<Linear>(&table_2, 0.4, 0.0)));
-        out_frame[0] = sig*0.02; 
-        out_frame[1] = sig*0.02;
+        out_frame[0] = sig*0.2; 
+        out_frame[1] = sig*0.2;
       };
     };
 
