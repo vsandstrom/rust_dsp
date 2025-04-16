@@ -518,7 +518,7 @@ macro_rules! complex_sine {
     let mut min = 0.0f32;
     let mut max = 0.0f32;
     for (n, (a, p)) in $amps.iter().zip($phases.iter()).enumerate() {
-      let inc = TAU * (n+1) as f32 / len as f32;
+      let inc = ::core::f32::consts::TAU * (n+1) as f32 / len as f32;
       let mut angle = inc * (len * p);
       arr.iter_mut().for_each(|sample| { 
         *sample += angle.sin() * a;
@@ -539,7 +539,7 @@ macro_rules! complex_sine {
     let mut min = 0.0f32;
     let mut max = 0.0f32;
     for (n, a) in $amps.iter().enumerate() {
-      let inc = TAU * (n+1) as f32 / len as f32;
+      let inc = ::core::f32::consts::TAU * (n+1) as f32 / len as f32;
       let mut angle = 0.0f32;
       arr.iter_mut().for_each(|sample| { 
         *sample += angle.sin() * a; 

@@ -1,5 +1,4 @@
-use core::{f32::consts::PI, usize};
-
+use core::f32::consts::PI;
 pub struct Linear { }
 pub struct Cubic { }
 pub struct Cosine { }
