@@ -4,7 +4,6 @@ use std::{
   sync::mpsc::channel,
   thread,
   time::Duration,
-  f32::consts::TAU
 };
 
 use cpal::traits::{
@@ -13,20 +12,14 @@ use cpal::traits::{
   StreamTrait
 };
 use rust_dsp::{ 
-  dsp::signal::map, 
-  dsp::buffer::range, filter::{
-    biquad::{
-      twopole::Biquad, BiquadCoeffs, BiquadTrait
-    }, svf::{
-      SVFCoeffs, SVFTrait, SVFilter
-    }, 
-    Filter
-  }, 
   fold::{Fold, Abs}, 
   interpolation::{Floor, Linear},
-  waveshape::traits::Waveshape,
   wavetable::shared::Wavetable,
   noise::Noise,
+  waveshape::*,
+  interpolation::Linear,
+  waveshape::*,
+  wavetable::shared::Wavetable,
 };
 
 fn main() -> anyhow::Result<()> {

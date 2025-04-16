@@ -15,6 +15,7 @@ pub enum FoldType {
 /// 4.0 * ((y - y.round()).abs() - 0.25)
 /// ```
 pub struct Abs {}
+#[repr(C)]
 /// Uses f32::sin() as non-linear function
 /// ```
 /// let x = input.sin() * (amount + 1.0) * 10.0;
@@ -22,6 +23,7 @@ pub struct Abs {}
 /// 4.0 * ((y - y.round()).sin())
 /// ```
 pub struct Sin {}
+#[repr(C)]
 /// Uses f32::tanh() as non-linear function
 /// ```
 /// let x = input.sin() * (amount + 1.0) * 10.0;
