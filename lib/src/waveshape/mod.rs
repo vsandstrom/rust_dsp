@@ -1,6 +1,6 @@
 use crate::dsp::buffer::scale;
 use alloc::{vec::Vec, borrow::ToOwned};
-use core::f32::consts::{PI, TAU};
+use ::core::f32::consts::{PI, TAU};
 
 /// Create a complex waveform from amplitudes and phases of sine partials
 /// (tip: normalize amplitudes to get waveform within -1.0 - 1.0)
@@ -552,12 +552,18 @@ macro_rules! complex_sine {
     arr
   }}
 }
+
+  // export macros
+  pub use {sine, hanning, square, triangle, sawtooth, reverse_sawtooth, complex_sine, phasor};
 }
 
 #[cfg(test)]
 mod tests {
+
   use super::*;
   use crate::waveshape::traits::Waveshape;
+  const DIFF: f32 = 0.00001;
+
   #[test]
   fn test_phasor() {
     let x = [0.0; 8].phasor().to_owned();
@@ -569,4 +575,67 @@ mod tests {
     let x = [0.0; 8].phasor().to_owned();
     assert_eq!(x[7], 1.0);
   }
+
+  #[test]
+  fn test_macros_sine() {
+    use crate::sine;
+    let x = sine!(128);
+    let y = [0.0; 128].sine();
+    assert!(x.iter().zip(y.iter()).all(|(a, b)| {
+      f32::abs(a-b) < DIFF
+    }))
+  }
+  
+  #[test]
+  fn test_macros_triangle() {
+    use crate::triangle;
+    let x = triangle!(128);
+    let y = [0.0; 128].triangle();
+    assert!(x.iter().zip(y.iter()).all(|(a, b)| {
+      f32::abs(a-b) < DIFF 
+    }))
+  }
+  
+  #[test]
+  fn test_macros_square() {
+    use crate::square;
+    let x = square!(128);
+    let y = [0.0; 128].square();
+    assert!(x.iter().zip(y.iter()).all(|(a, b)| {
+      f32::abs(a-b) < DIFF 
+    }))
+  }
+  
+  #[test]
+  fn test_macros_phasor() {
+    use crate::phasor;
+    let x = phasor!(128);
+    let y = [0.0; 128].phasor();
+    assert!(x.iter().zip(y.iter()).all(|(a, b)| {
+      f32::abs(a-b) < DIFF 
+    }))
+  }
+  
+  #[test]
+  fn test_macros_sawtooth() {
+    use crate::sawtooth;
+    let x = sawtooth!(128);
+    let y = [0.0; 128].sawtooth();
+    assert!(x.iter().zip(y.iter()).all(|(a, b)| {
+      f32::abs(a-b) < DIFF 
+    }))
+  }
+  
+  #[test]
+  fn test_macros_complex_sine() {
+    use crate::complex_sine;
+    let amp = [1.0, 0.5, 0.3];
+    let phs = [0.0, 0.5, 0.75];
+    let x = complex_sine!(&amp, &phs, 127);
+    let y = [0.0; 128].complex_sine(amp, phs);
+    assert!(x.iter().zip(y.iter()).all(|(a, b)| {
+      f32::abs(a-b) < DIFF*100.0 
+    }))
+  }
+
 }

@@ -12,13 +12,7 @@ use cpal::traits::{
   StreamTrait
 };
 use rust_dsp::{ 
-  fold::{Fold, Abs}, 
-  interpolation::{Floor, Linear},
-  wavetable::shared::Wavetable,
-  noise::Noise,
-  waveshape::*,
   interpolation::Linear,
-  waveshape::*,
   wavetable::shared::Wavetable,
 };
 

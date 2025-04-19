@@ -10,25 +10,31 @@ pub enum FoldType {
 #[repr(C)]
 /// Uses f32::abs() as non-linear function
 /// ```
-/// let x = input.sin() * (amount + 1.0) * 10.0;
-/// let y = 0.25 * x - 0.25;
-/// 4.0 * ((y - y.round()).abs() - 0.25)
+/// let input: f32 = 0.5;
+/// let amount: f32 = 1.0;
+/// let x: f32 = input.sin() * (amount + 1.0) * 10.0;
+/// let y: f32 = 0.25 * x - 0.25;
+/// let folded: f32 = 4.0 * ((y - y.round()).abs() - 0.25);
 /// ```
 pub struct Abs {}
 #[repr(C)]
 /// Uses f32::sin() as non-linear function
 /// ```
-/// let x = input.sin() * (amount + 1.0) * 10.0;
-/// let y = 0.25 * x - 0.25;
-/// 4.0 * ((y - y.round()).sin())
+/// let input: f32 = 0.5;
+/// let amount: f32 = 1.0;
+/// let x: f32 = input.sin() * (amount + 1.0) * 10.0;
+/// let y: f32 = 0.25 * x - 0.25;
+/// let folded: f32 = 4.0 * ((y - y.round()).sin());
 /// ```
 pub struct Sin {}
 #[repr(C)]
 /// Uses f32::tanh() as non-linear function
 /// ```
-/// let x = input.sin() * (amount + 1.0) * 10.0;
-/// let y = 0.25 * x - 0.25;
-/// 4.0 * ((y - y.round()).tanh())
+/// let input: f32 = 0.5;
+/// let amount: f32 = 1.0;
+/// let x: f32 = input.sin() * (amount + 1.0) * 10.0;
+/// let y: f32 = 0.25 * x - 0.25;
+/// let folded: f32 = 4.0 * ((y - y.round()).tanh());
 /// ```
 pub struct Tanh {}
 

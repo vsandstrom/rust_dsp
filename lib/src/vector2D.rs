@@ -23,7 +23,6 @@ impl AddAssign for Coord {
     self.x += rhs.x;
     self.y += rhs.y;
   }
-
 }
 
 impl From<(f32, f32)> for Coord {
