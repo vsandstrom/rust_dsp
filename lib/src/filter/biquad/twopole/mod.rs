@@ -1,26 +1,25 @@
-use super::{BiquadCoeffs, BiquadTrait};
+use super::{BiquadCoeffs, BiquadTrait, BiquadKind};
 use crate::filter::Filter;
+use core::marker::PhantomData;
 
 #[derive(Clone, Copy)]
-pub struct Biquad {
+pub struct Biquad<T: BiquadKind> {
   x1: f32, x2: f32, y1: f32, y2: f32,
   bq: BiquadCoeffs,
+  _marker: PhantomData<T>
 }
 
-impl Default for Biquad {
-  fn default() -> Self { Self::new() }
-}
-
-impl Biquad {
-  pub fn new() -> Self {
+impl<T: BiquadKind> Biquad<T> {
+  pub fn new(settings: T::Settings) -> Self {
     Self {
       x1: 0.0, x2: 0.0, y1: 0.0, y2: 0.0, 
-      bq: BiquadCoeffs{ a1: 0.0, a2: 0.0, b0: 0.0, b1: 0.0, b2: 0.0 },
+      bq: T::calc(&settings),
+      _marker: PhantomData
     }
   }
 }
 
-impl Filter for Biquad {
+impl<T: BiquadKind> Filter for Biquad<T> {
   fn process(&mut self, sample: f32) -> f32 {
     let output = {
         self.bq.b0 * sample 
@@ -38,8 +37,8 @@ impl Filter for Biquad {
   }
 }
 
-impl BiquadTrait for Biquad {
-  fn update(&mut self, bq: BiquadCoeffs) {
-      self.bq = bq;
+impl<T: BiquadKind> BiquadTrait<T> for Biquad<T> {
+  fn update(&mut self, settings: &T::Settings) {
+      self.bq = T::calc(settings);
   }
 }

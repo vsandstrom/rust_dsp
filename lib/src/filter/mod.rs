@@ -6,6 +6,13 @@ pub mod svf;
 use alloc::{vec, vec::Vec};
 use crate::interpolation::Interpolation;
 
+pub(crate) struct Lpf;
+pub(crate) struct Hpf;
+pub(crate) struct Bpf;
+pub(crate) struct Notch;
+pub(crate) struct HighShelf;
+pub(crate) struct LowShelf;
+pub(crate) struct Peq;
 
 pub trait Filter {
   fn process(&mut self, sample: f32) -> f32;
