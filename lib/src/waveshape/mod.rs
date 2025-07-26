@@ -4,7 +4,13 @@ use ::core::f32::consts::{PI, TAU};
 
 /// Create a complex waveform from amplitudes and phases of sine partials
 /// (tip: normalize amplitudes to get waveform within -1.0 - 1.0)
+///
+/// It is up to the user to make sure that the amplitudes and phases are 
+/// of the same length. It will short circuit to the shortest list, 
+/// and produce an empty slice if one or both are empty.
 pub fn complex_sine(table: &mut [f32], amps: &[f32], phases: &[f32]) {
+  debug_assert!(amps.len() == phases.len(), "Amplitudes and phases mus be of equal length");
+  debug_assert!(!amps.is_empty(), "Amplitudes and phases must be at least of length 1");
   let len = table.len() as f32;
   for (i, (a, p)) in amps.iter().zip(phases).enumerate() {
     let inc = TAU * (i+1) as f32 / len; 
@@ -180,6 +186,8 @@ impl<'a, const N: usize> Waveshape<N> for &'a mut [f32] {
 
   /// Create a complex waveform from amplitudes and phases of sine partials
   fn complex_sine(&mut self, amps: &[f32], phases: &[f32]) {
+    debug_assert!(amps.len() == phases.len(), "Amplitudes and phases mus be of equal length");
+    debug_assert!(!amps.is_empty(), "Amplitudes and phases must be at least of length 1");
     let len = N as f32;
     for (i, (amp, phase)) in amps.iter().zip(phases).enumerate() {
       let inc = TAU * (i+1) as f32 / len;
@@ -275,6 +283,8 @@ impl<const N: usize> Waveshape<N> for [f32; N] {
 
   /// Create a complex waveform from amplitudes and phases of sine partials
   fn complex_sine(&mut self, amps: &[f32], phases: &[f32]) -> Self::Output {
+    debug_assert!(amps.len() == phases.len(), "Amplitudes and phases mus be of equal length");
+    debug_assert!(!amps.is_empty(), "Amplitudes and phases must be at least of length 1");
     let len = N as f32;
     for (i, (amp, phase)) in amps.iter().zip(phases).enumerate() {
       let inc = TAU * (i+1) as f32 / len;
@@ -378,6 +388,8 @@ impl<const N:usize> Waveshape<N> for Vec<f32>  {
   /// if lenght of amplitude- or phases slice is bigger than u16, 
   /// (which it should probably never do) unexpected behavior might occur
   fn complex_sine (&mut self, amps: &[f32], phases: &[f32]) -> Self::Output {
+    debug_assert!(amps.len() == phases.len(), "Amplitudes and phases mus be of equal length");
+    debug_assert!(!amps.is_empty(), "Amplitudes and phases must be at least of length 1");
     let len = self.len() as f32;
     amps.iter().zip(phases).enumerate().for_each(|(i, (amp, phase))| {
       
@@ -595,8 +607,8 @@ macro_rules! phasor {
 #[macro_export]
 macro_rules! complex_sine {
   ($amps:expr, $phases:expr, $size:literal) => {{
-    assert!($amps.len() == $phases.len(), "Amplitudes and phases mus be of equal length");
-    assert!(!$amps.is_empty(), "Amplitudes and phases must be at least of length 1");
+    debug_assert!($amps.len() == $phases.len(), "Amplitudes and phases mus be of equal length");
+    debug_assert!(!$amps.is_empty(), "Amplitudes and phases must be at least of length 1");
     let _: &[f32] = $amps;
     let _: &[f32] = $phases;
     let len = $size as f32;

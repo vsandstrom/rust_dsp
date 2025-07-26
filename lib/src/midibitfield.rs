@@ -40,6 +40,13 @@ impl MidiBitField {
     }
   }
 
+  /// Check if value is encoded as 1 or 0.
+  /// returns [`true`] if bit is set. 
+  pub fn check(&self, value: u8) -> bool {
+    let data = self.data;
+    ((1 << value) & data) == 1
+  }
+
   #[allow(unused)]
   /// returns the value of the underlying structure
   pub(crate) fn get_data(&self) -> u128 {
@@ -69,8 +76,7 @@ use super::*;
     assert_eq!(bm.get_data(), 16)
   }
   
-  #[test]
-  /// activate bit 4 and bit 0, (16 + 1)
+  #[test] /// activate bit 4 and bit 0, (16 + 1)
   fn add_bit_4_and_0() {
     let mut bm = MidiBitField::default();
     bm.add(4).unwrap();

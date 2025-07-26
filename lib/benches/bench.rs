@@ -11,6 +11,7 @@ use criterion::{criterion_group, criterion_main};
 
 use wavetables_bench::criterion_benchmark_tables;
 // use grain_bench::criterion_benchmark_grains;
+use poly_bench::criterion_benchmark_poly_table;
 use midi_input_bench::criterion_benchmark_midi;
 use delay_bench::criterion_benchmark_delay;
 
@@ -19,6 +20,7 @@ criterion_group!(
   benches,
   criterion_benchmark_tables,
   // criterion_benchmark_grains,
+  criterion_benchmark_poly_table,
   criterion_benchmark_midi,
   criterion_benchmark_delay
 );
