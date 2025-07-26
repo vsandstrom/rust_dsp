@@ -90,13 +90,13 @@ impl BiquadKind for Notch {
   }
 }
 
-impl BiquadKind for Peq {
-  type Settings = BiquadSettings;
-  #[inline]
-  fn calc(settings: &Self::Settings) -> BiquadCoeffs {
-    BiquadCoeffs::peq(settings.omega, settings.q, settings.gain)
-  }
-}
+// impl BiquadKind for Peq {
+//   type Settings = BiquadSettings;
+//   #[inline]
+//   fn calc(settings: &Self::Settings) -> BiquadCoeffs {
+//     BiquadCoeffs::peq(settings.omega, settings.q, settings.gain)
+//   }
+// }
 
 impl BiquadCoeffs {
 #[inline]
@@ -237,5 +237,6 @@ impl BiquadKind for HighShelf {
         BiquadCoeffs {a1,a2,b0,b1,b2}
     }
   }
+}
 }
 
