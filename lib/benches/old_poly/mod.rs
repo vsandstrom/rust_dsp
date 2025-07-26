@@ -89,6 +89,7 @@ pub mod vector {
 
   pub struct PolyVector<const VOICES: usize, const TABLESIZE: usize> {
     voices: [VectorOscillator; VOICES],
+    tables: Arc<RwLock<Vec<[f32; TABLESIZE]>>>,
     frequencies: [f32; VOICES],
     next_voice: usize,
     envelope: Envelope,
@@ -103,6 +104,7 @@ pub mod vector {
       });
       Self {
         voices,
+        tables,
         envelope: Envelope::default(),
         next_voice: 0,
         frequencies: [0.0; VOICES],
@@ -125,7 +127,8 @@ pub mod vector {
       }
       for (i, voice) in self.voices.iter_mut().enumerate() {
         if (self.env_positions[i] as usize) < self.envelope.len() {
-          sig += voice.play::<T>(self.frequencies[i], positions[i], phases[i]) * 
+          let tables = self.tables.read().unwrap();
+          sig += voice.play::<TABLESIZE, T>(&tables, self.frequencies[i], positions[i], phases[i]) * 
             self.envelope.read::<U>(self.env_positions[i]);
           self.env_positions[i] += 1.0;
         } 
@@ -159,6 +162,7 @@ pub mod owned {
       vector::VectorOscillator,
       wavetable::shared::Wavetable
     };
+    use rust_dsp::interpolation::Linear;
 
     struct Token<T> {
       voice: T,
@@ -210,7 +214,7 @@ pub mod owned {
 
       for (i, v) in self.voices.iter_mut().enumerate() {
         if (v.env_pos as usize) < env.len() {
-          sig += v.voice.play::<N, T>(table, v.freq, phases[i]) * env.read::<U>(v.env_pos);
+          sig += v.voice.play::<T>(table, v.freq, phases[i]) * env.read::<U>(v.env_pos);
           v.env_pos += 1.0;
         }
       }
@@ -267,7 +271,7 @@ pub mod owned {
 
       for (i, v) in self.voices.iter_mut().enumerate() {
         if (v.env_pos as usize) < env.len() {
-          sig += v.voice.play::<OscInterpolation, LENGTH>(
+          sig += v.voice.play::<LENGTH, Linear>(
             tables,
             v.freq,
             positions[i],

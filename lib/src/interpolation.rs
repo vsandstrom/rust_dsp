@@ -1,9 +1,9 @@
 use ::core::f32::consts::PI;
-pub struct Linear { }
-pub struct Cubic { }
-pub struct Cosine { }
-pub struct Hermite { }
-pub struct Floor { }
+pub struct Linear;
+pub struct Cubic;
+pub struct Cosine;
+pub struct Hermite;
+pub struct Floor;
 
 pub trait Interpolation {
   fn interpolate(position: f32, buffer: &[f32], buffer_size: usize) -> f32;

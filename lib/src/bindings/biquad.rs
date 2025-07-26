@@ -73,16 +73,17 @@ pub extern "C" fn biquad_new(filter_type: BiquadType, settings: BiquadSettings) 
 /// Destructor
 pub unsafe extern "C" fn biquad_delete(biquad: *mut BiquadOpaque) {
   if !biquad.is_null() {
-    let kind = biquad.read().kind;
-    match kind {
-      BiquadType::Lpf       => drop(Box::from_raw(biquad as *mut Biquad<Lpf>)),
-      BiquadType::Bpf       => drop(Box::from_raw(biquad as *mut Biquad<Bpf>)),
-      BiquadType::Hpf       => drop(Box::from_raw(biquad as *mut Biquad<Hpf>)),
-      BiquadType::Notch     => drop(Box::from_raw(biquad as *mut Biquad<Notch>)),
-      BiquadType::Peq       => drop(Box::from_raw(biquad as *mut Biquad<Peq>)),
-      BiquadType::LowShelf  => drop(Box::from_raw(biquad as *mut Biquad<LowShelf>)),
-      BiquadType::HighShelf => drop(Box::from_raw(biquad as *mut Biquad<HighShelf>)),
+    let boxed = Box::from_raw(biquad);
+    match boxed.kind {
+      BiquadType::Lpf       => drop(Box::from_raw(boxed.ptr as *mut Biquad<Lpf>)),
+      BiquadType::Bpf       => drop(Box::from_raw(boxed.ptr as *mut Biquad<Bpf>)),
+      BiquadType::Hpf       => drop(Box::from_raw(boxed.ptr as *mut Biquad<Hpf>)),
+      BiquadType::Notch     => drop(Box::from_raw(boxed.ptr as *mut Biquad<Notch>)),
+      BiquadType::Peq       => drop(Box::from_raw(boxed.ptr as *mut Biquad<Peq>)),
+      BiquadType::LowShelf  => drop(Box::from_raw(boxed.ptr as *mut Biquad<LowShelf>)),
+      BiquadType::HighShelf => drop(Box::from_raw(boxed.ptr as *mut Biquad<HighShelf>)),
     }
+    // boxed is dropped here
   }
 }
 
@@ -123,11 +124,7 @@ pub unsafe extern "C" fn biquad_update(biquad: *mut BiquadOpaque, settings: Biqu
   }
 }
 
-
-
 // Biquad 4 pole
-
-
 #[repr(C)]
 pub struct Biquad4Opaque {
   kind: BiquadType, 
@@ -172,16 +169,17 @@ pub extern "C" fn biquad4_new(filter_type: BiquadType, settings: BiquadSettings)
 pub unsafe extern "C" fn biquad4_delete(biquad: *mut Biquad4Opaque) {
   if biquad.is_null() { return; }
 
-  let bq = Box::from_raw(biquad);
-  match bq.kind {
-    BiquadType::Lpf => drop(Box::from_raw(bq.ptr as *mut Biquad4<Lpf>)),
-    BiquadType::Bpf => drop(Box::from_raw(bq.ptr as *mut Biquad4<Bpf>)),
-    BiquadType::Hpf => drop(Box::from_raw(bq.ptr as *mut Biquad4<Hpf>)),
-    BiquadType::Notch => drop(Box::from_raw(bq.ptr as *mut Biquad4<Notch>)),
-    BiquadType::Peq => drop(Box::from_raw(bq.ptr as *mut Biquad4<Peq>)),
-    BiquadType::LowShelf => drop(Box::from_raw(bq.ptr as *mut Biquad4<LowShelf>)),
-    BiquadType::HighShelf => drop(Box::from_raw(bq.ptr as *mut Biquad4<HighShelf>)),
+  let boxed = Box::from_raw(biquad);
+  match boxed.kind {
+    BiquadType::Lpf => drop(Box::from_raw(boxed.ptr as *mut Biquad4<Lpf>)),
+    BiquadType::Bpf => drop(Box::from_raw(boxed.ptr as *mut Biquad4<Bpf>)),
+    BiquadType::Hpf => drop(Box::from_raw(boxed.ptr as *mut Biquad4<Hpf>)),
+    BiquadType::Notch => drop(Box::from_raw(boxed.ptr as *mut Biquad4<Notch>)),
+    BiquadType::Peq => drop(Box::from_raw(boxed.ptr as *mut Biquad4<Peq>)),
+    BiquadType::LowShelf => drop(Box::from_raw(boxed.ptr as *mut Biquad4<LowShelf>)),
+    BiquadType::HighShelf => drop(Box::from_raw(boxed.ptr as *mut Biquad4<HighShelf>)),
   }
+  // boxed is dropped here
 }
 
 
@@ -219,9 +217,7 @@ pub unsafe extern "C" fn biquad4_update(biquad: *mut Biquad4Opaque, settings: Bi
   }
 }
 
-
 // Biquad 8 pole
-
 #[repr(C)]
 pub struct Biquad8Opaque {
   kind: BiquadType, 
@@ -268,16 +264,17 @@ pub extern "C" fn biquad8_new(filter_type: BiquadType, settings: BiquadSettings)
 pub unsafe extern "C" fn biquad8_delete(biquad: *mut Biquad8Opaque) {
   if biquad.is_null() { return; }
 
-  let bq = Box::from_raw(biquad);
-  match bq.kind {
-    BiquadType::Lpf => drop(Box::from_raw(bq.ptr as *mut Biquad8<Lpf>)),
-    BiquadType::Bpf => drop(Box::from_raw(bq.ptr as *mut Biquad8<Bpf>)),
-    BiquadType::Hpf => drop(Box::from_raw(bq.ptr as *mut Biquad8<Hpf>)),
-    BiquadType::Notch => drop(Box::from_raw(bq.ptr as *mut Biquad8<Notch>)),
-    BiquadType::Peq => drop(Box::from_raw(bq.ptr as *mut Biquad8<Peq>)),
-    BiquadType::LowShelf => drop(Box::from_raw(bq.ptr as *mut Biquad8<LowShelf>)),
-    BiquadType::HighShelf => drop(Box::from_raw(bq.ptr as *mut Biquad8<HighShelf>)),
+  let boxed = Box::from_raw(biquad);
+  match boxed.kind {
+    BiquadType::Lpf => drop(Box::from_raw(boxed.ptr as *mut Biquad8<Lpf>)),
+    BiquadType::Bpf => drop(Box::from_raw(boxed.ptr as *mut Biquad8<Bpf>)),
+    BiquadType::Hpf => drop(Box::from_raw(boxed.ptr as *mut Biquad8<Hpf>)),
+    BiquadType::Notch => drop(Box::from_raw(boxed.ptr as *mut Biquad8<Notch>)),
+    BiquadType::Peq => drop(Box::from_raw(boxed.ptr as *mut Biquad8<Peq>)),
+    BiquadType::LowShelf => drop(Box::from_raw(boxed.ptr as *mut Biquad8<LowShelf>)),
+    BiquadType::HighShelf => drop(Box::from_raw(boxed.ptr as *mut Biquad8<HighShelf>)),
   }
+  // boxed is dropped here
 }
 
 

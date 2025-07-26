@@ -3,7 +3,7 @@ use rust_dsp::wavetable::shared::Wavetable;
 use simple_plot::plot;
 
 
-pub fn plot_buffer<const N:usize>(buffer: &[f32; N]) {
+pub fn plot_buffer<const N:usize>(title: &str, buffer: &[f32; N]) {
   const FREQ: f32 = 48000.0 / 10000.0;
   let mut wt = [Wavetable::default(); 6];
   wt.iter_mut().for_each(|w| w.set_samplerate(48000.0));
@@ -16,11 +16,11 @@ pub fn plot_buffer<const N:usize>(buffer: &[f32; N]) {
     shapes[4].push(wt[5].play::<Floor>   (buffer, FREQ, 0.0));
   }
 
-  plot!(&format!("hermite: {:?}", buffer), shapes[0].clone());
-  plot!(&format!("cosine: {:?}",   buffer), shapes[1].clone());
-  plot!(&format!("cubic: {:?}",    buffer), shapes[2].clone());
-  plot!(&format!("linear: {:?}",   buffer), shapes[3].clone());
-  plot!(&format!("floor: {:?}",    buffer), shapes[4].clone());
+  plot!(&format!("{title} - hermite"), shapes[0].clone());
+  plot!(&format!("{title} - cosine"), shapes[1].clone());
+  plot!(&format!("{title} - cubic"), shapes[2].clone());
+  plot!(&format!("{title} - linear"), shapes[3].clone());
+  plot!(&format!("{title} - floor"), shapes[4].clone());
 
 }
   

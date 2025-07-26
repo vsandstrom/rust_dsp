@@ -2,9 +2,10 @@ use super::*;
 
 /// Wavetable that shares the table containing the wave representation.
 ///
-/// Performance lies between owned and Arc<RwLock>, and is preferred when
-/// trying to keep allocated data at a minimum. Beware of stack overflow when
-/// creating too many big arrays. 
+/// Performance lies in between an owned [f32; n] as table and 
+/// an [`Arc<RwLock<Vec<f32>>>`] as table, 
+/// and is preferred when trying to keep allocated data at a minimum.
+/// !Beware of stack overflow when creating too many big arrays. 
 #[derive(Clone, Copy)]
 pub struct Wavetable {
   position: f32,

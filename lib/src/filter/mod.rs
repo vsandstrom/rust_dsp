@@ -6,16 +6,22 @@ pub mod svf;
 use alloc::{vec, vec::Vec};
 use crate::interpolation::Interpolation;
 
-pub(crate) struct Lpf;
-pub(crate) struct Hpf;
-pub(crate) struct Bpf;
-pub(crate) struct Notch;
-pub(crate) struct HighShelf;
-pub(crate) struct LowShelf;
-pub(crate) struct Peq;
+pub struct Lpf;
+pub struct Hpf;
+pub struct Bpf;
+pub struct Notch;
+pub struct HighShelf;
+pub struct LowShelf;
+pub struct Peq;
 
 pub trait Filter {
   fn process(&mut self, sample: f32) -> f32;
+}
+
+pub trait FilterKind {
+  type Settings;
+  type Coefficients;
+  fn calc(settings: &Self::Settings) -> Self::Coefficients;
 }
 
 pub trait InterpolatingFilter {
@@ -31,6 +37,50 @@ pub trait SVFTrait {
   fn calc_notch(&mut self, w: f32, q: f32);
   fn calc_high_shelf(&mut self, w: f32, q: f32, gain: f32) {}
   fn calc_low_shelf(&mut self, w: f32, q: f32, gain: f32) {}
+}
+
+#[macro_export]
+macro_rules! impl_filter_kind {
+  (
+    trait $trait_name:ident,
+    settings = $settings_ty:ty,
+    output = $output_ty:ty,
+    mappings = {
+      $(
+        $type:ty => $method:ident $( [ $($arg:ident),* ] )?
+      ),* $(,)?
+  }
+  ) => {
+    $(
+      /// Generates implementations for different filter types, 
+      /// assigns `Lpf` to use the `lpf`-method for a given trait. 
+      /// ```
+      /// impl $trait_name for $type {
+      ///   type Settings = $settings_ty;
+      ///   #[inline]
+      ///   fn calc(settings: &Self::Settings) -> $output_ty {
+      ///     < $output_ty >::$method(
+      ///       settings.omega,
+      ///       settings.q,
+      ///       $( $(settings.$arg),*)?
+      ///     )
+      ///   }
+      /// }
+      /// ```
+      ///
+      impl $trait_name for $type {
+        type Settings = $settings_ty;
+        #[inline]
+        fn calc(settings: &Self::Settings) -> $output_ty {
+          < $output_ty >::$method(
+            settings.omega,
+            settings.q,
+            $( $(settings.$arg),*)?
+          )
+        }
+      }
+    )*
+  };
 }
 
 // pub struct Comb {

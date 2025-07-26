@@ -1,31 +1,91 @@
 use super::Filter;
+use super::{Lpf, Bpf, Hpf, Notch, Peq, HighShelf, LowShelf, FilterKind};
+use core::marker::PhantomData;
 
-pub trait SVFTrait {
-  fn update(&mut self, coeffs: SVFCoeffs);
+
+
+pub trait SVFTrait<T: SVFKind> {
+  fn update(&mut self, settings: &T::Settings);
 }
 
-#[derive(Default)]
-pub struct SVFCoeffs { a1: f32, a2: f32, a3: f32, m0: f32, m1: f32, m2: f32, k: f32 }
+pub struct SVFSettings{pub omega: f32, pub q: f32, pub gain: f32}
 
-pub struct SVFilter {
-  ic1eq: f32,
-  ic2eq: f32,
-  c: SVFCoeffs,
+pub trait SVFKind {
+  type Settings;
+  fn calc(settings: &Self::Settings) -> SVFCoeffs;
 }
 
-impl Default for SVFilter {
-  fn default() -> Self {
-    Self{
-      ic1eq: 0.0,
-      ic2eq: 0.0,
-      c: SVFCoeffs::default(),
-    }
+// crate::impl_filter_kind!(
+//   trait SVFKind, 
+//   settings = SVFSettings,
+//   output = SVFCoeffs,
+//   mappings = {
+//     Lpf => lpf,
+//     Bpf => bpf,
+//     Hpf => hpf,
+//     Notch => notch,
+//     Peq => peq [gain],
+//     LowShelf => low_shelf [gain],
+//     HighShelf => high_shelf [gain],
+//   }
+// );
+
+
+impl SVFKind for Lpf {
+  type Settings = SVFSettings;
+  fn calc(settings: &Self::Settings) -> SVFCoeffs {
+    SVFCoeffs::lpf(settings.omega, settings.q)
   }
 }
 
-impl SVFilter {
-  pub fn new() -> Self {
-    Self::default()
+impl SVFKind for Bpf {
+  type Settings = SVFSettings;
+  fn calc(settings: &Self::Settings) -> SVFCoeffs {
+    SVFCoeffs::bpf(settings.omega, settings.q)
+  }
+}
+
+impl SVFKind for Hpf {
+  type Settings = SVFSettings;
+  fn calc(settings: &Self::Settings) -> SVFCoeffs {
+    SVFCoeffs::hpf(settings.omega, settings.q)
+  }
+}
+
+impl SVFKind for Notch {
+  type Settings = SVFSettings;
+  fn calc(settings: &Self::Settings) -> SVFCoeffs {
+    SVFCoeffs::notch(settings.omega, settings.q)
+  }
+}
+
+
+pub struct SVFCoeffs { 
+  a1: f32,
+  a2: f32, 
+  a3: f32,
+  m0: f32,
+  m1: f32,
+  m2: f32,
+  k:  f32
+}
+
+pub struct SVFilter<T: SVFKind> {
+  ic1eq: f32,
+  ic2eq: f32,
+  c: SVFCoeffs,
+  _marker: PhantomData<T>
+
+}
+
+impl<T: SVFKind> SVFilter<T> {
+  pub fn new(settings: T::Settings) -> Self {
+    Self {
+      ic1eq: 0.0,
+      ic2eq: 0.0,
+      c: T::calc(&settings),
+      _marker: PhantomData
+    }
   }
 
   pub fn set_mode(&mut self, mode: f32) {
@@ -33,7 +93,7 @@ impl SVFilter {
   }
 }
 
-impl Filter for SVFilter {
+impl<T: SVFKind> Filter for SVFilter<T> {
   fn process(&mut self, sample: f32) -> f32 {
     // v0 is sample
     //
@@ -54,16 +114,16 @@ impl Filter for SVFilter {
   }
 }
 
-impl SVFTrait for SVFilter {
-  fn update(&mut self, coeffs: SVFCoeffs) {
-      self.c = coeffs;
+impl<T: SVFKind> SVFTrait<T> for SVFilter<T> {
+  fn update(&mut self, settings: &T::Settings) {
+      self.c = T::calc(settings);
   }
 }
 
 impl SVFCoeffs {
   #[inline]
-  pub fn lpf(w: f32, q: f32) -> Self {
-    let g = f32::tan(w/2.0);
+  pub fn lpf(omega: f32, q: f32) -> Self {
+    let g = f32::tan(omega/2.0);
     let k = 1.0/q;
     let a1 = 1.0 / (1.0 + g * (g + k));
     let a2 = g * a1;
@@ -75,8 +135,8 @@ impl SVFCoeffs {
   }
   
   #[inline]
-  pub fn bpf(w: f32, q: f32) -> Self {
-    let g = f32::tan(w/2.0);
+  pub fn bpf(omega: f32, q: f32) -> Self {
+    let g = f32::tan(omega/2.0);
     let k = 1.0/q;
     let a1 = 1.0 / (1.0 + g * (g + k));
     let a2 = g * a1;
@@ -89,8 +149,8 @@ impl SVFCoeffs {
   }
 
   #[inline]
-  pub fn hpf(w: f32, q: f32) -> Self {
-    let g = f32::tan(w/2.0);
+  pub fn hpf(omega: f32, q: f32) -> Self {
+    let g = f32::tan(omega/2.0);
     let k = 1.0/q;
     let a1 = 1.0 / (1.0 + g * (g + k));
     let a2 = g * a1;
@@ -116,8 +176,8 @@ impl SVFCoeffs {
   }
 
   #[inline]
-  pub fn notch(w: f32, q: f32) -> Self {
-    let g = f32::tan(w/2.0);
+  pub fn notch(omega: f32, q: f32) -> Self {
+    let g = f32::tan(omega/2.0);
     let k = 1.0/q;
     let a1 = 1.0 / (1.0 + g * (g + k));
     let a2 = g * a1;
