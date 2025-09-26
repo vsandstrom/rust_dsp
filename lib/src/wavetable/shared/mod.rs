@@ -45,6 +45,7 @@ impl Wavetable {
   /// Play function for wavetable where __SIZE__ is the table size and __TableInterpolation = &impl Interpolation__
   #[inline]
   pub fn play<TableInterpolation>(&mut self, table: &[f32], frequency: f32, phase: f32) -> f32
+
     where
         TableInterpolation: Interpolation
   {
