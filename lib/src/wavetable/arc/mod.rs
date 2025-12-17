@@ -8,19 +8,19 @@ pub struct Wavetable{
   position: f32,
   table: Arc<RwLock<Vec<f32>>>,
   size: usize,
-  samplerate: f32,
+  samplerate: u32,
   sr_recip: f32,
 }
 
 impl Wavetable {
-  pub fn new(table: Arc<RwLock<Vec<f32>>>, samplerate: f32) -> Self {
+  pub fn new(table: Arc<RwLock<Vec<f32>>>, samplerate: u32) -> Self {
     let size = table.try_read().unwrap().len();
     Self {
       position: 0.0,
       table,
       size,
       samplerate,
-      sr_recip: 1.0 / samplerate,
+      sr_recip: 1.0 / samplerate as f32,
     }
   }
 
@@ -39,8 +39,8 @@ impl Wavetable {
     }
   }
   
-  pub fn set_samplerate(&mut self, samplerate: f32) {
+  pub fn set_samplerate(&mut self, samplerate: u32) {
     self.samplerate = samplerate;
-    self.sr_recip = 1.0 / samplerate;
+    self.sr_recip = 1.0 / samplerate as f32;
   }
 }

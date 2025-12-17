@@ -6,7 +6,7 @@ use simple_plot::plot;
 pub fn plot_buffer<const N:usize>(buffer: &[f32; N]) {
   const FREQ: f32 = 48000.0 / 10000.0;
   let mut wt = [Wavetable::default(); 6];
-  wt.iter_mut().for_each(|w| w.set_samplerate(48000.0));
+  wt.iter_mut().for_each(|w| w.set_samplerate(48000));
   let mut shapes = vec![Vec::new(); 5];
   for _ in 0..20000 {
     shapes[0].push(wt[1].play::<Hermite>(buffer, FREQ, 0.0));

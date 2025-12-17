@@ -1,48 +1,34 @@
 use crate::{dsp::math::is_pow2, interpolation::Interpolation};
 use alloc::{vec, vec::Vec};
 
-pub trait DelayTrait {
-  fn new(length: usize) -> Self;
-  // fn set_time(&mut self, delay_time: f32);
-}
+// pub trait DelayTrait {
+//   fn new(length: usize) -> Self;
+//   // fn set_time(&mut self, delay_time: f32);
+// }
 
 pub struct Delay {
-  buffer: Vec<f32>,
   position: usize,
 }
 
 
 
 impl Delay {
+  pub fn new() -> Self { Delay { position: 0 } }
   // delay is set in number of samples, but restricted to floats for interpolation 
   // enabling the process.
-  pub fn play<T: Interpolation>(&mut self, input: f32, delay: f32, feedback: f32) -> f32 {
-    let len = self.buffer.len() as f32;
+  pub fn play<T: Interpolation>(&mut self, buffer: &mut [f32], input: f32, delay: f32, feedback: f32) -> f32 {
+    let len = buffer.len() as f32;
     let mut time = self.position as f32 + delay;
     while time >= len { time -= len };
     while time < 0.0  { time += len };
-    let out = T::interpolate(time, &self.buffer, self.buffer.len());
-    self.position %= self.buffer.len();
-    self.buffer[self.position] = input + (out * feedback);
+    let out = T::interpolate(time, buffer, buffer.len());
+    self.position %= buffer.len();
+    while self.position > buffer.len() { self.position -= buffer.len() }
+    buffer[self.position] = input + (out * feedback);
     self.position += 1;
     out
   }
 
-}
-
-impl DelayTrait for Delay {
-  /// Delay in samples
-  fn new(max_samples: usize) -> Self {
-    Delay{
-      buffer: vec![0.0; max_samples],
-      position: 0,
-    }
-  }
-
-  // /// Set delay time in samples
-  // fn set_time(&mut self, delay: f32) {
-  //   self.delay = delay;
-  // }
 }
 
 /// Constant size delay line.

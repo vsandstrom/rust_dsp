@@ -7,21 +7,21 @@ use crate::interpolation::Interpolation;
 /// of type `trait Interpolation`
 pub struct VectorOscillator {
   table_pos: f32,
-  samplerate: f32,
+  samplerate: usize,
   sr_recip: f32,
 }
 
 impl VectorOscillator {
-  pub fn new(samplerate: f32) -> Self {
+  pub fn new(samplerate: usize) -> Self {
     Self {
       table_pos: 0.0,
       samplerate,
-      sr_recip: 1.0 / samplerate,
+      sr_recip: 1.0 / samplerate as f32,
     }
   }
 
   pub fn play<const LENGTH: usize, T: Interpolation>(&mut self, tables: &[[f32; LENGTH]], frequency: f32, position: f32, phase: f32) -> f32 {
-    if frequency > self.samplerate * 0.5 {return 0.0}
+    if frequency as usize > (self.samplerate >> 1) {return 0.0}
     let len = LENGTH as f32;
     let width = tables.len();
     let position = if position >= 1.0 {0.99999999999999} else {position};
@@ -40,13 +40,13 @@ impl VectorOscillator {
     sig
   }
 
-  pub fn set_samplerate(&mut self, samplerate: f32) {
+  pub fn set_samplerate(&mut self, samplerate: usize) {
     self.samplerate = samplerate;
-    self.sr_recip = 1.0 / samplerate;
+    self.sr_recip = 1.0 / samplerate as f32;
   }
 
   pub fn play_linear<const LENGTH: usize>(&mut self, tables: &[[f32; LENGTH]], frequency: f32, position: f32, phase: f32) -> f32 {
-    if frequency > self.samplerate * 0.5 {return 0.0}
+    if frequency as usize > (self.samplerate >> 1) {return 0.0}
     let len = LENGTH as f32;
     let width = tables.len();
 
@@ -84,7 +84,7 @@ mod tests {
   fn one_table() {
     const SIZE: usize = 512;
     let tables = [[0.0; SIZE].sine()];
-    let mut vc = VectorOscillator::new(48000.0);
+    let mut vc = VectorOscillator::new(48000);
     let mut shape = vec!();
     for i in 0..16 {
       shape.push(vc.play::<SIZE, Linear>(&tables, 1.0/(i as f32 + 1.0), 20.0, 1.0));

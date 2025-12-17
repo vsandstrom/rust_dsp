@@ -8,7 +8,7 @@ pub struct WavetableOpaque;
 /// ```ignore
 /// pub struct Wavetable {
 ///   position: f32,
-///   samplerate: f32,
+///   samplerate: u32,
 ///   sr_recip: f32,
 /// }
 /// ```
@@ -30,7 +30,7 @@ pub extern "C" fn wavetable_delete(wavetable: *mut WavetableOpaque) {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn wavetable_set_samplerate(wavetable: *mut WavetableOpaque, samplerate: f32) {
+pub unsafe extern "C" fn wavetable_set_samplerate(wavetable: *mut WavetableOpaque, samplerate: u32) {
   (*(wavetable as *mut Wavetable)).set_samplerate(samplerate)
 }
 
@@ -64,16 +64,16 @@ mod shared_table_tests {
       wavetable_play_floor,
       wavetable_play_linear,
       WavetableOpaque,
-      wavetable_play_cubic,
     }, 
     waveshape::traits::Waveshape, 
   };
 
-  const SAMPLERATE: f32 = 48000.0;
+  const SAMPLERATE: u32 = 48000;
+  const SIZE: usize = 16;
+  const FREQ: f32 = SAMPLERATE as f32 / SIZE as f32;
 
   #[test] 
   fn triangletest_simple() {
-    const SIZE: usize = 16;
     let mut table = [0.0; SIZE];
     let table = table.triangle();
     let wt: *mut WavetableOpaque = wavetable_new();
@@ -82,7 +82,7 @@ mod shared_table_tests {
     // Check if it wraps
     for _ in 0..16 {
       unsafe{
-        let out = wavetable_play_floor(wt, table.as_ptr(), table.len(), SAMPLERATE/ SIZE as f32,  0.0);
+        let out = wavetable_play_floor(wt, table.as_ptr(), table.len(), FREQ,  0.0);
         shape.push(out);
       }
     }
@@ -95,7 +95,6 @@ mod shared_table_tests {
   
   #[test] 
   fn interptest_simple() {
-    const SIZE: usize = 16;
     let mut table = [0.0; SIZE];
     let table = table.triangle();
     let wt: *mut WavetableOpaque = wavetable_new();
@@ -104,7 +103,7 @@ mod shared_table_tests {
     // Check if it wraps
     for _ in 0..16 {
       unsafe {
-        let out = wavetable_play_linear(wt, table.as_ptr(), SIZE, SAMPLERATE / SIZE as f32, 1.0);
+        let out = wavetable_play_linear(wt, table.as_ptr(), SIZE, FREQ, 1.0);
         shape.push(out);
       }
     }
@@ -115,50 +114,68 @@ mod shared_table_tests {
     ], shape)
   }
 
-  #[test]
-  fn linear_test_simple() {
-    const SIZE: usize = 4;
-    let dilude = 2;
-    let mut table = [0.0; SIZE];
-    let table = table.triangle();
-    let wt: *mut WavetableOpaque = wavetable_new();
-    unsafe {wavetable_set_samplerate(wt, SAMPLERATE);}
-    let mut shape = vec!();
-    for _ in 0..(SIZE * dilude) {
-      shape.push(
-        unsafe{
-          wavetable_play_linear(wt, table.as_ptr(), SIZE, SAMPLERATE / SIZE as f32 * 0.5, 0.0)
-        }
-      );
+}
+
+#[cfg(test)]
+mod interpol_test {
+  use alloc::vec;
+  use crate::{
+    bindings::wavetable::{
+      wavetable_delete,
+      wavetable_new, 
+      wavetable_set_samplerate,
+      wavetable_play_linear,
+      WavetableOpaque,
+      wavetable_play_cubic,
+    }, 
+    waveshape::traits::Waveshape, 
+  };
+
+  const SAMPLERATE: u32 = 48000;
+  const SIZE: usize = 4;
+  const FREQ: f32 = SAMPLERATE as f32 / SIZE as f32;
+    #[test]
+    fn linear_test_simple() {
+      let dilude = 2;
+      let mut table = [0.0; SIZE];
+      let table = table.triangle();
+      let wt: *mut WavetableOpaque = wavetable_new();
+      unsafe {wavetable_set_samplerate(wt, SAMPLERATE);}
+      let mut shape = vec!();
+      for _ in 0..(SIZE * dilude) {
+        shape.push(
+          unsafe{
+            wavetable_play_linear(wt, table.as_ptr(), SIZE, FREQ * 0.5, 0.0)
+          }
+        );
+      }
+      wavetable_delete(wt);
+      assert_eq!(vec![
+         0.5,  1.0,  0.5, 0.0,
+        -0.5, -1.0, -0.5, 0.0
+      ], shape);
     }
-    wavetable_delete(wt);
-    assert_eq!(vec![
-       0.5,  1.0,  0.5, 0.0,
-      -0.5, -1.0, -0.5, 0.0
-    ], shape);
-  }
-  
-  #[test]
-  fn cubic() {
-    const SIZE: usize = 4;
-    let dilude = 2;
-    let mut table = [0.0; SIZE];
-    let table = table.triangle();
-    let wt: *mut WavetableOpaque = wavetable_new();
-    unsafe {wavetable_set_samplerate(wt, SAMPLERATE);}
-    let mut shape = vec!();
-    for _ in 0..(SIZE * dilude) {
-      shape.push(
-        unsafe{
-          wavetable_play_cubic(wt, table.as_ptr(), SIZE, SAMPLERATE / SIZE as f32 * 0.5, 0.0)
-        }
-      );
+    
+    #[test]
+    fn cubic() {
+      let dilude = 2;
+      let mut table = [0.0; SIZE];
+      let table = table.triangle();
+      let wt: *mut WavetableOpaque = wavetable_new();
+      unsafe {wavetable_set_samplerate(wt, SAMPLERATE);}
+      let mut shape = vec!();
+      for _ in 0..(SIZE * dilude) {
+        shape.push(
+          unsafe{
+            wavetable_play_cubic(wt, table.as_ptr(), SIZE, FREQ * 0.5, 0.0)
+          }
+        );
+      }
+      wavetable_delete(wt);
+      assert_eq!(vec![
+         0.75,  1.0,  0.75, 0.0,
+        -0.75, -1.0, -0.75, 0.0
+      ], shape);
     }
-    wavetable_delete(wt);
-    assert_eq!(vec![
-       0.75,  1.0,  0.75, 0.0,
-      -0.75, -1.0, -0.75, 0.0
-    ], shape);
-  }
 }
 

@@ -24,12 +24,12 @@ pub struct Granulator<const BUFSIZE: usize, const NUMGRAINS: usize> {
   next_grain: usize,
   grains: [Grain; NUMGRAINS],
 
-  samplerate: f32,
+  samplerate: u32,
   sr_recip: f32,
 }
 
 impl<const BUFSIZE: usize, const NUMGRAINS: usize> Granulator<BUFSIZE, NUMGRAINS> {
-  pub fn new(samplerate: f32) -> Self {
+  pub fn new(samplerate: u32) -> Self {
   // Buffer to hold recorded audio
   let buffer = [0.0; BUFSIZE];
   let shape = [0.0; 512].hanning();
@@ -57,7 +57,7 @@ impl<const BUFSIZE: usize, const NUMGRAINS: usize> Granulator<BUFSIZE, NUMGRAINS
     recording: false,
     next_grain: 0,
     samplerate,
-    sr_recip: 1.0 / samplerate,
+    sr_recip: 1.0 / samplerate as f32,
   }
 }
 
@@ -118,8 +118,8 @@ pub fn trigger_new(&mut self,
 
 impl<const BUFSIZE: usize, const NUMGRAINS: usize> GrainTrait for Granulator<BUFSIZE, NUMGRAINS> {
   #[inline]
-  fn set_samplerate(&mut self, samplerate: f32) {
+  fn set_samplerate(&mut self, samplerate: u32) {
     self.samplerate = samplerate;
-    self.sr_recip = 1.0 / samplerate;
+    self.sr_recip = 1.0 / samplerate as f32;
   }
 }

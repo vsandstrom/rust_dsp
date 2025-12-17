@@ -91,11 +91,11 @@ pub fn criterion_benchmark_tables(c: &mut Criterion) {
   const SIZE: usize = 1<<15;
   let table = [0.0; SIZE].sine();
   let mut wt = ShareTable::new();
-  wt.set_samplerate(48000.0);
+  wt.set_samplerate(48000);
   let mut group = c.benchmark_group("tables");
 
   let otable = [0.0;SIZE].sine();
-  let mut owt = OwnTable::new(&otable, 48000.0);
+  let mut owt = OwnTable::new(&otable, 48000);
 
   group.bench_function(
     "wt owned",
@@ -108,7 +108,10 @@ pub fn criterion_benchmark_tables(c: &mut Criterion) {
   );
   
   #[cfg(feature="std")]
-  let mut  awt = { let atable = Arc::new(RwLock::new([0.0;SIZE].sine().to_vec())); ArcTable::new(atable, 48000.0) };
+  let mut  awt = { 
+    let atable = Arc::new(RwLock::new([0.0;SIZE].sine().to_vec())); 
+    ArcTable::new(atable, 48000) 
+  };
   group.bench_function(
     "wt arc",
     |b| b.iter(|| {run_table_arc(&mut awt)}) 
@@ -116,10 +119,12 @@ pub fn criterion_benchmark_tables(c: &mut Criterion) {
 
   drop(group);
   let mut lfo = ShareTable::new();
-  lfo.set_samplerate(48000.0);
-  let mut olfo = OwnTable::new(&otable, 48000.0);
+  lfo.set_samplerate(48000);
+  let mut olfo = OwnTable::new(&otable, 48000);
   #[cfg(feature="std")]
-  let mut  alfo = { let atable = Arc::new(RwLock::new([0.0;SIZE].sine().to_vec())); ArcTable::new(atable, 48000.0) };
+  let mut  alfo = { 
+    let atable = Arc::new(RwLock::new([0.0;SIZE].sine().to_vec()));
+    ArcTable::new(atable, 48000) };
 
   let mut group_mod = c.benchmark_group("tables_mod");
   group_mod.bench_function(

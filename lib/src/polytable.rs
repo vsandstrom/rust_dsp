@@ -69,7 +69,7 @@ impl<const VOICES: usize> PolyTable<VOICES> {
     sig
   }
 
-  pub fn set_samplerate(&mut self, samplerate: f32) {
+  pub fn set_samplerate(&mut self, samplerate: u32) {
     for t in self.voices.iter_mut() {
       t.voice.set_samplerate(samplerate);
     }
@@ -82,7 +82,7 @@ pub struct PolyVector<const VOICES: usize> {
 }
 
 impl<const VOICES: usize> PolyVector<VOICES> {
-  pub fn new(samplerate: f32) -> Self {
+  pub fn new(samplerate: usize) -> Self {
     let voices = array::from_fn(|_| {
       Token{
         voice: VectorOscillator::new(samplerate),
@@ -119,7 +119,7 @@ impl<const VOICES: usize> PolyVector<VOICES> {
     sig
   }
 
-  pub fn set_samplerate(&mut self, samplerate: f32) {
+  pub fn set_samplerate(&mut self, samplerate: usize) {
     for v in &mut self.voices {
       v.voice.set_samplerate(samplerate);
     }

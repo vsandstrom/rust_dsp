@@ -1,23 +1,21 @@
 use std::{ 
   sync::mpsc::channel,
   thread,
-  time::Duration 
+  time::Duration,
+  f32::consts::TAU,
 };
 
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use rust_dsp::{ 
-  dsp::signal::map, interpolation::{Floor, Linear}, waveshape::{self, sawtooth, phasor}, wavetable::shared::WaveTable
-};
+use rust_dsp::{interpolation::Linear, wavetable::shared::Wavetable };
 
 use rust_dsp::{
   dsp::buffer::range, filter::{
     Filter,
     biquad::{BiquadCoeffs, twopole::Biquad, BiquadTrait},
     svf::{SVFilter, SVFCoeffs, SVFTrait},
-  }, interpolation::Linear, 
+  }, 
   noise::Noise,
   waveshape::triangle,
-  wavetable::owned::Wavetable
 };
 
 fn main() -> anyhow::Result<()> {
@@ -43,7 +41,7 @@ fn main() -> anyhow::Result<()> {
 
     // Use default config from input device
     let config: cpal::StreamConfig = input_device.default_input_config()?.into();
-    let sr = config.sample_rate.0 as f32;
+    let sr = config.sample_rate.0;
 
     // SETUP YOUR AUDIO PROCESSING STRUCTS HERE !!!! <-------------------------
     let mut bq= Biquad::new();
@@ -55,11 +53,11 @@ fn main() -> anyhow::Result<()> {
     triangle(&mut table_1);
     triangle(&mut table_2);
 
-    range(&mut table_1, -1.0, 1.0, (TAU * 100.0) / sr, (TAU * 20000.0) / sr);
+    range(&mut table_1, -1.0, 1.0, (TAU * 100.0) / sr as f32, (TAU * 20000.0) / sr as f32);
     range(&mut table_2, -1.0, 1.0, 0.1, 15.0);
 
-    let mut lfo_freq = Wavetable::new(&table_1, sr);
-    let mut lfo_q = Wavetable::new(&table_2, sr);
+    let mut lfo_freq = Wavetable::new();
+    let mut lfo_q = Wavetable::new();
     lfo_freq.set_samplerate(sr);
     lfo_q.set_samplerate(sr);
 
@@ -79,10 +77,10 @@ fn main() -> anyhow::Result<()> {
       | data: &mut [f32], _: &cpal::OutputCallbackInfo | {
       // Process output data
       for out_frame in data.chunks_mut(16) {
-        let sig = noise.play(1.0/sr);
+        let sig = noise.play(1.0 / sr as f32);
 
-        let freq = lfo_freq.play::<Linear>(0.2, 0.0);
-        let q = lfo_q.play::<Linear>(0.15, 0.0);
+        let freq = lfo_freq.play::<Linear>(&table_1, 0.2, 0.0);
+        let q = lfo_q.play::<Linear>(&table_2, 0.15, 0.0);
         bq.update(BiquadCoeffs::bpf(freq, q));
         svf.update(SVFCoeffs::bpf(freq, q));
         let sig = sig * 0.1;

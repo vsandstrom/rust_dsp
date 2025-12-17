@@ -8,7 +8,7 @@ use super::*;
 pub struct Wavetable<'a, const N:usize> {
   position: f32,
   table: &'a [f32; N],
-  samplerate: f32,
+  samplerate: u32,
   sr_recip: f32,
 }
 
@@ -24,12 +24,12 @@ impl<'a, const N:usize> Clone for Wavetable<'a, N> {
 }
 
 impl<'a, const N: usize> Wavetable<'a, N> {
-  pub fn new(table: &'a [f32; N], samplerate: f32) -> Self {
+  pub fn new(table: &'a [f32; N], samplerate: u32) -> Self {
     Self { 
       position: 0.0, 
       table,
       samplerate,
-      sr_recip: 1.0 / samplerate,
+      sr_recip: 1.0 / samplerate as f32,
     } 
   }
 
@@ -44,9 +44,9 @@ impl<'a, const N: usize> Wavetable<'a, N> {
     T::interpolate(pos, self.table, self.table.len())
   }
 
-  pub fn set_samplerate(&mut self, samplerate: f32) {
+  pub fn set_samplerate(&mut self, samplerate: u32) {
     self.samplerate = samplerate;
-    self.sr_recip = 1.0 / samplerate;
+    self.sr_recip = 1.0 / samplerate as f32;
   }
 
 }

@@ -15,7 +15,7 @@ use alloc::boxed::Box;
 ///   pub recording: bool,
 ///   next_grain: usize,
 ///   grains: Vec<Grain>,
-///   samplerate: f32,
+///   samplerate: u32,
 ///   sr_recip: f32,
 /// }
 /// ```
@@ -23,7 +23,7 @@ pub struct GranulatorOpaque;
 
 #[no_mangle]
 /// Constructor
-pub extern "C" fn granulator_new(samplerate: f32, num_grains: usize, buf_size: usize) -> *mut GranulatorOpaque {
+pub extern "C" fn granulator_new(samplerate: u32, num_grains: usize, buf_size: usize) -> *mut GranulatorOpaque {
   let mut table = [0.0; 1024];
   hanning(&mut table);
   let shape = table.to_vec();

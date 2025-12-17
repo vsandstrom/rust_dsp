@@ -69,7 +69,7 @@ fn run_delay_hermite(d: &mut Delay, input: f32, buffer: &mut [f32]) {
 pub fn criterion_benchmark_interpolation(c: &mut Criterion) {
   let mut wt = Wavetable::new();
   let table = [0.0; 1<<13].sine();
-  wt.set_samplerate(48000.0);
+  wt.set_samplerate(48000);
 
   let mut group = c.benchmark_group("interpolation_table");
 

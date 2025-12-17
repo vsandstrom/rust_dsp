@@ -8,7 +8,7 @@ use super::*;
 #[derive(Clone, Copy, Default, Debug)]
 pub struct Wavetable {
   position: f32,
-  samplerate: f32,
+  samplerate: u32,
   sr_recip: f32,
 }
 
@@ -16,7 +16,7 @@ impl Wavetable {
   pub fn new() -> Self {
     Self {
       position: 0.0,
-      samplerate: 0.0,
+      samplerate: 0,
       sr_recip: 0.0,
     }
   }
@@ -35,8 +35,8 @@ impl Wavetable {
     T::interpolate(pos, table, table.len())
   }
 
-  pub fn set_samplerate(&mut self, samplerate: f32) {
+  pub fn set_samplerate(&mut self, samplerate: u32) {
     self.samplerate = samplerate;
-    self.sr_recip = 1.0 / samplerate;
+    self.sr_recip = 1.0 / samplerate as f32;
   }
 }

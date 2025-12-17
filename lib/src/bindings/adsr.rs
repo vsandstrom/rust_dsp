@@ -32,7 +32,7 @@ pub struct ADSREnvelopeOpaque;
 
 #[no_mangle]
 /// Constructor
-pub extern "C" fn adsr_new(samplerate: f32) -> *mut ADSREnvelopeOpaque {
+pub extern "C" fn adsr_new(samplerate: u32) -> *mut ADSREnvelopeOpaque {
   Box::into_raw(Box::new(ADSREnvelope::new(samplerate))) as *mut ADSREnvelopeOpaque
 }
 
