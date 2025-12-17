@@ -210,7 +210,7 @@ pub mod owned {
 
       for (i, v) in self.voices.iter_mut().enumerate() {
         if (v.env_pos as usize) < env.len() {
-          sig += v.voice.play::<N, T>(table, v.freq, phases[i]) * env.read::<U>(v.env_pos);
+          sig += v.voice.play::<T>(table, v.freq, phases[i]) * env.read::<U>(v.env_pos);
           v.env_pos += 1.0;
         }
       }
@@ -267,7 +267,7 @@ pub mod owned {
 
       for (i, v) in self.voices.iter_mut().enumerate() {
         if (v.env_pos as usize) < env.len() {
-          sig += v.voice.play::<OscInterpolation, LENGTH>(
+          sig += v.voice.play::<LENGTH, OscInterpolation>(
             tables,
             v.freq,
             positions[i],

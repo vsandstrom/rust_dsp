@@ -1,11 +1,11 @@
 use criterion::Criterion;
-use rust_dsp::delay::{Delay, DelayTrait, FixedDelay, delay};
+use rust_dsp::delay::{Delay, FixedDelay, delay};
 use rust_dsp::interpolation::Linear;
 
 const SIZE: usize = 8*48000;
 
-fn delay_interpolated(d: &mut Delay, input: f32) {
-  for _ in 0..256 {d.play::<Linear>(input, 0.1, 0.1);}
+fn delay_interpolated(d: &mut Delay, input: f32, buffer: &mut [f32]) {
+  for _ in 0..256 {d.play::<Linear>(buffer, input, 0.1, 0.1);}
 }
 
 fn fixed_delay(fd: &mut FixedDelay<SIZE>, input: f32) {
@@ -32,7 +32,7 @@ fn fixed_delay_outer2(pos: &mut usize, buffer: &mut [f32], input: f32) {
 
 pub fn criterion_benchmark_delay(c: &mut Criterion) {
   let mut group = c.benchmark_group("delay");
-  let mut d = Delay::new(SIZE);
+  let mut d = Delay::new();
   let mut fd = FixedDelay::new();
   let mut fda = FixedDelayAltered::new();
 
@@ -47,7 +47,7 @@ pub fn criterion_benchmark_delay(c: &mut Criterion) {
   let signal = 1.0;
   group.bench_function("interpolated delay", |b| {
     b.iter(|| {
-      delay_interpolated(&mut d, signal);
+      delay_interpolated(&mut d, signal, &mut buffer);
     })
   });
   
