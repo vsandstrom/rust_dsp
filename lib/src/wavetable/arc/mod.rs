@@ -1,6 +1,9 @@
+#![deprecated = "Implementation with Arc<RwLock<Vec<f32>>> table is not usable in real world"]
+
 use super::*;
 use std::sync::{Arc, RwLock};
 
+#[derive(Clone, Default, Debug)]
 pub struct Wavetable{
   position: f32,
   table: Arc<RwLock<Vec<f32>>>,
@@ -23,15 +26,14 @@ impl Wavetable {
 
   #[inline]
   pub fn play<T: Interpolation>(&mut self, frequency: f32, phase: f32) -> f32 {
-    debug_assert!(self.samplerate > f32::EPSILON, "samplerate has not been set");
-    if frequency > self.samplerate * 0.5 { return 0.0; }
     let len= self.size as f32;
-    self.position += (len * self.sr_recip * frequency) + len * phase;
-    while self.position > len {
-      self.position -= len;
-    }
+    self.position += len * self.sr_recip * frequency;
+    if self.position > len { self.position -= len; }
+    let mut pos = self.position + (phase * len);
+    while pos > len { pos -= len; }
+    while pos < 0.0 { pos += len; }
     if let Ok(table) = &self.table.try_read() {
-      T::interpolate(self.position, table.as_ref(), self.size)
+      T::interpolate(pos, table.as_ref(), self.size)
     } else {
       0.0
     }

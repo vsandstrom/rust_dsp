@@ -12,6 +12,7 @@ pub trait Interpolation {
 
 /// Linear interpolation - read position is interpolated between 2 points
 impl Interpolation for Linear {
+  #[inline(always)]
   fn interpolate(position: f32, buffer: &[f32], buffer_size: usize) -> f32 {
     let pos = position as usize;
     let x = position.fract();
@@ -24,6 +25,7 @@ impl Interpolation for Linear {
 
 /// Cubic interpolation - read position is interpolated between 4 points
 impl Interpolation for Cubic {
+  #[inline(always)]
   fn interpolate(position: f32, buffer: &[f32], buffer_size: usize) -> f32 {
     let a2 = (position.floor() as usize) % buffer_size;
     let diff = position.fract();
@@ -40,6 +42,7 @@ impl Interpolation for Cubic {
 
 /// Cosine interpolation - read position is interpolated between 4 points
 impl Interpolation for Cosine {
+  #[inline(always)]
   fn interpolate(position: f32, buffer: &[f32], buffer_size: usize) -> f32 {
     let diff = position.fract();
     let n = position as usize;
@@ -54,6 +57,7 @@ impl Interpolation for Cosine {
 
 /// Hermite interpolation - read position is interpolated between 4 points
 impl Interpolation for Hermite {
+  #[inline(always)]
   fn interpolate(position: f32, buffer: &[f32], buffer_size: usize) -> f32 {
     let diff = position.fract();
     let a2 = position as usize % buffer_size;
@@ -70,6 +74,7 @@ impl Interpolation for Hermite {
 
 /// No interpolation - read position is floored.
 impl Interpolation for Floor {
+  #[inline(always)]
   fn interpolate(position: f32, buffer: &[f32], buffer_size: usize) -> f32 {
     let i: usize = position as usize % buffer_size;
     buffer[i]

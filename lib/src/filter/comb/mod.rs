@@ -9,35 +9,35 @@ pub struct Comb {
 }
 
 impl Comb {
-  /// IIR: feedback > 0.0, feedforward == 0.0
-  /// FIR: feedback == 0.0, feedforward > 0.0
-  /// AllPass:  feedback == feedforward > 0.0
-  ///         feedforward comb filter
-  ///
-  ///        ╓──> ( * b0 )───────╖
-  ///        ║   ╓─────────╖     V
-  ///  x(n) ─╨─> ║  z(-M)  ║─> ( + )──> y(n)
-  ///            ╙─────────╜    
-  ///
-  ///
-  ///          feedback comb filter
-  ///
-  ///               ╓─────────────────> y(n)
-  ///               ║   ╓─────────╖ 
-  ///  x(n) ─>( + )─╨─> ║  z(-M)  ║──╖
-  ///           Λ       ╙─────────╜  ║ 
-  ///           ╙────────( * aM ) <──╜
-  ///
-  ///
-  ///             allpass filter
-  ///
-  ///                ╓───> ( * b0 )─────────╖
-  ///                ║   ╓─────────╖        V
-  ///  x(n) ─> ( + )─╨─> ║  z(-M)  ║──╥─> ( + )──> y(n)
-  ///            Λ       ╙─────────╜  ║ 
-  ///            ╙────────( * -aM ) <─╜
-  ///
-  ///       where: b0 == aM
+  // IIR: feedback > 0.0, feedforward == 0.0
+  // FIR: feedback == 0.0, feedforward > 0.0
+  // AllPass:  feedback == feedforward > 0.0
+  //         feedforward comb filter
+  //
+  //        ╓──> ( * b0 )───────╖
+  //        ║   ╓─────────╖     V
+  //  x(n) ─╨─> ║  z(-M)  ║─> ( + )──> y(n)
+  //            ╙─────────╜    
+  //
+  //
+  //          feedback comb filter
+  //
+  //               ╓─────────────────> y(n)
+  //               ║   ╓─────────╖ 
+  //  x(n) ─>( + )─╨─> ║  z(-M)  ║──╖
+  //           Λ       ╙─────────╜  ║ 
+  //           ╙────────( * aM ) <──╜
+  //
+  //
+  //             allpass filter
+  //
+  //                ╓───> ( * b0 )─────────╖
+  //                ║   ╓─────────╖        V
+  //  x(n) ─> ( + )─╨─> ║  z(-M)  ║──╥─> ( + )──> y(n)
+  //            Λ       ╙─────────╜  ║ 
+  //            ╙────────( * -aM ) <─╜
+  //
+  //       where: b0 == aM
   pub fn new<const N: usize>(feedforward: f32, feedback: f32) -> Self {
     Self {
       buffer: vec![0.0;N],
@@ -144,35 +144,35 @@ impl LPComb {
 
 impl Filter for LPComb {
 
-  /// IIR: feedback > 0.0, feedforward == 0.0
-  /// FIR: feedback == 0.0, feedforward > 0.0
-  /// AllPass:  feedback == feedforward > 0.0
-  ///         feedforward comb filter
-  ///
-  ///        ╓──> ( * b0 )───────╖
-  ///        ║   ╓─────────╖     V
-  ///  x(n) ─╨─> ║  z(-M)  ║─> ( + )──> y(n)
-  ///            ╙─────────╜    
-  ///
-  ///
-  ///          feedback comb filter
-  ///
-  ///               ╓─────────────────> y(n)
-  ///               ║   ╓─────────╖ 
-  ///  x(n) ─>( + )─╨─> ║  z(-M)  ║──╖
-  ///           Λ       ╙─────────╜  ║ 
-  ///           ╙────────( * aM ) <──╜
-  ///
-  ///
-  ///             allpass filter
-  ///
-  ///                ╓───> ( * b0 )─────────╖
-  ///                ║   ╓─────────╖        V
-  ///  x(n) ─> ( + )─╨─> ║  z(-M)  ║──╥─> ( + )──> y(n)
-  ///            Λ       ╙─────────╜  ║ 
-  ///            ╙────────( * -aM ) <─╜
-  ///
-  ///       where: b0 == aM
+  // IIR: feedback > 0.0, feedforward == 0.0
+  // FIR: feedback == 0.0, feedforward > 0.0
+  // AllPass:  feedback == feedforward > 0.0
+  //         feedforward comb filter
+  //
+  //        ╓──> ( * b0 )───────╖
+  //        ║   ╓─────────╖     V
+  //  x(n) ─╨─> ║  z(-M)  ║─> ( + )──> y(n)
+  //            ╙─────────╜    
+  //
+  //
+  //          feedback comb filter
+  //
+  //               ╓─────────────────> y(n)
+  //               ║   ╓─────────╖ 
+  //  x(n) ─>( + )─╨─> ║  z(-M)  ║──╖
+  //           Λ       ╙─────────╜  ║ 
+  //           ╙────────( * aM ) <──╜
+  //
+  //
+  //             allpass filter
+  //
+  //                ╓───> ( * b0 )─────────╖
+  //                ║   ╓─────────╖        V
+  //  x(n) ─> ( + )─╨─> ║  z(-M)  ║──╥─> ( + )──> y(n)
+  //            Λ       ╙─────────╜  ║ 
+  //            ╙────────( * -aM ) <─╜
+  //
+  //       where: b0 == aM
   fn process(&mut self, sample: f32) -> f32 {
     let delayed = self.buffer[self.position];
     let dc_blocked = sample - self.previous_in + 0.995 * self.previous_out;

@@ -7,7 +7,6 @@ pub mod shared;
 #[cfg(feature="std")]
 pub mod arc;
 
-
 #[cfg(test)]
 mod shared_table_tests {
   use alloc::vec;
@@ -32,8 +31,7 @@ mod shared_table_tests {
     // Check if it wraps
     for _ in 0..16 {
       let out = wt.play::<Floor>(&table, SAMPLERATE/ SIZE as f32, 0.0);
-      shape.push(out);
-    }
+      shape.push(out); }
     assert_eq!(vec![
        0.25,  0.5,  0.75,  1.0,  0.75,  0.5,  0.25,  0.0,
       -0.25, -0.5, -0.75, -1.0, -0.75, -0.5, -0.25,  0.0
