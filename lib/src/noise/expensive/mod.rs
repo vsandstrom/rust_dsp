@@ -1,6 +1,6 @@
 use rand::{self, Rng};
 
-pub struct Noise {
+pub struct ExpensiveNoise {
   counter: u64,
   duration_in_samples: u64,
   current: f32,
@@ -9,7 +9,7 @@ pub struct Noise {
   sr_recip: f32,
 }
 
-impl Noise {
+impl ExpensiveNoise {
   /// duration is in seconds. 
   /// if you want to play audiorate, use the reciprocal of the frequency you want
   /// ```
@@ -53,8 +53,6 @@ mod tests {
   
   #[test]
   fn poll() {
-    let _rnd = Noise::new(48000);
-
-    
+    let _rnd = ExpensiveNoise::new(48000);
   }
 }

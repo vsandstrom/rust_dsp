@@ -1,7 +1,7 @@
 [package]
 name = "rust_dsp"
 version = "0.1.141"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 rand = "0.8.5"

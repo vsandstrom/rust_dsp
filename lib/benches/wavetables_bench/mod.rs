@@ -39,7 +39,7 @@ fn run_table_arc(wt: &mut ArcTable) -> f32 {
 }
 
 #[cfg(feature="std")]
-fn run_table_own<const N: usize>(wt: &mut OwnTable<N>) -> f32 {
+fn run_table_own(wt: &mut OwnTable) -> f32 {
   let mut out = 0.0;
   let mut freq = 100.0;
   for i in 0..BLOCK_SIZE {
@@ -61,7 +61,7 @@ fn run_table_mod<const N: usize>(wt: &mut ShareTable, &table: &[f32; N], lfo: &m
   out
 }
 
-fn run_table_own_mod<const N: usize>(wt: &mut OwnTable<N>, lfo: &mut OwnTable<N>) -> f32 {
+fn run_table_own_mod(wt: &mut OwnTable, lfo: &mut OwnTable) -> f32 {
   let mut out = 0.0;
   let mut freq = 100.0;
   let mut m = 0.0;

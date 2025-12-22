@@ -28,7 +28,6 @@ impl Delay {
     self.position += 1;
     out
   }
-
 }
 
 /// Constant size delay line.
