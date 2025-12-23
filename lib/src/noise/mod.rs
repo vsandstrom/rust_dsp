@@ -1,6 +1,6 @@
-mod white;
-mod pink;
-mod brown;
+pub mod white;
+pub mod pink;
+pub mod brown;
 mod expensive;
 
 use rand;
