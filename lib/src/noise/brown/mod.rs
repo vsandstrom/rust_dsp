@@ -1,31 +1,35 @@
 use crate::noise::white;
 use crate::filter::onepole::Onepole;
 use crate::filter::Filter;
-use super::TRand;
+use super::Prng;
 
-pub struct BrownNoise {
-  noise: white::Noise,
+pub struct Noise {
+  rng: Prng,
   lowpass: Onepole
 }
 
-impl BrownNoise {
-  pub fn new(samplerate: u32) -> Self {
+impl Noise {
+  pub fn new(seed: u32, samplerate: u32) -> Self {
     let mut lowpass = Onepole::new(samplerate);
     // close to DC, could try 1 - 5 Hz
     lowpass.set_cutoff(2.0);
     Self { 
-      noise: white::Noise::default(), 
+      rng: Prng::new(seed),
       lowpass 
     }
   }
 
-  pub fn process_block(&mut self, out: &mut [f32]) {
+  pub fn play_block(&mut self, out: &mut [f32]) {
     out.iter_mut().for_each(|x| {
-      *x = self.lowpass.process(self.noise.process())
+      *x = self.lowpass.process(self.rng.frand_bipolar())
     });
   }
 
-  pub fn process(&mut self) -> f32 {
-    self.lowpass.process(self.noise.process())
+  pub fn play(&mut self) -> f32 {
+    self.lowpass.process(self.rng.frand_bipolar())
+  }
+  
+  pub fn play_control(&mut self) -> f32 {
+    self.lowpass.process(self.rng.frand_unipolar())
   }
 }

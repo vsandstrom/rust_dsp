@@ -1,16 +1,19 @@
+// default noise
+pub use pk3::Noise;
 
-pub mod pk3 {
-  use crate::noise::white;
+
+mod pk3 {
+  use crate::noise::Prng;
   pub struct Noise {
-    noise: white::Noise,
+    rng: Prng,
     coeffs: [(f32,f32); 6],
     filter: [f32; 7]
   }
 
-  impl Default for Noise {
-    fn default() -> Self {
-      Self{
-        noise: white::Noise::new(),
+  impl Noise {
+    pub fn new(seed: u32) -> Self {
+      Self {
+        rng: Prng::new(seed),
         coeffs: [
           (0.99886, 0.0555179),
           (0.99332, 0.0750759),
@@ -20,18 +23,11 @@ pub mod pk3 {
           (-0.7616, 0.016898 ), 
         ],
         filter: [0.0; 7]
-
       }
     }
-  }
 
-  impl Noise {
-    pub fn new() -> Self {
-      Self::default()
-    }
-
-    pub fn process(&mut self,) -> f32 {
-      let white = self.noise.process();
+    pub fn play(&mut self) -> f32 {
+      let white = self.rng.frand_bipolar();
       self.filter[0] = self.coeffs[0].0 * self.filter[0] + white * self.coeffs[0].1;
       self.filter[1] = self.coeffs[1].0 * self.filter[1] + white * self.coeffs[1].1;
       self.filter[2] = self.coeffs[2].0 * self.filter[2] + white * self.coeffs[2].1;
@@ -46,17 +42,18 @@ pub mod pk3 {
 }
 
 pub mod pke {
-  use crate::noise::white;
+  use crate::noise::{Prng, white};
   pub struct Noise {
-    noise: white::Noise,
+    rng: Prng,
     coeffs: [(f32,f32); 3],
     filter: [f32; 3],
   }
 
-  impl Default for Noise {
-    fn default() -> Self {
+
+  impl Noise {
+    pub fn new(seed: u32) -> Self { 
       Self{
-        noise: white::Noise::new(),
+        rng: Prng::new(seed),
         coeffs: [
           (0.99765, 0.099046 ),
           (0.963  , 0.2965164),
@@ -65,12 +62,17 @@ pub mod pke {
         filter: [0.0; 3],
       }
     }
-  }
 
-  impl Noise {
-    pub fn new() -> Self { Self::default() }
-    pub fn process(&mut self,) -> f32 {
-      let white = self.noise.process();
+    pub fn play(&mut self) -> f32 {
+      let white = self.rng.frand_bipolar();
+      self.coeffs.iter().zip(self.filter.iter_mut()).for_each(|((b, a), f)| {
+        *f = *b * *f + white * *a;
+      });
+      self.filter.iter().sum::<f32>() + white * 0.1848
+    }
+    
+    pub fn play_control(&mut self) -> f32 {
+      let white = self.rng.frand_unipolar();
       self.coeffs.iter().zip(self.filter.iter_mut()).for_each(|((b, a), f)| {
         *f = *b * *f + white * *a;
       });
