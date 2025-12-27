@@ -5,10 +5,10 @@ mod expensive;
 
 use rand;
 
-const BIPOLAR: u32 = 0x40000000;
-const UNIPOLAR: u32 = 0x3F800000;
+pub const BIPOLAR: u32 = 0x40000000;
+pub const UNIPOLAR: u32 = 0x3F800000;
 
-pub(super) struct Prng {
+pub struct Prng {
   s1: u32,
   s2: u32,
   s3: u32,

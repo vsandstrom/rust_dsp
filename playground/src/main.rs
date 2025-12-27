@@ -14,7 +14,10 @@ use cpal::traits::{DeviceTrait, StreamTrait};
 use rust_dsp::{
   wavetable::shared::Wavetable,
   filter::{ onepole::Onepole, }, 
-  noise::pink::Noise as PinkNoise,
+  noise::pink::pk3::Noise as PinkNoise,
+  noise::pink::voss_mccartney::Noise as PinkNoise2,
+  noise::pink::discord::Noise as PinkNoise3,
+  noise::pink::Noise as PinkNoise4,
   noise::white::Noise as WhiteNoise,
   noise::brown::Noise as BrownNoise,
   waveshape::{traits::Waveshape},
@@ -48,6 +51,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   let seed = 12345678;
 
   let mut pink = PinkNoise::new(seed);
+  let mut pink2 = PinkNoise2::new(seed);
+  let mut pink3 = PinkNoise3::new(seed);
+  let mut pink4 = PinkNoise4::new(seed as i32);
   let mut white = WhiteNoise::new(seed);
   let mut brown = BrownNoise::new(seed, sr);
   let mut noise_buf = [0.0; 48000];
@@ -71,7 +77,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       // i+=1;
       let sig1 = white.play();
       let sig2 = pink.play() * 0.03;
-      let sig3 = brown.play();
+      let sig3 = pink2.play();
+      let sig4 = pink3.play();
+      let sig5 = pink4.play();
+      let sig6 = brown.play();
 
       // let sig = wt.play::<Linear>(&table, 100.0, 0.0) * 0.5;
       // op.set_cutoff(cutoffs[j]);
@@ -79,6 +88,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       out_frame[0] = sig1;
       out_frame[1] = sig2;
       out_frame[2] = sig3;
+      out_frame[3] = sig4;
+      out_frame[4] = sig5;
+      out_frame[5] = sig6;
     };
     noise_buf.iter_mut().for_each(|x| *x = 0.0);
   };
