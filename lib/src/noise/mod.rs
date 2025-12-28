@@ -56,3 +56,34 @@ impl Prng {
     self.s1 ^ self.s2 ^ self.s3
   }
 }
+
+pub mod rng {
+  /// Supercollider RNG - generates u32
+  pub fn complex_u32(s1: &mut u32, s2: &mut u32, s3: &mut u32) -> u32 {
+    *s1 = ((*s1 & 0u32.wrapping_sub(2))  << 12) ^ (((*s1 << 13) ^ *s1) >> 19);
+    *s2 = ((*s2 & 0u32.wrapping_sub(8))  << 4)  ^ (((*s2 << 2)  ^ *s2) >> 25);
+    *s3 = ((*s3 & 0u32.wrapping_sub(16)) << 17) ^ (((*s3 << 3)  ^ *s3) >> 11);
+    *s1 ^ *s2 ^ *s3
+  }
+
+  pub fn simple_u32(state: &mut u32) -> u32 {
+    *state = state.wrapping_mul(16807).wrapping_add(1);
+    *state
+  }
+    
+  #[inline(always)]
+  pub fn moderate_u32(fpd: &mut u32) -> u32 {
+    *fpd ^= *fpd << 13;
+    *fpd ^= *fpd >> 17;
+    *fpd ^= *fpd << 5;
+    *fpd
+  }
+
+  pub fn utof_bipolar(int: &u32) -> f32 {
+    f32::from_bits(*int >> 9 | super::BIPOLAR) - 3.0
+  }
+
+  pub fn utof_unipolar(int: &u32) -> f32 {
+    f32::from_bits(*int >> 9 | super::UNIPOLAR) - 3.0
+  }
+}

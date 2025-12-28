@@ -93,6 +93,7 @@ pub mod pke {
 ///        x               x        - row 4
 ///                x                - row 5
 /// ```
+/// https://www.firstpr.com.au/dsp/pink-noise/#Filtering
 pub mod voss_mccartney2 {
   /// 8.2ns per call - on Intel i7 3.1GHz Quad Core
   use rand::{SeedableRng, rngs::SmallRng, RngCore};
@@ -146,6 +147,7 @@ pub mod voss_mccartney2 {
 ///        x               x        - row  3
 ///                x                - row  4
 /// ```
+/// https://www.firstpr.com.au/dsp/pink-noise/#Filtering
 pub mod voss_mccartney {
   /// 4.6ns per call - on Intel i7 3.1GHz Quad Core
   use crate::noise::Prng;
