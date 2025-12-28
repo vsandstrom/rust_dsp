@@ -1,123 +1,125 @@
-#[macro_use] extern crate rust_dsp;
+mod plotter;
+mod io;
 
 use std::{ 
-  sync::mpsc::channel,
   thread,
   time::Duration,
+  env::args
 };
 
-use cpal::traits::{
-  DeviceTrait,
-  HostTrait,
-  StreamTrait
-};
-use rust_dsp::{ 
-  interpolation::Linear,
+use plotter::plot_buffer;
+use io::IO;
+
+use cpal::traits::{DeviceTrait, StreamTrait};
+use rust_dsp::{
   wavetable::shared::Wavetable,
+  filter::{ onepole::Onepole, }, 
+  noise::pink::pk3::Noise as PinkNoise,
+  noise::pink::voss_mccartney::Noise as PinkNoise2,
+  noise::pink::discord::Noise as PinkNoise3,
+  noise::pink::Noise as PinkNoise4,
+  noise::white::Noise as WhiteNoise,
+  noise::brown::Noise as BrownNoise,
+  waveshape::{traits::Waveshape},
 };
 
-fn main() -> anyhow::Result<()> {
-    // List all audio devices
-    let host = cpal::default_host();
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+  let plot = args()
+    .nth(1)
+    .map_or_else(|| false, |x| {x == "plot"});
+  // let io = IO::new_default()?;
+  let io = IO::new_current()?;
+  let sr = io.samplerate;
+  let ch = io.channels;
 
-    // List default input and output devices
-    let input_device = match host.default_input_device() {
-      Some(device) => {
-        // println!("Default input: {}", device.name().unwrap());
-        device
-      },
-      None => panic!("no default input device available")
-    };
+  // SETUP YOUR AUDIO PROCESSING STRUCTS HERE !!!! <-------------------------
+  let mut op = Onepole::new(sr);
+  // let cutoffs = [200.0, 400.0, 600.0, 300.0];
+  op.set_cutoff(200.0);
+  // let mut i = 0;
+  // let mut j = 0;
 
-    let output_device = match host.default_output_device() {
-      Some(device) => {
-        // println!("Default output: {}", device.name().unwrap()); 
-        device
-      },
-      None => panic!("no default output device available")
-    };
-
-    // Use default config from input device
-    let config: cpal::StreamConfig = input_device.default_input_config()?.into();
-    let ch = config.channels;
-    let sr = config.sample_rate.0 as f32;
-
-    // SETUP YOUR AUDIO PROCESSING STRUCTS HERE !!!! <-------------------------
-    // let mut bq= Biquad::new();
-    // let mut svf = SVFilter::new();
-    let table_1 = complex_sine!(&[1.0, 0.2, 0.3], 512);
-    let table_2 = triangle![0.0f32; 512];
-
-    let mut wt = Wavetable::new();
-    let mut lfo = Wavetable::new();
-
-    wt.set_samplerate(sr);
-    lfo.set_samplerate(sr);
-
-    // Create a channel to send and receive samples
-    let (tx, rx) = channel::<Vec<f32>>();
-    // Callbacks
-    let input_callback = move 
-      | data: &[f32], _: &cpal::InputCallbackInfo | {
-        // Process input data
-      // tx.send(data.to_vec());
-    };
-
-
-    let output_callback = move 
-      | data: &mut [f32], _: &cpal::OutputCallbackInfo | {
-      // Process output data
-      for out_frame in data.chunks_mut(ch.into()) {
-        let sig = wt.play::<Linear>(&table_1, 200.2, 0.0);
-        // let sig = Fold::process::<Abs>(sig, 1.0 + (0.5 * lfo.play::<Linear>(&table_2, 0.4, 0.0)));
-        out_frame[0] = sig*0.2; 
-        out_frame[1] = sig*0.2;
-      };
-    };
-
-    let err_callback = |err: cpal::StreamError| {
-        eprintln!("{}", err);
-    };
-
-    let input_stream = input_device.build_input_stream(
-        &config, 
-        input_callback,
-        err_callback,
-        None
-    )?;
-
-    let output_stream = output_device.build_output_stream(
-        &config,
-        output_callback,
-        err_callback,
-        None
-    )?;
-
-    input_stream.play().expect("FAILED INPUT STREAM");
-    output_stream.play().expect("FAILED OUTPUT STREAM");
-    loop{ thread::sleep(Duration::from_secs(40)); }
-
-    // allow running forever
-    #[allow(unreachable_code)]
-    Ok(())
-}
-
-fn fold(sig: f32, min: f32, max: f32  ) -> f32 {
-  let mut s1 = sig;
-  let x = s1 - min;
-  if s1 >= max {
-    s1 = max + max - s1;
-    if s1 >= min {return s1}
-  } else if s1 < min {
-    s1 = min + min - s1;
-    if s1 < max {return s1}
+  // let mut wt = Wavetable::new();
+  let table = [0.0; 1028].sawtooth();
+  let mut wt = Wavetable::new();
+  wt.set_samplerate(sr);
+  // let mut noise = Noise::new(sr);
+  if plot {
+    plot_buffer(&table, false);
   }
-  
-  if max == min {return min;}
-  // ok do the divide
-  let range = max - min;
-  let range2 = range + range;
-  let mut c = x - range2 * f32::floor(x / range2);
-  if c >= range { c = range2 - c }
-  c + min
+
+  let seed = 12345678;
+
+  let mut pink = PinkNoise::new(seed);
+  let mut pink2 = PinkNoise2::new(seed);
+  let mut pink3 = PinkNoise3::new(seed);
+  let mut pink4 = PinkNoise4::new(seed as i32);
+  let mut white = WhiteNoise::new(seed);
+  let mut brown = BrownNoise::new(seed, sr);
+  let mut noise_buf = [0.0; 48000];
+
+  // Create a channel to send and receive samples
+  // let (tx, rx) = channel::<Vec<f32>>();
+  // Callbacks
+  let input_callback = move 
+    | _data: &[f32], _: &cpal::InputCallbackInfo | {
+      // Process input data
+      // NOP
+  };
+
+
+  let output_callback = move 
+    | data: &mut [f32], _: &cpal::OutputCallbackInfo | {
+    // Process output data
+
+    for (i, out_frame) in data.chunks_mut(ch.into()).enumerate() {
+      // if i == sr * 4 { j += 1; j &= 0b11; i = 0; }
+      // i+=1;
+      let sig1 = white.play();
+      let sig2 = pink.play() * 0.03;
+      let sig3 = pink2.play();
+      let sig4 = pink3.play();
+      let sig5 = pink4.play();
+      let sig6 = brown.play();
+
+      // let sig = wt.play::<Linear>(&table, 100.0, 0.0) * 0.5;
+      // op.set_cutoff(cutoffs[j]);
+      // let filt = op.process(sig);
+      out_frame[0] = sig1;
+      out_frame[1] = sig2;
+      out_frame[2] = sig3;
+      out_frame[3] = sig4;
+      out_frame[4] = sig5;
+      out_frame[5] = sig6;
+    };
+    noise_buf.iter_mut().for_each(|x| *x = 0.0);
+  };
+
+  let err_callback = |err: cpal::StreamError| {
+      eprintln!("{}", err);
+  };
+
+  let input_stream = io.input_device.build_input_stream(
+      &io.config, 
+      input_callback,
+      err_callback,
+      None
+  )?;
+
+  let output_stream = io.output_device.build_output_stream(
+      &io.config,
+      output_callback,
+      err_callback,
+      None
+  )?;
+
+  input_stream.play().expect("FAILED INPUT STREAM");
+  output_stream.play().expect("FAILED OUTPUT STREAM");
+  loop{ thread::sleep(Duration::from_secs(40)); }
+
+  // allow running forever
+  #[allow(unreachable_code)]
+  Ok(())
 }
+
+

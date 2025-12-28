@@ -2,46 +2,41 @@ use super::*;
 
 /// Wavetable that shares the table containing the wave representation.
 ///
-/// Performance of the `shared` Wavetable implementation lies in between
-/// an owned [`[f32; n]`] as table and an [`Arc<RwLock<Vec<f32>>>`] as table, 
-/// and is preferred when trying to keep allocated data at a minimum.
-/// !Beware of stack overflow when creating too many big arrays. 
-#[derive(Clone, Copy)]
+/// Performance lies between owned and Arc<RwLock>, and is preferred when
+/// trying to keep allocated data at a minimum. Beware of stack overflow when
+/// creating too many big arrays. 
+#[derive(Clone, Copy, Default, Debug)]
 pub struct Wavetable {
   position: f32,
+  samplerate: u32,
   sr_recip: f32,
-}
-
-impl Default for Wavetable {
-   fn default() -> Self {
-    Self {
-      position: 0.0,
-      sr_recip: 0.0,
-    }
-  }
 }
 
 impl Wavetable {
   pub fn new() -> Self {
     Self {
       position: 0.0,
+      samplerate: 0,
       sr_recip: 0.0,
     }
   }
 
   /// Play function for wavetable where __SIZE__ is the table size and __TableInterpolation = &impl Interpolation__
   #[inline]
-  pub fn play<T>(&mut self, table: &[f32], frequency: f32, phase: f32) -> f32
-    where T: Interpolation
-  {
-    debug_assert!(self.sr_recip > f32::EPSILON, "samplerate has not been set");
+  pub fn play<T: Interpolation>(&mut self, table: &[f32], frequency: f32, phase: f32) -> f32 {
     let len = table.len() as f32;
-    self.position += len * (self.sr_recip * frequency + phase);
-    while self.position > len { self.position -= len; }
-    T::interpolate(self.position, table, table.len())
+    // increment phase position in table
+    self.position += len * self.sr_recip * frequency;
+    if self.position > len { self.position -= len; }
+    // add FM (phase modulation)
+    let mut pos = self.position + (phase * len);
+    while pos > len { pos -= len; }
+    while pos < 0.0 { pos += len; }
+    T::interpolate(pos, table, table.len())
   }
 
-  pub fn set_samplerate(&mut self, samplerate: f32) {
-    self.sr_recip = 1.0 / samplerate;
+  pub fn set_samplerate(&mut self, samplerate: u32) {
+    self.samplerate = samplerate;
+    self.sr_recip = 1.0 / samplerate as f32;
   }
 }

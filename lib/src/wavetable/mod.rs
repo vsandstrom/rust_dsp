@@ -7,7 +7,6 @@ pub mod shared;
 #[cfg(feature="std")]
 pub mod arc;
 
-
 #[cfg(test)]
 mod shared_table_tests {
   use alloc::vec;
@@ -18,11 +17,12 @@ mod shared_table_tests {
 
   use super::shared::Wavetable;
 
-  const SAMPLERATE: f32 = 48000.0;
+  const SAMPLERATE: u32 = 48000;
+  const SIZE: usize = 16;
+  const FREQ: f32 = SAMPLERATE as f32 / SIZE as f32;
 
   #[test] 
   fn triangletest_simple() {
-    const SIZE: usize = 16;
     let mut table = [0.0; SIZE];
     let table = table.triangle();
     // let mut wt = simple::Wavetable::new();
@@ -31,9 +31,8 @@ mod shared_table_tests {
     let mut shape = vec!();
     // Check if it wraps
     for _ in 0..16 {
-      let out = wt.play::<Floor>(&table, SAMPLERATE/ SIZE as f32, 0.0);
-      shape.push(out);
-    }
+      let out = wt.play::<Floor>(&table, FREQ, 0.0);
+      shape.push(out); }
     assert_eq!(vec![
        0.25,  0.5,  0.75,  1.0,  0.75,  0.5,  0.25,  0.0,
       -0.25, -0.5, -0.75, -1.0, -0.75, -0.5, -0.25,  0.0
@@ -42,7 +41,6 @@ mod shared_table_tests {
   
   #[test] 
   fn interptest_simple() {
-    const SIZE: usize = 16;
     let mut table = [0.0; SIZE];
     let table = table.triangle();
     let mut wt = Wavetable::new();
@@ -50,7 +48,7 @@ mod shared_table_tests {
     let mut shape = vec!();
     // Check if it wraps
     for _ in 0..16 {
-      let out = wt.play::<Linear>(&table, SAMPLERATE / SIZE as f32, 1.0);
+      let out = wt.play::<Linear>(&table, FREQ, 1.0);
       shape.push(out);
     }
     assert_eq!(vec![
@@ -69,7 +67,7 @@ mod shared_table_tests {
     wt.set_samplerate(SAMPLERATE);
     let mut shape = vec!();
     for _ in 0..(SIZE * dilude) {
-      shape.push(wt.play::<Linear>(&table, SAMPLERATE / SIZE as f32 * 0.5, 0.0));
+      shape.push(wt.play::<Linear>(&table, FREQ * 2.0, 0.0));
     }
     // println!("{:?}", shape);
     assert_eq!(vec![
@@ -89,11 +87,12 @@ mod owned_table_tests {
 
   use super::owned::Wavetable;
 
-  const SAMPLERATE: f32 = 48000.0;
+  const SAMPLERATE: u32 = 48000;
+  const SIZE: usize = 16;
+  const FREQ: f32 = SAMPLERATE as f32 / SIZE as f32;
 
   #[test] 
   fn triangletest_simple() {
-    const SIZE: usize = 16;
     let mut table = [0.0; SIZE];
     let table = table.triangle();
     // let mut wt = simple::Wavetable::new();
@@ -101,7 +100,7 @@ mod owned_table_tests {
     let mut shape = vec!();
     // Check if it wraps
     for _ in 0..16 {
-      let out = wt.play::<Floor>(SAMPLERATE/ SIZE as f32, 0.0);
+      let out = wt.play::<Floor>(FREQ, 0.0);
       shape.push(out);
     }
     assert_eq!(vec![
@@ -112,14 +111,13 @@ mod owned_table_tests {
   
   #[test] 
   fn interptest_simple() {
-    const SIZE: usize = 16;
     let mut table = [0.0; SIZE];
     let table = table.triangle();
     let mut wt = Wavetable::new(&table, SAMPLERATE);
     let mut shape = vec!();
     // Check if it wraps
     for _ in 0..16 {
-      let out = wt.play::<Linear>(SAMPLERATE / SIZE as f32, 1.0);
+      let out = wt.play::<Linear>(FREQ, 1.0);
       shape.push(out);
     }
     assert_eq!(vec![
@@ -137,7 +135,7 @@ mod owned_table_tests {
     let mut wt = Wavetable::new(&table, SAMPLERATE);
     let mut shape = vec!();
     for _ in 0..(SIZE * dilude) {
-      shape.push(wt.play::<Linear>( SAMPLERATE / SIZE as f32 * 0.5, 0.0));
+      shape.push(wt.play::<Linear>(FREQ * 2.0, 0.0));
     }
     // println!("{:?}", shape);
     assert_eq!(vec![
@@ -160,11 +158,12 @@ mod arc_table_tests {
 
   use super::arc::Wavetable;
 
-  const SAMPLERATE: f32 = 48000.0;
+  const SAMPLERATE: u32 = 48000;
+  const SIZE: usize = 16;
+  const FREQ: f32 = SAMPLERATE as f32 / SIZE as f32;
 
   #[test] 
   fn triangletest_simple() {
-    const SIZE: usize = 16;
     let mut table = [0.0; SIZE];
     let table = table.triangle();
     // let mut wt = simple::Wavetable::new();
@@ -172,7 +171,7 @@ mod arc_table_tests {
     let mut shape = vec!();
     // Check if it wraps
     for _ in 0..16 {
-      let out = wt.play::<Floor>(SAMPLERATE/ SIZE as f32, 0.0);
+      let out = wt.play::<Floor>(FREQ, 0.0);
       shape.push(out);
     }
     assert_eq!(vec![
@@ -183,14 +182,13 @@ mod arc_table_tests {
   
   #[test] 
   fn interptest_simple() {
-    const SIZE: usize = 16;
     let mut table = [0.0; SIZE];
     let table = table.triangle();
     let mut wt = Wavetable::new(Arc::new(RwLock::new(table.into())), SAMPLERATE);
     let mut shape = vec!();
     // Check if it wraps
     for _ in 0..16 {
-      let out = wt.play::<Linear>(SAMPLERATE / SIZE as f32, 1.0);
+      let out = wt.play::<Linear>(FREQ, 1.0);
       shape.push(out);
     }
     assert_eq!(vec![
@@ -208,7 +206,7 @@ mod arc_table_tests {
     let mut wt = Wavetable::new(Arc::new(RwLock::new(table.into())), SAMPLERATE);
     let mut shape = vec!();
     for _ in 0..(SIZE * dilude) {
-      shape.push(wt.play::<Linear>( SAMPLERATE / SIZE as f32 * 0.5, 0.0));
+      shape.push(wt.play::<Linear>( FREQ * 2.0, 0.0));
     }
     // println!("{:?}", shape);
     assert_eq!(vec![

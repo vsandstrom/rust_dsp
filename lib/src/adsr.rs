@@ -39,7 +39,7 @@ pub struct ADSREnvelope {
 }
 
 impl ADSREnvelope {
-  pub fn new(sr: f32) -> Self {
+  pub fn new(samplerate: u32) -> Self {
     Self {
       atk_value: 1.0,
       atk_duration: 1.0,
@@ -56,7 +56,7 @@ impl ADSREnvelope {
       playing: false,
       reset: Reset::Soft,
       count: 0,
-      sr
+      sr: samplerate as f32
     }
   }
 
@@ -149,6 +149,6 @@ impl ADSREnvelope {
   pub fn set_release_dur(&mut self, rel_duration: f32) { self.rel_duration = rel_duration; }
   pub fn set_release_cur(&mut self,    rel_curve: f32) { self.rel_curve    = rel_curve; }
   pub fn set_reset_type (&mut self, reset: Reset)      { self.reset        = reset; }
-  pub fn set_samplerate (&mut self, samplerate: f32)   { self.sr = samplerate; }
+  pub fn set_samplerate (&mut self, samplerate: u32)   { self.sr = samplerate as f32; }
 }
 

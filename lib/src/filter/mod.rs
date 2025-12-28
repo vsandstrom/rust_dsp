@@ -1,5 +1,6 @@
 pub mod biquad;
 pub mod onepole;
+pub mod onezero;
 pub mod comb;
 pub mod svf;
 

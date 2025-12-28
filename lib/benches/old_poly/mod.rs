@@ -271,7 +271,7 @@ pub mod owned {
 
       for (i, v) in self.voices.iter_mut().enumerate() {
         if (v.env_pos as usize) < env.len() {
-          sig += v.voice.play::<LENGTH, Linear>(
+          sig += v.voice.play::<LENGTH, OscInterpolation>(
             tables,
             v.freq,
             positions[i],

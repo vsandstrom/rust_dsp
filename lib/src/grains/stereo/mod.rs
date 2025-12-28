@@ -26,12 +26,12 @@ pub struct Granulator {
   next_grain: usize,
   grains: Vec<Grain>,
 
-  samplerate: f32,
+  samplerate: u32,
   sr_recip: f32,
 }
 
 impl Granulator {
-  pub fn new(shape: Vec<f32>, samplerate: f32, num_grains: usize) -> Self {
+  pub fn new(shape: Vec<f32>, samplerate: u32, num_grains: usize) -> Self {
   // Buffer to hold recorded audio
 
   let grains = vec![
@@ -53,7 +53,7 @@ impl Granulator {
     recording: false,
     next_grain: 0,
     samplerate,
-    sr_recip: 1.0 / samplerate,
+    sr_recip: 1.0 / samplerate as f32,
   }
 }
 
@@ -134,9 +134,9 @@ impl GrainTrait for Granulator {
     self.envelope = shape;
   }
 
-   fn set_samplerate(&mut self, samplerate: f32) {
+   fn set_samplerate(&mut self, samplerate: u32) {
     self.samplerate = samplerate;
-    self.sr_recip = 1.0 / samplerate;
+    self.sr_recip = 1.0 / samplerate as f32;
   }
 
 

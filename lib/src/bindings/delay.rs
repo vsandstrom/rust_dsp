@@ -1,40 +1,43 @@
-use crate::{delay::{Delay, FixedDelay, DelayTrait}, interpolation::{Linear, Cubic}};
+use crate::{delay::{Delay, FixedDelay}, interpolation::{Linear, Cubic}};
 use alloc::boxed::Box;
+use core::slice::from_raw_parts_mut;
 
-#[repr(C)]
-// ```
-// Underlying structure:
+/// Underlying structure:
+/// ```ignore
 /// struct Delay {
 ///   buffer: Vec<f32>,
 ///   delay: f32,
 ///   position: usize,
 /// }
-// ```
-pub struct DelayOpaque;
+/// ```
+#[repr(C)]
+pub struct DelayRust;
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 /// Constructor
-pub extern "C" fn delay_new(length: usize) -> *mut DelayOpaque {
-  Box::into_raw(Box::new(Delay::new(length))) as *mut DelayOpaque
+pub extern "C" fn delay_new() -> *mut DelayRust {
+  Box::into_raw(Box::new(Delay::new())) as *mut DelayRust
 }
 
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 /// Destructor
-pub unsafe extern "C" fn delay_delete(delay: *mut DelayOpaque) {
+pub unsafe extern "C" fn delay_delete(delay: *mut DelayRust) {
   if !delay.is_null() {
     drop(Box::from_raw(delay as *mut Delay))
   }
 }
 
-#[no_mangle]
-pub unsafe extern "C" fn delay_play_linear(delay: *mut DelayOpaque, input: f32, seconds: f32, feedback: f32) -> f32 {
-  (*(delay as *mut Delay)).play::<Linear>(input, seconds, feedback)
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn delay_play_linear(delay: *mut DelayRust, buffer: *mut f32, buf_len: usize, input: f32, seconds: f32, feedback: f32) -> f32 {
+  let buffer = from_raw_parts_mut(buffer, buf_len);
+  (*(delay as *mut Delay)).play::<Linear>(buffer, input, seconds, feedback)
 }
 
-#[no_mangle]
-pub unsafe extern "C" fn delay_play_cubic(delay: *mut DelayOpaque, input: f32, seconds: f32, feedback: f32) -> f32 {
-  (*(delay as *mut Delay)).play::<Cubic>(input, seconds, feedback)
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn delay_play_cubic(delay: *mut DelayRust, buffer: *mut f32, buf_len: usize, input: f32, seconds: f32, feedback: f32) -> f32 {
+  let buffer = from_raw_parts_mut(buffer, buf_len);
+  (*(delay as *mut Delay)).play::<Cubic>(buffer, input, seconds, feedback)
 }
 
 

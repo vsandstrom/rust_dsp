@@ -1,27 +1,27 @@
 use rand::{self, Rng};
 
-pub struct Noise {
+pub struct ExpensiveNoise {
   counter: u64,
   duration_in_samples: u64,
   current: f32,
   inc: f32,
-  samplerate: f32,
+  samplerate: u32,
   sr_recip: f32,
 }
 
-impl Noise {
+impl ExpensiveNoise {
   /// duration is in seconds. 
   /// if you want to play audiorate, use the reciprocal of the frequency you want
   /// ```
   /// use rust_dsp::noise::Noise;
   ///
-  /// let mut noise = Noise::new(48000.0);
+  /// let mut noise = Noise::new(48000);
   /// let out = noise.play(1.0/440.0); // ≈ 0.00227272727
   /// ```
   pub fn play(&mut self, duration: f32) -> f32 {
     self.counter += 1;
     if self.counter >= self.duration_in_samples {
-      self.duration_in_samples = (self.samplerate * duration) as u64;
+      self.duration_in_samples = (self.samplerate as f32 * duration) as u64;
       self.counter = 0;
       let next = rand::thread_rng().gen_range(-1.0..1.0);
       self.inc = ( next - self.current ) / self.duration_in_samples as f32;
@@ -30,19 +30,19 @@ impl Noise {
     self.current
   }
 
-  pub fn new(samplerate: f32) -> Self {
+  pub fn new(samplerate: u32) -> Self {
     Self {
       current: 0.0,
       inc: 0.0,
       counter: 0,
       duration_in_samples: 0,
       samplerate,
-      sr_recip: 1.0/ samplerate,
+      sr_recip: 1.0/ samplerate as f32,
     }
   }
 
-  pub fn set_samplerate(&mut self, samplerate: f32) {
-      self.sr_recip = 1.0 / samplerate;
+  pub fn set_samplerate(&mut self, samplerate: u32) {
+      self.sr_recip = 1.0 / samplerate as f32;
       self.samplerate = samplerate;
   }
 }
@@ -53,8 +53,6 @@ mod tests {
   
   #[test]
   fn poll() {
-    let _rnd = Noise::new(48000.0);
-
-    
+    let _rnd = ExpensiveNoise::new(48000);
   }
 }

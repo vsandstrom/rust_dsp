@@ -14,7 +14,7 @@ pub use shared::Granulator;
 
 pub trait GrainTrait {
   fn record(&mut self, _sample: f32) -> Option<f32> {None}
-  fn set_samplerate(&mut self, samplerate: f32);
+  fn set_samplerate(&mut self, samplerate: u32);
   // optional traits
   fn update_envelope(&mut self, _shape: Vec<f32>){}
   fn set_buffersize(&mut self, _size: usize) {}
