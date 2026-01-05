@@ -78,7 +78,7 @@ mod tests {
   use super::*;
   use alloc::vec;
   use crate::waveshape::traits::Waveshape;
-  use crate::interpolation::Linear;
+  use crate::interpolation::linear::Linear;
 
   #[test]
   fn one_table() {

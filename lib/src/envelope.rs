@@ -2,7 +2,6 @@ use crate::interpolation::Interpolation;
 use crate::buffer::Buffer;
 use alloc::borrow::ToOwned;
 use alloc::string::ToString;
-use alloc::sync::Arc;
 use alloc::{vec, vec::Vec};
 use alloc::string::String;
 

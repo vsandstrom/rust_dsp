@@ -1,5 +1,4 @@
 use crate::interpolation::Interpolation;
-use core::debug_assert;
 use alloc::vec::Vec;
 
 pub mod owned;
@@ -11,7 +10,7 @@ pub mod arc;
 mod shared_table_tests {
   use alloc::vec;
   use crate::{
-    interpolation::{Floor, Linear},
+    interpolation::{floor::Floor, linear::Linear},
     waveshape::traits::Waveshape,
   };
 
@@ -81,7 +80,10 @@ mod shared_table_tests {
 mod owned_table_tests {
   use alloc::vec;
   use crate::{
-    interpolation::{Floor, Linear},
+    interpolation::{
+      floor::Floor, 
+      linear::Linear
+    },
     waveshape::traits::Waveshape,
   };
 
@@ -152,7 +154,10 @@ mod arc_table_tests {
   use alloc::vec;
   use std::sync::{Arc, RwLock};
   use crate::{
-    interpolation::{Floor, Linear},
+    interpolation::{
+      floor::Floor, 
+      linear::Linear
+    },
     waveshape::traits::Waveshape,
   };
 

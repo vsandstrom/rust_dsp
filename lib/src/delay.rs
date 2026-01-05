@@ -6,6 +6,7 @@ use alloc::{vec, vec::Vec};
 //   // fn set_time(&mut self, delay_time: f32);
 // }
 
+#[derive(Default)]
 pub struct Delay {
   position: usize,
 }

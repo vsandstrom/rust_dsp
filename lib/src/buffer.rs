@@ -1,5 +1,4 @@
 use crate::interpolation::Interpolation;
-use alloc::{vec, vec::Vec};
 
 pub struct Buffer<const N: usize> {
   pub buffer: [f32; N],
@@ -49,7 +48,11 @@ impl<const N: usize> Buffer<N> {
 
 #[cfg(test)]
 mod tests {
-  use crate::interpolation::{Floor, Linear, Cubic};
+  use crate::interpolation::{
+    floor::Floor, 
+    linear::Linear, 
+    cubic::Cubic
+  };
   use super::Buffer;
 
   #[test]

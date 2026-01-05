@@ -140,15 +140,25 @@ impl ADSREnvelope {
     self.stage = EnvStage::Atk;
   }
 
+  #[inline(always)]
   pub fn set_attack_val (&mut self,    atk_value: f32) { self.atk_value    = atk_value; }
+  #[inline(always)]
   pub fn set_attack_dur (&mut self, atk_duration: f32) { self.atk_duration = atk_duration; }
+  #[inline(always)]
   pub fn set_attack_cur (&mut self,    atk_curve: f32) { self.atk_curve    = atk_curve; }
+  #[inline(always)]
   pub fn set_decay_dur  (&mut self, dec_duration: f32) { self.dec_duration = dec_duration; }
+  #[inline(always)]
   pub fn set_decay_cur  (&mut self,    dec_curve: f32) { self.dec_curve    = dec_curve; }
+  #[inline(always)]
   pub fn set_sustain_val(&mut self,    sus_value: f32) { self.sus_value    = sus_value; }
+  #[inline(always)]
   pub fn set_release_dur(&mut self, rel_duration: f32) { self.rel_duration = rel_duration; }
+  #[inline(always)]
   pub fn set_release_cur(&mut self,    rel_curve: f32) { self.rel_curve    = rel_curve; }
+  #[inline(always)]
   pub fn set_reset_type (&mut self, reset: Reset)      { self.reset        = reset; }
+  #[inline(always)]
   pub fn set_samplerate (&mut self, samplerate: u32)   { self.sr = samplerate as f32; }
 }
 
