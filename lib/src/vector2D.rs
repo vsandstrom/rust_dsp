@@ -116,7 +116,7 @@ impl VectorOscillator2D {
   }
 
   /// Change direction vector
-  fn set_vector(&mut self, vector: Vector) {
+  pub fn set_vector(&mut self, vector: Vector) {
     self.direction = vector;
   }
 }
