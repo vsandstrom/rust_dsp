@@ -1,37 +1,41 @@
-use rand::Rng;
+use crate::noise::Prng;
+
 
 pub struct Impulse { 
   samplerate: f32,
   duration: f32,
-  counter: u32 
+  counter: u32,
 }
 
 pub struct Dust {
   samplerate: f32,
   duration: f32,
-  counter: u32
+  counter: u32,
+  rng: Prng
 }
 
 pub struct Trigger {
   samplerate: f32,
   duration: f32,
   counter: u32,
-  random: bool
+  random: bool,
+  rng: Prng
 }
 
 
 pub trait TrigTrait { 
-  fn new(samplerate: f32) -> Self;
   fn play(&mut self, duration: f32) -> f32; 
   fn bind(&mut self, duration: f32, func: &mut impl FnMut());
   fn set_samplerate(&mut self, samplerate: f32);
 }
 
-impl TrigTrait for Impulse {
-  fn new(samplerate: f32) -> Self {
-    Self{duration: 0.0, samplerate, counter: 0}
+impl Impulse {
+  pub fn new(samplerate: u32) -> Self {
+    Self { samplerate: samplerate as f32, duration: 0.0, counter: 0 }
   }
+}
 
+impl TrigTrait for Impulse {
   fn play(&mut self, duration: f32) -> f32 {
     if self.counter >= (self.duration * self.samplerate) as u32 {
       self.duration = duration;
@@ -56,18 +60,19 @@ impl TrigTrait for Impulse {
   }
 }
 
-impl TrigTrait for Dust {
-  fn new(samplerate: f32) -> Self {
-    Self{duration: 0.0, samplerate, counter: 0}
+impl Dust {
+  pub fn new(samplerate: u32, seed: u32) -> Self {
+    Self { samplerate: samplerate as f32, duration: 0.0, counter: 0, rng: Prng::new(seed) }
   }
+}
 
+impl TrigTrait for Dust {
   fn play(&mut self, duration: f32) -> f32 {
     if self.counter < (self.duration * self.samplerate) as u32 {
       self.counter += 1;
       return 0.0;
     }
-    let mut rng = rand::thread_rng();
-    let rng = rng.gen_range(0.0..=2.0);
+    let rng = self.rng.frand_unipolar() * 2.0;
     self.duration = duration * rng;
     self.counter = 0;
     1.0
@@ -77,8 +82,7 @@ impl TrigTrait for Dust {
     if self.counter < (self.duration * self.samplerate) as u32 {
       self.counter += 1;
     }
-    let mut rng = rand::thread_rng();
-    let rng = rng.gen_range(0.0..=2.0);
+    let rng = self.rng.frand_unipolar() * 2.0;
     self.duration = duration * rng;
     self.counter = 0;
     func();
@@ -89,19 +93,19 @@ impl TrigTrait for Dust {
   }
 }
 
-impl TrigTrait for Trigger {
-  fn new(samplerate: f32) -> Self {
-    Self{duration: 0.0, samplerate, counter: 0, random: false}
+impl Trigger {
+  pub fn new(samplerate: u32, seed: u32) -> Self {
+    Self { samplerate: samplerate as f32, duration: 0.0, counter: 0, random: false, rng: Prng::new(seed) }
   }
-
+}
+impl TrigTrait for Trigger {
   fn play(&mut self, duration: f32) -> f32 {
     if self.counter < (self.duration * self.samplerate) as u32 {
       self.counter += 1;
       return 0.0;
     }
     if self.random {
-      let mut rng = rand::thread_rng();
-      let rng = rng.gen_range(0.0..=2.0);
+      let rng = self.rng.frand_unipolar() * 2.0;
       self.duration = duration * rng;
       self.counter = 0;
     } else {
@@ -118,8 +122,7 @@ impl TrigTrait for Trigger {
       return;
     }
     if self.random {
-      let mut rng = rand::thread_rng();
-      let rng = rng.gen_range(0.0..=2.0);
+      let rng = self.rng.frand_unipolar() * 2.0;
       self.duration = duration * rng;
       self.counter = 0;
     } else {
