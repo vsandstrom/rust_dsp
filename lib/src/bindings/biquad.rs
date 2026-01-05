@@ -1,5 +1,13 @@
-use crate::filter::{biquad::{eightpole::Biquad8, fourpole::Biquad4, twopole::Biquad, BiquadCoeffs, BiquadTrait
-}, Filter};
+use crate::filter::{
+  biquad::{
+    eightpole::Biquad8,
+    fourpole::Biquad4,
+    twopole::Biquad,
+    BiquadCoeffs,
+    BiquadTrait 
+  }, 
+  Filter
+};
   
 /// Underlying structure:
 /// ```ignore
