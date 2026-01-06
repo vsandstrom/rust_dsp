@@ -56,12 +56,12 @@ pub extern "C" fn envelope_delete(env: *mut EnvelopeRust) {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn envelope_trig(env: *mut EnvelopeRust) {
-  unsafe {(*(env as *mut Envelope)).trig()}
+  unsafe { (*(env as *mut Envelope)).trig() }
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn envelope_play(env: *mut EnvelopeRust) -> f32 {
-  unsafe {(*(env as *mut Envelope)).play()}
+  unsafe { (*(env as *mut Envelope)).play() }
 }
 
 #[unsafe(no_mangle)]

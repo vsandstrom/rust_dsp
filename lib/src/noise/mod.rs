@@ -1,9 +1,7 @@
 pub mod white;
 pub mod pink;
 pub mod brown;
-mod expensive;
-
-use rand;
+pub mod expensive;
 
 pub const BIPOLAR: u32 = 0x40000000;
 pub const UNIPOLAR: u32 = 0x3F800000;
@@ -50,9 +48,9 @@ impl Prng {
   /// ), producing a random u32
   #[inline]
   pub fn trand(&mut self) -> u32 {
-    self.s1 = ((self.s1 & 0u32.wrapping_sub(2)) << 12) ^ (((self.s1 << 13) ^ self.s1) >> 19);
-    self.s2 = ((self.s2 & 0u32.wrapping_sub(8)) << 4) ^ (((self.s2 << 2) ^ self.s2) >> 25);
-    self.s3 = ((self.s3 & 0u32.wrapping_sub(16)) << 17) ^ (((self.s3 << 3) ^ self.s3) >> 11);
+    self.s1 = ((self.s1 & 0u32.wrapping_sub(2))  << 12) ^ (((self.s1 << 13) ^ self.s1) >> 19);
+    self.s2 = ((self.s2 & 0u32.wrapping_sub(8))  << 4)  ^ (((self.s2 << 2)  ^ self.s2) >> 25);
+    self.s3 = ((self.s3 & 0u32.wrapping_sub(16)) << 17) ^ (((self.s3 << 3)  ^ self.s3) >> 11);
     self.s1 ^ self.s2 ^ self.s3
   }
 }
@@ -85,5 +83,22 @@ pub mod rng {
 
   pub fn utof_unipolar(int: &u32) -> f32 {
     f32::from_bits(*int >> 9 | super::UNIPOLAR) - 3.0
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn consistant_output() {
+    const SEED: u32 = 1234;
+    let mut rng = Prng::new(SEED);
+    let mut a = vec![0; 2048];
+    a.iter_mut().for_each(|x| *x = rng.trand());
+    let mut rng = Prng::new(SEED);
+    let mut b = vec![0; 2048];
+    b.iter_mut().for_each(|x| *x = rng.trand());
+    assert_eq!(a, b)
   }
 }
