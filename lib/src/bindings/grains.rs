@@ -1,5 +1,5 @@
 use crate::{
-  grains::{GrainTrait, dynamic::Granulator}, interpolation::{Cubic, Linear}, waveshape::hanning
+  grains::{GrainTrait, dynamic::Granulator}, interpolation::{cubic::Cubic, linear::Linear}, waveshape::hanning
 };
 use alloc::boxed::Box;
 

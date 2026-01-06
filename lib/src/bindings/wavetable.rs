@@ -1,5 +1,6 @@
+
 use crate::wavetable::shared::Wavetable;
-use crate::interpolation::{Cubic, Floor, Linear};
+use crate::interpolation::{cubic::Cubic, floor::Floor, linear::Linear};
 use alloc::{slice, boxed::Box};
 
 /// Underlying structure:
@@ -29,26 +30,26 @@ pub extern "C" fn wavetable_delete(wavetable: *mut WavetableRust) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn wavetable_set_samplerate(wavetable: *mut WavetableRust, samplerate: u32) {
-  (*(wavetable as *mut Wavetable)).set_samplerate(samplerate)
+pub extern "C" fn wavetable_set_samplerate(wavetable: *mut WavetableRust, samplerate: u32) {
+  unsafe {*(wavetable as *mut Wavetable)}.set_samplerate(samplerate)
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn wavetable_play_floor(wavetable: *mut WavetableRust, table: *const f32, table_length: usize, frequency: f32, phase: f32) -> f32 {
-  let table = slice::from_raw_parts(table, table_length);
-  (*(wavetable as *mut Wavetable)).play::<Floor>(table, frequency, phase)
+pub extern "C" fn wavetable_play_floor(wavetable: *mut WavetableRust, table: *const f32, table_length: usize, frequency: f32, phase: f32) -> f32 {
+  let table = unsafe { slice::from_raw_parts(table, table_length) };
+  unsafe {*(wavetable as *mut Wavetable)}.play::<Floor>(table, frequency, phase)
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn wavetable_play_linear(wavetable: *mut WavetableRust, table: *const f32, table_length: usize, frequency: f32, phase: f32) -> f32 {
-  let table = slice::from_raw_parts(table, table_length);
-  (*(wavetable as *mut Wavetable)).play::<Linear>(table, frequency, phase)
+pub extern "C" fn wavetable_play_linear(wavetable: *mut WavetableRust, table: *const f32, table_length: usize, frequency: f32, phase: f32) -> f32 {
+  let table = unsafe { slice::from_raw_parts(table, table_length) };
+  unsafe {*(wavetable as *mut Wavetable)}.play::<Linear>(table, frequency, phase)
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn wavetable_play_cubic(wavetable: *mut WavetableRust, table: *const f32, table_length: usize, frequency: f32, phase: f32) -> f32 {
-  let table = slice::from_raw_parts(table, table_length);
-  (*(wavetable as *mut Wavetable)).play::<Cubic>(table, frequency, phase)
+pub extern "C" fn wavetable_play_cubic(wavetable: *mut WavetableRust, table: *const f32, table_length: usize, frequency: f32, phase: f32) -> f32 {
+  let table = unsafe { slice::from_raw_parts(table, table_length) };
+  unsafe {*(wavetable as *mut Wavetable)}.play::<Cubic>(table, frequency, phase)
 }
 
 
@@ -76,14 +77,12 @@ mod shared_table_tests {
     let mut table = [0.0; SIZE];
     let table = table.triangle();
     let wt: *mut WavetableRust = wavetable_new();
-    unsafe { wavetable_set_samplerate(wt, SAMPLERATE); }
+    wavetable_set_samplerate(wt, SAMPLERATE); 
     let mut shape = vec!();
     // Check if it wraps
     for _ in 0..16 {
-      unsafe{
-        let out = wavetable_play_floor(wt, table.as_ptr(), table.len(), FREQ,  0.0);
-        shape.push(out);
-      }
+      let out = wavetable_play_floor(wt, table.as_ptr(), table.len(), FREQ,  0.0);
+      shape.push(out);
     }
     wavetable_delete(wt);
     assert_eq!(vec![
@@ -97,14 +96,12 @@ mod shared_table_tests {
     let mut table = [0.0; SIZE];
     let table = table.triangle();
     let wt: *mut WavetableRust = wavetable_new();
-    unsafe {wavetable_set_samplerate(wt, SAMPLERATE);}
+    wavetable_set_samplerate(wt, SAMPLERATE);
     let mut shape = vec!();
     // Check if it wraps
     for _ in 0..16 {
-      unsafe {
-        let out = wavetable_play_linear(wt, table.as_ptr(), SIZE, FREQ, 1.0);
-        shape.push(out);
-      }
+      let out = wavetable_play_linear(wt, table.as_ptr(), SIZE, FREQ, 1.0);
+      shape.push(out);
     }
     wavetable_delete(wt);
     assert_eq!(vec![
@@ -139,13 +136,11 @@ mod interpol_test {
       let mut table = [0.0; SIZE];
       let table = table.triangle();
       let wt: *mut WavetableRust = wavetable_new();
-      unsafe {wavetable_set_samplerate(wt, SAMPLERATE);}
+      wavetable_set_samplerate(wt, SAMPLERATE);
       let mut shape = vec!();
       for _ in 0..(SIZE * dilude) {
         shape.push(
-          unsafe{
-            wavetable_play_linear(wt, table.as_ptr(), SIZE, FREQ * 0.5, 0.0)
-          }
+          wavetable_play_linear(wt, table.as_ptr(), SIZE, FREQ * 0.5, 0.0)
         );
       }
       wavetable_delete(wt);
@@ -161,13 +156,11 @@ mod interpol_test {
       let mut table = [0.0; SIZE];
       let table = table.triangle();
       let wt: *mut WavetableRust = wavetable_new();
-      unsafe {wavetable_set_samplerate(wt, SAMPLERATE);}
+      wavetable_set_samplerate(wt, SAMPLERATE);
       let mut shape = vec!();
       for _ in 0..(SIZE * dilude) {
         shape.push(
-          unsafe{
-            wavetable_play_cubic(wt, table.as_ptr(), SIZE, FREQ * 0.5, 0.0)
-          }
+          wavetable_play_cubic(wt, table.as_ptr(), SIZE, FREQ * 0.5, 0.0)
         );
       }
       wavetable_delete(wt);

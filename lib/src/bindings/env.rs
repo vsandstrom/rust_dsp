@@ -22,6 +22,7 @@ use alloc::{slice, boxed::Box, vec};
 pub struct EnvelopeRust;
 
 #[repr(C)]
+#[allow(unused)]
 pub enum Reset {
   Hard,
   Soft
