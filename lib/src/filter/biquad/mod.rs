@@ -90,14 +90,6 @@ impl BiquadKind for Notch {
   }
 }
 
-// impl BiquadKind for Peq {
-//   type Settings = BiquadSettings;
-//   #[inline]
-//   fn calc(settings: &Self::Settings) -> BiquadCoeffs {
-//     BiquadCoeffs::peq(settings.omega, settings.q, settings.gain)
-//   }
-// }
-
 impl BiquadCoeffs {
 #[inline]
   pub fn lpf(omega: f32, q: f32) -> Self {
