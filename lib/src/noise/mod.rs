@@ -31,6 +31,24 @@ impl Prng {
     Self {s1, s2, s3}
   }
 
+  pub fn reset(&mut self, seed: u32) {
+    let s1 = match 1234598713 ^ seed {
+      x if x < 2 => 1243598713,
+      x => x
+    };
+    let s2 = match 3093459404 ^ seed {
+      x if x < 8 => 3093459404,
+      x => x
+
+    };
+    let s3 = match 1821928721 ^ seed {
+      x if x < 16 => 1821928721,
+      x => x
+    };
+    self.s1 = s1;
+    self.s2 = s2;
+    self.s3 = s3;
+  }
 
   /// Generate a value between [-1.0..1.0)
   #[inline]
@@ -93,11 +111,12 @@ mod tests {
   #[test]
   fn consistant_output() {
     const SEED: u32 = 1234;
-    let mut rng = Prng::new(SEED);
-    let mut a = vec![0; 2048];
+    const NUM: usize = 1<<13;
+    let mut rng = Prng::new(SEED); // create rng
+    let mut a = vec![0; NUM];
     a.iter_mut().for_each(|x| *x = rng.trand());
-    let mut rng = Prng::new(SEED);
-    let mut b = vec![0; 2048];
+    rng.reset(SEED); // reseed the rng
+    let mut b = vec![0; NUM];
     b.iter_mut().for_each(|x| *x = rng.trand());
     assert_eq!(a, b)
   }
