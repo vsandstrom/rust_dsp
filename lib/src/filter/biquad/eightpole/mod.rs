@@ -1,4 +1,4 @@
-use super::{BiquadCoeffs, BiquadKind, BiquadTrait};
+use super::{BiquadCoeffs, BiquadTrait};
 use crate::filter::Filter;
 
 #[derive(Clone, Copy)]

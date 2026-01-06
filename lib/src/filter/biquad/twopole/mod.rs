@@ -1,6 +1,5 @@
-use super::{BiquadCoeffs, BiquadTrait, BiquadKind};
+use super::{BiquadCoeffs, BiquadTrait};
 use crate::filter::Filter;
-use core::marker::PhantomData;
 
 #[derive(Clone, Copy)]
 pub struct Biquad {

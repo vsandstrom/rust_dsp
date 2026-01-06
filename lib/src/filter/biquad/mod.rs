@@ -6,7 +6,6 @@ use super::{
   Lpf,
   Bpf,
   Hpf,
-  Peq,
   Notch,
   LowShelf,
   HighShelf,
