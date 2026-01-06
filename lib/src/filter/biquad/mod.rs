@@ -6,7 +6,6 @@ use super::{
   Lpf,
   Bpf,
   Hpf,
-  Peq,
   Notch,
   LowShelf,
   HighShelf,
@@ -17,8 +16,8 @@ use super::{
 #[repr(C)]
 pub struct BiquadCoeffs {a1: f32, a2: f32, b0: f32, b1: f32, b2: f32}
 
-pub trait BiquadTrait<T: BiquadKind> {
-  fn update(&mut self, settings: &T::Settings);
+pub trait BiquadTrait {
+  fn update(&mut self, settings: &BiquadCoeffs);
 }
 
 #[repr(C)]
@@ -144,19 +143,19 @@ impl BiquadCoeffs {
     Self{a1, a2, b0, b1, b2}
   }
 
-impl BiquadKind for Peq {
-  type Settings = BiquadSettings;
-  fn calc(settings: &Self::Settings) -> BiquadCoeffs {
-    let alpha = settings.w.sin() / (2.0 * settings.q);
-    let a = f32::powf(10.0, settings.gain/40.0);
-    let a0 = (1.0 + alpha) / a;       //  1 + alpha
-    let a1 = -2.0 * w.cos() / a0;  // -2 * cos(omega)
-    let a2 = (1.0 - alpha) / a / a0;  //  1 - alpha / A
-    let b0 = (1.0 + alpha) * a / a0;  // 1 + alpha * A
-    let b1 = a1;                    // -2 * cos(omega)
-    let b2 = (1.0 - alpha) * a / a0;  // 1 - alpha * A
-    Self{a1, a2, b0, b1, b2}
-  }
+// impl BiquadKind for Peq {
+//   type Settings = BiquadSettings;
+//   fn calc(settings: &Self::Settings) -> BiquadCoeffs {
+//     let alpha = settings.w.sin() / (2.0 * settings.q);
+//     let a = f32::powf(10.0, settings.gain/40.0);
+//     let a0 = (1.0 + alpha) / a;       //  1 + alpha
+//     let a1 = -2.0 * w.cos() / a0;  // -2 * cos(omega)
+//     let a2 = (1.0 - alpha) / a / a0;  //  1 - alpha / A
+//     let b0 = (1.0 + alpha) * a / a0;  // 1 + alpha * A
+//     let b1 = a1;                    // -2 * cos(omega)
+//     let b2 = (1.0 - alpha) * a / a0;  // 1 - alpha * A
+//     Self{a1, a2, b0, b1, b2}
+//   }
 
   // #[inline]
   // fn low_shelf(w: f32, q: f32, gain: f32) -> Self {
@@ -186,24 +185,24 @@ impl BiquadKind for Peq {
 pub mod calc {
   use super::BiquadCoeffs;
   #[inline]
-  pub fn lpf(w: f32, q: f32) -> BiquadCoeffs {
-      let alpha = w.sin() / (2.0 * q);
+  pub fn lpf(omega: f32, q: f32) -> BiquadCoeffs {
+      let alpha = omega.sin() / (2.0 * q);
       let a0 = 1.0 + alpha;
-      let a1 = (-2.0 * w.cos()) / a0 ;
+      let a1 = (-2.0 * omega.cos()) / a0 ;
       let a2 = (1.0 - alpha) / a0;
 
-      let b1 = (1.0 - w.cos()) / a0;
+      let b1 = (1.0 - omega.cos()) / a0;
       let b0 = b1 / 2.0 / a0;
       let b2 = b0;
       BiquadCoeffs{a1, a2, b0, b1, b2}
   }
     
   #[inline]
-  pub fn bpf(w: f32, q: f32) -> BiquadCoeffs {
-    let alpha = w.sin() / (2.0 * q);
+  pub fn bpf(omega: f32, q: f32) -> BiquadCoeffs {
+    let alpha = omega.sin() / (2.0 * q);
     
     let a0 = 1.0 + alpha;
-    let a1 = (-2.0 * w.cos()) / a0;
+    let a1 = (-2.0 * omega.cos()) / a0;
     let a2 = (1.0 - alpha) / a0;
 
     let b0 = alpha / a0;
@@ -213,23 +212,23 @@ pub mod calc {
   }
 
   #[inline]
-  pub fn hpf(w: f32, q: f32) -> BiquadCoeffs {
-    let alpha = w.sin() / (2.0 * q);
+  pub fn hpf(omega: f32, q: f32) -> BiquadCoeffs {
+    let alpha = omega.sin() / (2.0 * q);
     let a0 = 1.0 + alpha;
-    let a1 = -2.0 * w.cos() / a0;
+    let a1 = -2.0 * omega.cos() / a0;
     let a2 = 1.0 - alpha / a0;
 
-    let b0 = (1.0 + w.cos()) / 2.0 / a0;
+    let b0 = (1.0 + omega.cos()) / 2.0 / a0;
     let b1 = -(b0 * 2.0);
     let b2 = b0;
     BiquadCoeffs{a1, a2, b0, b1, b2}
   }
 
   #[inline]
-  pub fn notch(w: f32, q: f32) -> BiquadCoeffs {
-    let alpha = w.sin() / (2.0 * q);
+  pub fn notch(omega: f32, q: f32) -> BiquadCoeffs {
+    let alpha = omega.sin() / (2.0 * q);
     let a0 = 1.0 + alpha;
-    let a1 = -2.0 * w.cos() / a0;
+    let a1 = -2.0 * omega.cos() / a0;
     let a2 = (1.0 - alpha) / a0;
 
     let b0 = 1.0 / a0;
@@ -239,11 +238,11 @@ pub mod calc {
   }
 
   #[inline]
-  pub fn peq(w: f32, q: f32, gain: f32) -> BiquadCoeffs {
-    let alpha = w.sin() / (2.0 * q);
+  pub fn peq(omega: f32, q: f32, gain: f32) -> BiquadCoeffs {
+    let alpha = omega.sin() / (2.0 * q);
     let a = f32::powf(10.0, gain/40.0);
     let a0 = (1.0 + alpha) / a;       //  1 + alpha
-    let a1 = -2.0 * w.cos() / a0;  // -2 * cos(omega)
+    let a1 = -2.0 * omega.cos() / a0;  // -2 * cos(omega)
     let a2 = (1.0 - alpha) / a / a0;  //  1 - alpha / A
     let b0 = (1.0 + alpha) * a / a0;  // 1 + alpha * A
     let b1 = a1;                    // -2 * cos(omega)
@@ -256,8 +255,8 @@ impl BiquadKind for LowShelf {
   type Settings = BiquadSettings;
   #[inline]
   fn calc(settings: &Self::Settings) -> BiquadCoeffs {
-    let alpha = settings.w.sin() / (2.0 * settings.q);
-    let omega = settings.w.cos();
+    let alpha = settings.omega.sin() / (2.0 * settings.q);
+    let omega = settings.omega.cos();
     let a = 10.0f32.powf(settings.gain / 40.0);
     
     let a_m1 = a - 1.0;
@@ -292,8 +291,8 @@ impl BiquadKind for HighShelf {
   type Settings = BiquadSettings;
   #[inline]
   fn calc(settings: &Self::Settings) -> BiquadCoeffs {
-    let alpha = settings.w.sin() / (2.0 * settings.q);
-    let omega = settings.w.cos();
+    let alpha = settings.omega.sin() / (2.0 * settings.q);
+    let omega = settings.omega.cos();
     let a = 10.0f32.powf(settings.gain / 40.0);
     
     let a_m1 = a - 1.0;
@@ -323,5 +322,5 @@ impl BiquadKind for HighShelf {
     }
   }
 }
-}
+// }
 

@@ -1,33 +1,29 @@
-use super::{BiquadCoeffs, BiquadTrait, BiquadKind};
+use super::{BiquadCoeffs, BiquadTrait};
 use crate::filter::Filter;
-use core::marker::PhantomData;
 
 #[derive(Clone, Copy)]
-pub struct Biquad8<T: BiquadKind> {
+pub struct Biquad8 {
   x1_1: f32, x1_2: f32, y1_1: f32, y1_2: f32, 
   x2_1: f32, x2_2: f32, y2_1: f32, y2_2: f32,
   x3_1: f32, x3_2: f32, y3_1: f32, y3_2: f32,
   x4_1: f32, x4_2: f32, y4_1: f32, y4_2: f32,
   bq: BiquadCoeffs,
-  _marker: PhantomData<T>
 }
 
-impl<T: BiquadKind> Biquad8<T> {
-  pub fn new(settings: T::Settings) -> Self { 
+impl Biquad8 {
+  pub fn new(settings: BiquadCoeffs) -> Self { 
     Self { 
       x1_1: 0.0, x1_2: 0.0, y1_1: 0.0, y1_2: 0.0,
       x2_1: 0.0, x2_2: 0.0, y2_1: 0.0, y2_2: 0.0,
       x3_1: 0.0, x3_2: 0.0, y3_1: 0.0, y3_2: 0.0,
       x4_1: 0.0, x4_2: 0.0, y4_1: 0.0, y4_2: 0.0, 
-      bq: T::calc(&settings),
-      _marker: PhantomData
-
+      bq: settings,
     }
   }
 }
 
 
-impl<T: BiquadKind> Filter for Biquad8<T> {
+impl Filter for Biquad8 {
   fn process(&mut self, sample: f32) -> f32 {
     let mut output = 
         self.bq.b0 * sample 
@@ -80,9 +76,9 @@ impl<T: BiquadKind> Filter for Biquad8<T> {
   }
 }
 
-impl<T: BiquadKind> BiquadTrait<T> for Biquad8<T> {
-  fn update(&mut self, settings: &T::Settings) {
-      self.bq = T::calc(settings);
+impl BiquadTrait for Biquad8 {
+  fn update(&mut self, settings: &BiquadCoeffs) {
+      self.bq = *settings;
   }
 }
 

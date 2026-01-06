@@ -1,4 +1,3 @@
-
 use crate::wavetable::shared::Wavetable;
 use crate::interpolation::{cubic::Cubic, floor::Floor, linear::Linear};
 use alloc::{slice, boxed::Box};
@@ -31,25 +30,25 @@ pub extern "C" fn wavetable_delete(wavetable: *mut WavetableRust) {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn wavetable_set_samplerate(wavetable: *mut WavetableRust, samplerate: u32) {
-  unsafe {*(wavetable as *mut Wavetable)}.set_samplerate(samplerate)
+  unsafe {(*(wavetable as *mut Wavetable)).set_samplerate(samplerate)}
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn wavetable_play_floor(wavetable: *mut WavetableRust, table: *const f32, table_length: usize, frequency: f32, phase: f32) -> f32 {
   let table = unsafe { slice::from_raw_parts(table, table_length) };
-  unsafe {*(wavetable as *mut Wavetable)}.play::<Floor>(table, frequency, phase)
+  unsafe {(*(wavetable as *mut Wavetable)).play::<Floor>(table, frequency, phase)}
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn wavetable_play_linear(wavetable: *mut WavetableRust, table: *const f32, table_length: usize, frequency: f32, phase: f32) -> f32 {
   let table = unsafe { slice::from_raw_parts(table, table_length) };
-  unsafe {*(wavetable as *mut Wavetable)}.play::<Linear>(table, frequency, phase)
+  unsafe {(*(wavetable as *mut Wavetable)).play::<Linear>(table, frequency, phase)}
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn wavetable_play_cubic(wavetable: *mut WavetableRust, table: *const f32, table_length: usize, frequency: f32, phase: f32) -> f32 {
   let table = unsafe { slice::from_raw_parts(table, table_length) };
-  unsafe {*(wavetable as *mut Wavetable)}.play::<Cubic>(table, frequency, phase)
+  unsafe {(*(wavetable as *mut Wavetable)).play::<Cubic>(table, frequency, phase)}
 }
 
 
@@ -74,8 +73,7 @@ mod shared_table_tests {
 
   #[test] 
   fn triangletest_simple() {
-    let mut table = [0.0; SIZE];
-    let table = table.triangle();
+    let table = [0.0; SIZE].triangle();
     let wt: *mut WavetableRust = wavetable_new();
     wavetable_set_samplerate(wt, SAMPLERATE); 
     let mut shape = vec!();

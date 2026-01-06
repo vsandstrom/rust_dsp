@@ -4,7 +4,7 @@ use crate::filter::{
     fourpole::Biquad4,
     twopole::Biquad,
     BiquadCoeffs,
-    BiquadTrait 
+    BiquadTrait,
   }, 
   Filter
 };
@@ -22,8 +22,8 @@ pub struct BiquadRust;
 
 #[unsafe(no_mangle)]
 /// Constructor
-pub extern "C" fn biquad_new() -> *mut BiquadRust {
-  let bq = Box::new(Biquad::new());
+pub extern "C" fn biquad_new(settings: BiquadCoeffs) -> *mut BiquadRust {
+  let bq = Box::new(Biquad::new(settings));
   Box::into_raw(bq) as *mut BiquadRust
 }
 
@@ -31,17 +31,7 @@ pub extern "C" fn biquad_new() -> *mut BiquadRust {
 /// Destructor
 pub extern "C" fn biquad_delete(biquad: *mut BiquadRust) {
   if !biquad.is_null() {
-    let boxed = Box::from_raw(biquad);
-    match boxed.kind {
-      BiquadType::Lpf       => drop(Box::from_raw(boxed.ptr as *mut Biquad<Lpf>)),
-      BiquadType::Bpf       => drop(Box::from_raw(boxed.ptr as *mut Biquad<Bpf>)),
-      BiquadType::Hpf       => drop(Box::from_raw(boxed.ptr as *mut Biquad<Hpf>)),
-      BiquadType::Notch     => drop(Box::from_raw(boxed.ptr as *mut Biquad<Notch>)),
-      BiquadType::Peq       => drop(Box::from_raw(boxed.ptr as *mut Biquad<Peq>)),
-      BiquadType::LowShelf  => drop(Box::from_raw(boxed.ptr as *mut Biquad<LowShelf>)),
-      BiquadType::HighShelf => drop(Box::from_raw(boxed.ptr as *mut Biquad<HighShelf>)),
-    }
-    // boxed is dropped here
+    unsafe { drop(Box::from_raw(biquad)) }
   }
 }
 
@@ -55,44 +45,44 @@ pub extern "C" fn biquad_process(biquad: *mut BiquadRust, sample: f32) -> f32 {
 #[unsafe(no_mangle)]
 pub extern "C" fn biquad_update(biquad: *mut BiquadRust, coeffs: BiquadCoeffs) {
   unsafe {
-    (*(biquad as *mut Biquad)).update(coeffs);
+    (*(biquad as *mut Biquad)).update(&coeffs);
   }
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn biquad_calc_lpf(biquad: *mut BiquadRust, w: f32, q: f32) {
   unsafe {
-    (*(biquad as *mut Biquad)).update(BiquadCoeffs::lpf(w, q))
+    (*(biquad as *mut Biquad)).update(&BiquadCoeffs::lpf(w, q))
   }
 }
     
 #[unsafe(no_mangle)]
 pub extern "C" fn biquad_calc_bpf(biquad: *mut BiquadRust, w: f32, q: f32) {
   unsafe {
-    (*(biquad as *mut Biquad)).update(BiquadCoeffs::bpf(w, q))
+    (*(biquad as *mut Biquad)).update(&BiquadCoeffs::bpf(w, q))
   }
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn biquad_calc_hpf(biquad: *mut BiquadRust, w: f32, q: f32) {
   unsafe {
-    (*(biquad as *mut Biquad)).update(BiquadCoeffs::hpf(w, q))
+    (*(biquad as *mut Biquad)).update(&BiquadCoeffs::hpf(w, q))
   }
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn biquad_calc_notch(biquad: *mut BiquadRust, w: f32, q: f32) {
   unsafe {
-    (*(biquad as *mut Biquad)).update(BiquadCoeffs::notch(w, q))
+    (*(biquad as *mut Biquad)).update(&BiquadCoeffs::notch(w, q))
   }
 }
 
-#[unsafe(no_mangle)]
-pub extern "C" fn biquad_calc_peq(biquad: *mut BiquadRust, w: f32, q: f32, gain: f32) {
-  unsafe {
-    (*(biquad as *mut Biquad)).update(BiquadCoeffs::peq(w, q, gain))
-  }
-}
+// #[unsafe(no_mangle)]
+// pub extern "C" fn biquad_calc_peq(biquad: *mut BiquadRust, w: f32, q: f32, gain: f32) {
+//   unsafe {
+//     (*(biquad as *mut Biquad)).update(&BiquadCoeffs::peq(w, q, gain))
+//   }
+// }
 
 
 // Biquad 4 pole
@@ -103,8 +93,8 @@ pub struct BiquadRust4;
 
 #[unsafe(no_mangle)]
 /// Constructor
-pub extern "C" fn biquad4_new() -> *mut BiquadRust4 {
-  let bq4 = Box::new(Biquad4::new());
+pub extern "C" fn biquad4_new(settings: BiquadCoeffs) -> *mut BiquadRust4 {
+  let bq4 = Box::new(Biquad4::new(settings));
   Box::into_raw(bq4) as *mut BiquadRust4
 }
 
@@ -127,44 +117,44 @@ pub extern "C" fn biquad4_process(biquad4: *mut BiquadRust4, sample: f32) -> f32
 #[unsafe(no_mangle)]
 pub extern "C" fn biquad4_update(biquad4: *mut BiquadRust4, coeffs: BiquadCoeffs) {
   unsafe {
-     (*(biquad4 as *mut Biquad4)).update(coeffs);
+     (*(biquad4 as *mut Biquad4)).update(&coeffs);
   }
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn biquad4_calc_lpf(biquad4: *mut BiquadRust4, w: f32, q: f32) {
   unsafe {
-     (*(biquad4 as *mut Biquad4)).update(BiquadCoeffs::lpf(w, q));
+     (*(biquad4 as *mut Biquad4)).update(&BiquadCoeffs::lpf(w, q));
   }
 }
     
 #[unsafe(no_mangle)]
 pub extern "C" fn biquad4_calc_bpf(biquad4: *mut BiquadRust4, w: f32, q: f32) {
   unsafe {
-     (*(biquad4 as *mut Biquad4)).update(BiquadCoeffs::bpf(w, q));
+     (*(biquad4 as *mut Biquad4)).update(&BiquadCoeffs::bpf(w, q));
   }
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn biquad4_calc_hpf(biquad4: *mut BiquadRust4, w: f32, q: f32) {
   unsafe {
-     (*(biquad4 as *mut Biquad4)).update(BiquadCoeffs::hpf(w, q));
+     (*(biquad4 as *mut Biquad4)).update(&BiquadCoeffs::hpf(w, q));
   }
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn biquad4_calc_notch(biquad4: *mut BiquadRust4, w: f32, q: f32) {
   unsafe {
-     (*(biquad4 as *mut Biquad4)).update(BiquadCoeffs::notch(w, q));
+     (*(biquad4 as *mut Biquad4)).update(&BiquadCoeffs::notch(w, q));
   }
 }
 
-#[unsafe(no_mangle)]
-pub extern "C" fn biquad4_calc_peq(biquad4: *mut BiquadRust4, w: f32, q: f32, gain: f32) {
-  unsafe {
-     (*(biquad4 as *mut Biquad4)).update(BiquadCoeffs::peq(w, q, gain));
-  }
-}
+// #[unsafe(no_mangle)]
+// pub extern "C" fn biquad4_calc_peq(biquad4: *mut BiquadRust4, w: f32, q: f32, gain: f32) {
+//   unsafe {
+//      (*(biquad4 as *mut Biquad4)).update(BiquadCoeffs::peq(w, q, gain));
+//   }
+// }
 
 // Biquad 8 pole
 #[repr(C)]
@@ -173,8 +163,8 @@ pub struct BiquadRust8;
 
 #[unsafe(no_mangle)]
 /// Constructor
-pub extern "C" fn biquad8_new() -> *mut BiquadRust8 {
-  let bq8 = Box::new(Biquad8::new());
+pub extern "C" fn biquad8_new(settings: BiquadCoeffs) -> *mut BiquadRust8 {
+  let bq8 = Box::new(Biquad8::new(settings));
   Box::into_raw(bq8) as *mut BiquadRust8
 }
 
@@ -196,44 +186,44 @@ pub extern "C" fn biquad8_process(biquad8: *mut BiquadRust8, sample: f32) -> f32
 #[unsafe(no_mangle)]
 pub extern "C" fn biquad8_update(biquad8: *mut BiquadRust8, coeffs: BiquadCoeffs) {
   unsafe {
-     (*(biquad8 as *mut Biquad8)).update(coeffs);
+     (*(biquad8 as *mut Biquad8)).update(&coeffs);
   }
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn biquad8_calc_lpf(biquad8: *mut BiquadRust8, w: f32, q: f32) {
   unsafe {
-     (*(biquad8 as *mut Biquad8)).update(BiquadCoeffs::lpf(w, q));
+     (*(biquad8 as *mut Biquad8)).update(&BiquadCoeffs::lpf(w, q));
   }
 }
     
 #[unsafe(no_mangle)]
 pub extern "C" fn biquad8_calc_bpf(biquad8: *mut BiquadRust8, w: f32, q: f32) {
   unsafe {
-     (*(biquad8 as *mut Biquad8)).update(BiquadCoeffs::bpf(w, q));
+     (*(biquad8 as *mut Biquad8)).update(&BiquadCoeffs::bpf(w, q));
   }
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn biquad8_calc_hpf(biquad8: *mut BiquadRust8, w: f32, q: f32) {
   unsafe {
-     (*(biquad8 as *mut Biquad8)).update(BiquadCoeffs::hpf(w, q));
+     (*(biquad8 as *mut Biquad8)).update(&BiquadCoeffs::hpf(w, q));
   }
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn biquad8_calc_notch(biquad8: *mut BiquadRust8, w: f32, q: f32) {
   unsafe {
-     (*(biquad8 as *mut Biquad8)).update(BiquadCoeffs::notch(w, q));
+     (*(biquad8 as *mut Biquad8)).update(&BiquadCoeffs::notch(w, q));
   }
 }
 
-#[unsafe(no_mangle)]
-pub extern "C" fn biquad8_calc_peq(biquad8: *mut BiquadRust8, w: f32, q: f32, gain: f32) {
-  unsafe {
-     (*(biquad8 as *mut Biquad8)).update(BiquadCoeffs::peq(w, q, gain));
-  }
-}
+// #[unsafe(no_mangle)]
+// pub extern "C" fn biquad8_calc_peq(biquad8: *mut BiquadRust8, w: f32, q: f32, gain: f32) {
+//   unsafe {
+//      (*(biquad8 as *mut Biquad8)).update(BiquadCoeffs::peq(w, q, gain));
+//   }
+// }
 // CALCULATE COEFFS:
 
 #[unsafe(no_mangle)]

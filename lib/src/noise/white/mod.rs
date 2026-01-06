@@ -1,11 +1,10 @@
-use super::rand::{SeedableRng, rngs::SmallRng, RngCore};
 use super::Prng;
 pub use sc::Noise;
 
 
 /// Using `rand` crate
 pub mod rand {
-  use super::{SeedableRng, SmallRng, RngCore};
+  use rand::{SeedableRng, rngs::SmallRng, RngCore};
   pub struct Noise {
     rng: SmallRng
   }

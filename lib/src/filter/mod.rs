@@ -4,6 +4,7 @@ pub mod onezero;
 pub mod comb;
 pub mod svf;
 
+#[cfg(not(feature="std"))]
 use alloc::{vec, vec::Vec};
 use crate::interpolation::Interpolation;
 
@@ -36,8 +37,8 @@ pub trait SVFTrait {
   fn calc_bpf(&mut self, w: f32, q: f32);
   fn calc_peq(&mut self, w: f32, q: f32, gain: f32);
   fn calc_notch(&mut self, w: f32, q: f32);
-  fn calc_high_shelf(&mut self, w: f32, q: f32, gain: f32) {}
-  fn calc_low_shelf(&mut self, w: f32, q: f32, gain: f32) {}
+  fn calc_high_shelf(&mut self, _w: f32, _q: f32, _gain: f32) {}
+  fn calc_low_shelf(&mut self, _w: f32, _q: f32, _gain: f32) {}
 }
 
 #[macro_export]
