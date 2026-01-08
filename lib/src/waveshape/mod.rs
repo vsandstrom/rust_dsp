@@ -111,7 +111,7 @@ pub trait Waveshape<const N: usize> {
   ) -> Self::Output;
 }
 
-impl<'a, const N: usize> Waveshape<N> for &'a mut [f32] {
+impl<const N: usize> Waveshape<N> for &mut [f32] {
   type Output = ();
 
   fn hanning(&mut self) {

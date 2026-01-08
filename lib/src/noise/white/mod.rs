@@ -2,6 +2,7 @@ use super::Prng;
 pub use sc::Noise;
 
 
+
 /// Using `rand` crate
 pub mod rand {
   use rand::{SeedableRng, rngs::SmallRng, RngCore};
@@ -60,3 +61,18 @@ pub mod sc {
   }
 }
 
+#[cfg(test)]
+mod test {
+  use super::*;
+
+  #[test]
+  fn spread() {
+    let mut rng = Prng::new(1234);
+    let arr: [u32; 1<<13] = std::array::from_fn(|_| rng.trand());
+    let x = arr[0];
+    assert!(arr[1..].iter().all(|y| *y != x));
+    let arr: [f32; 1<<13] = std::array::from_fn(|_| rng.frand_bipolar());
+    let x = arr[0];
+    assert!(arr[1..].iter().all(|y| *y != x));
+  }
+}

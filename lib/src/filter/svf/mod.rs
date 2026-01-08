@@ -1,5 +1,5 @@
 use super::Filter;
-use super::{Lpf, Bpf, Hpf, Notch, Peq, HighShelf, LowShelf, FilterKind};
+use super::{Lpf, Bpf, Hpf, Notch};
 use core::marker::PhantomData;
 
 
@@ -88,7 +88,7 @@ impl<T: SVFKind> SVFilter<T> {
     }
   }
 
-  pub fn set_mode(&mut self, mode: f32) {
+  pub fn set_mode(&mut self, _mode: f32) {
     todo!("moving between filter modes is not yet implemented")
   }
 }

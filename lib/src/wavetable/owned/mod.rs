@@ -24,7 +24,7 @@ impl Clone for Wavetable {
 }
 
 impl Wavetable {
-  pub fn new<'a, const N: usize>(table: &'a [f32; N], samplerate: u32) -> Self {
+  pub fn new<const N: usize>(table: &[f32; N], samplerate: u32) -> Self {
     Self { 
       position: 0.0, 
       table: table.to_vec(),

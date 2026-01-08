@@ -1,4 +1,4 @@
-use rand::{self, Rng};
+use super::Prng;
 
 pub struct ExpensiveNoise {
   counter: u64,
@@ -7,6 +7,7 @@ pub struct ExpensiveNoise {
   inc: f32,
   samplerate: u32,
   sr_recip: f32,
+  rng: Prng
 }
 
 impl ExpensiveNoise {
@@ -23,14 +24,14 @@ impl ExpensiveNoise {
     if self.counter >= self.duration_in_samples {
       self.duration_in_samples = (self.samplerate as f32 * duration) as u64;
       self.counter = 0;
-      let next = rand::thread_rng().gen_range(-1.0..1.0);
+      let next = self.rng.frand_bipolar();
       self.inc = ( next - self.current ) / self.duration_in_samples as f32;
     }
     self.current += self.inc;
     self.current
   }
 
-  pub fn new(samplerate: u32) -> Self {
+  pub fn new(samplerate: u32, seed: u32) -> Self {
     Self {
       current: 0.0,
       inc: 0.0,
@@ -38,6 +39,7 @@ impl ExpensiveNoise {
       duration_in_samples: 0,
       samplerate,
       sr_recip: 1.0/ samplerate as f32,
+      rng: Prng::new(seed),
     }
   }
 
@@ -53,6 +55,6 @@ mod tests {
   
   #[test]
   fn poll() {
-    let _rnd = ExpensiveNoise::new(48000);
+    let _rnd = ExpensiveNoise::new(48000, 1234);
   }
 }

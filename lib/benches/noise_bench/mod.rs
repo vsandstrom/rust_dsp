@@ -13,7 +13,7 @@ use rust_dsp::noise::pink::discord::Noise as PinkNoiseVossDiscord;
 pub fn criterion_benchmark_pink_noise(c: &mut Criterion) {
   let mut group = c.benchmark_group("pink_noise");
   let seed = 12345678;
-  let mut pink1 = PinkNoiseRidgeRat::new(seed as i32);
+  let mut pink1 = PinkNoiseRidgeRat::new(seed);
   let mut pink2 = PinkNoisePK3::new(seed);
   let mut pink3 = PinkNoisePKE::new(seed);
   let mut pink4 = PinkNoiseVossRand::new(seed);

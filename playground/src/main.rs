@@ -53,7 +53,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   let mut pink = PinkNoise::new(seed);
   let mut pink2 = PinkNoise2::new(seed);
   let mut pink3 = PinkNoise3::new(seed);
-  let mut pink4 = PinkNoise4::new(seed as i32);
+  let mut pink4 = PinkNoise4::new(seed);
   let mut white = WhiteNoise::new(seed);
   let mut brown = BrownNoise::new(seed, sr);
   let mut noise_buf = [0.0; 48000];

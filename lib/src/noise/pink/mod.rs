@@ -1,9 +1,10 @@
 // default noise
-pub use ridgerat::Noise;
+pub use voss_mccartney::Noise;
 
 pub mod pk3 {
   use crate::noise::Prng;
-  /// 6.2ns per call - on Intel i7 3.1GHz Quad Core
+  /// 6.26 ns per call - on Intel i7 3.1GHz Quad Core
+  /// 4.81 ns per call - on M3
   pub struct Noise {
     rng: Prng,
     coeffs: [(f32,f32); 6],
@@ -42,7 +43,8 @@ pub mod pk3 {
 }
 
 pub mod pke {
-  /// 4.9ns per call - on Intel i7 3.1GHz Quad Core
+  /// 4.32 ns per call - on Intel i7 3.1GHz Quad Core
+  /// 2.46 ns per call - on M3
   use crate::noise::{Prng};
   pub struct Noise {
     rng: Prng,
@@ -95,7 +97,8 @@ pub mod pke {
 /// ```
 /// https://www.firstpr.com.au/dsp/pink-noise/#Filtering
 pub mod voss_mccartney2 {
-  /// 8.2ns per call - on Intel i7 3.1GHz Quad Core
+  /// 6.25 ns per call - on Intel i7 3.1GHz Quad Core
+  /// 6.72 ns per call - on M3
   use rand::{SeedableRng, rngs::SmallRng, RngCore};
   pub struct Noise {
     noise: [u32; 16],
@@ -149,7 +152,8 @@ pub mod voss_mccartney2 {
 /// ```
 /// https://www.firstpr.com.au/dsp/pink-noise/#Filtering
 pub mod voss_mccartney {
-  /// 4.6ns per call - on Intel i7 3.1GHz Quad Core
+  /// 4.41 ns per call - on Intel i7 3.1GHz Quad Core
+  /// 4.29 ns per call - on M3
   use crate::noise::Prng;
   pub struct Noise {
     noise: [u32; 16],
@@ -185,7 +189,8 @@ pub mod voss_mccartney {
 /// Voss-McCartney design with extremely simple RNG suggested by `Matthijs` and `Skythedragon` on
 /// the `Rust Audio discord`
 pub mod discord {
-  /// 7.2ns per call - on Intel i7 3.1GHz Quad Core
+  /// 3.04 ns per call - on Intel i7 3.1GHz Quad Core
+  /// 3.57 ns per call - on M3
   pub struct Noise {
     noise: [u32; 16],
     total: u32,
@@ -225,8 +230,9 @@ pub mod discord {
 /// refs:
 /// http://www.ridgerat-tech.us/pink/newpink.htm
 /// https://github.com/BillyDM/Firewheel/blob/f72f532b9714eca27db3960ea6bc0ba91215b80b/crates/firewheel-nodes/src/noise_generator/pink.rs#L145
-mod ridgerat {
-  /// 7.2ns per call - on Intel i7 3.1GHz Quad Core
+pub mod ridgerat {
+  /// 6.20 ns per call - on Intel i7 3.1GHz Quad Core
+  /// 4.71 ns per call - on M3
   pub struct Noise {
     seed: i32,
     contrib: [i32; 5],

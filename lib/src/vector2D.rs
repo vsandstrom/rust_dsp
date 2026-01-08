@@ -34,8 +34,8 @@ impl From<(f32, f32)> for Coord {
 type Vector = Coord;
 
 pub struct Table2D<const LENGTH: usize> {
+  table: [f32; LENGTH],
   coords: Coord,
-  table: [f32; LENGTH]
 }
 
 pub struct VectorOscillator2D {

@@ -1,4 +1,3 @@
-use crate::noise::white;
 use crate::filter::onepole::Onepole;
 use crate::filter::Filter;
 use super::Prng;
