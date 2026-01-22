@@ -178,7 +178,7 @@ pub mod voss_mccartney {
       let next = self.rng.trand() >> 13;
       let prev = self.noise[i];
       self.noise[i] = next;
-      self.total += next - prev;
+      self.total = self.total.wrapping_add(next.wrapping_sub(prev));
       let val = f32::from_bits((self.total + (self.rng.trand() >> 13)) | crate::noise::BIPOLAR);
       val - 3.0
     }

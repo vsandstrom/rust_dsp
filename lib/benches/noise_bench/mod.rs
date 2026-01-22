@@ -64,6 +64,7 @@ pub fn criterion_benchmark_noise(c: &mut Criterion) {
   let mut prng = Prng::new(12345678);
   let mut rrng = SmallRng::from_rng(&mut rand::rng());
   let mut osrng = SmallRng::from_os_rng();
+  let mut wrng = WhiteNoise::new(12345678);
 
   // group.bench_function("XorShift unipolar float", |b| {
   //   b.iter(|| {
@@ -147,6 +148,13 @@ pub fn criterion_benchmark_noise(c: &mut Criterion) {
     })
   });
 
+  group.bench_function("LFSR", |b| {
+    let seed = 12345678;
+    let mut rng = WhiteNoise::new(seed);
+    b.iter(|| {
+      let _ = rng.process();
+    })
+  });
 
 }
 
@@ -228,5 +236,32 @@ impl XOrShift32Rng {
   #[inline]
   pub fn gen_noise_f64(&mut self) -> f64 {
     f64::from(self.gen_u32()) * (2.0 / 4_294_967_295.0) - 1.0
+  }
+}
+
+
+struct WhiteNoise {
+  seed: u32,
+}
+
+impl WhiteNoise {
+  const MASK: u32 = 0b1;
+  const N: u32 = 31;
+  const M: u32 = 21;
+
+  fn new(seed: u32) -> Self {
+    Self { seed }
+  }
+
+  #[inline(always)]
+  fn process(&mut self) -> f32 {
+    let fb = (
+      (self.seed >> Self::N) ^
+      (self.seed >> Self::M) ^
+      (self.seed >> 1) ^
+      (self.seed)) & Self::MASK;
+
+    self.seed = (self.seed << 1) | fb;
+    f32::from_bits(0x40000000 | (self.seed >> 9)) - 3.0
   }
 }

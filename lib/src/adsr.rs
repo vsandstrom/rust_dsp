@@ -6,12 +6,13 @@ pub enum Reset {
   #[default] Soft
 }
 
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 enum EnvStage {
   #[default] Atk,
   Dec,
   Sus,
-  Rel
+  Rel,
+  Waiting
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -24,7 +25,6 @@ pub struct ADSREnvelope {
   dec_curve: f32,
 
   sus_value: f32,
-
   rel_duration: f32,
   rel_curve: f32,
 
@@ -42,14 +42,14 @@ impl ADSREnvelope {
   pub fn new(samplerate: u32) -> Self {
     Self {
       atk_value: 1.0,
-      atk_duration: 1.0,
+      atk_duration: 4.0,
       atk_curve: 0.2,
       dec_duration: 0.5,
       dec_curve: 0.8,
       sus_value: 0.5,
       rel_duration: 2.0,
       rel_curve: 0.8,
-      stage: EnvStage::Atk,
+      stage: EnvStage::Waiting,
       start: f32::EPSILON,
       prev: f32::EPSILON,
       next: f32::EPSILON,
@@ -61,11 +61,16 @@ impl ADSREnvelope {
   }
 
 
-  pub fn play(&mut self, sustain: bool) -> f32 {
+  pub fn play(&mut self, trig: bool) -> f32 {
     debug_assert!(self.sr > f32::EPSILON, "forgotten to set the samplerate?");
-    if !self.playing { return 0.0; }
-    if !sustain {
+    if trig && self.stage == EnvStage::Waiting {
+      self.stage = EnvStage::Atk;
+      self.playing = true;
+      self.prev = self.next;
+      self.count = 0;
+    } else if !trig {
       match self.stage {
+        EnvStage::Waiting => { return 0.0; }
         EnvStage::Rel => (),
         _ => {
           // Aborts any stage if sustain is false, and immediately enters the Release stage.
@@ -74,9 +79,10 @@ impl ADSREnvelope {
           self.count = 0;
         }
       }
-    }
+    } 
 
     let env = match self.stage {
+      EnvStage::Waiting => { unreachable!() }
       EnvStage::Atk => {
         self.count += 1;
         self.process(self.start, self.atk_value, self.atk_duration, self.atk_curve, self.count)
@@ -92,14 +98,14 @@ impl ADSREnvelope {
         self.count += 1;
         self.process(self.prev, f32::EPSILON, self.rel_duration, self.rel_curve, self.count)
       }
-  };
+    };
 
-  match self.stage {
-    EnvStage::Atk => {
-      if self.count >= (self.atk_duration * self.sr) as usize { 
-        self.stage = EnvStage::Dec; 
-        self.count = 0;
-        self.prev = env;
+    match dbg!(self.stage) {
+      EnvStage::Atk => {
+        if self.count >= (self.atk_duration * self.sr) as usize { 
+          self.stage = EnvStage::Dec; 
+          self.count = 0;
+          self.prev = env;
         }
       },
       EnvStage::Dec => {
@@ -112,13 +118,14 @@ impl ADSREnvelope {
       EnvStage::Sus => (),
       EnvStage::Rel => {
         if self.count >= (self.rel_duration * self.sr) as usize { 
-          self.stage = EnvStage::Atk; 
+          self.stage = EnvStage::Waiting; 
           self.playing = false;
           self.prev = env;
         }
       },
+      EnvStage::Waiting => unreachable!()
     }
-    self.next = env;
+      self.next = env;
     env
   }
   

@@ -30,21 +30,21 @@ pub extern "C" fn delay_delete(delay: *mut DelayRust) {
   }
 }
 
-#[unsafe(no_mangle)]
-pub extern "C" fn delay_play_linear(delay: *mut DelayRust, buffer: *mut f32, buf_len: usize, input: f32, seconds: f32, feedback: f32) -> f32 {
-  unsafe {
-    let buffer = from_raw_parts_mut(buffer, buf_len);
-    (*(delay as *mut Delay)).play::<Linear>(buffer, input, seconds, feedback)
-  }
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn delay_play_cubic(delay: *mut DelayRust, buffer: *mut f32, buf_len: usize, input: f32, seconds: f32, feedback: f32) -> f32 {
-  unsafe {
-    let buffer = from_raw_parts_mut(buffer, buf_len);
-    (*(delay as *mut Delay)).play::<Cubic>(buffer, input, seconds, feedback)
-  }
-}
+// #[unsafe(no_mangle)]
+// pub extern "C" fn delay_play_linear(delay: *mut DelayRust, buffer: *mut f32, buf_len: usize, input: f32, seconds: f32, feedback: f32) -> f32 {
+//   unsafe {
+//     let buffer = from_raw_parts_mut(buffer, buf_len);
+//     (*(delay as *mut Delay)).play::<Linear>(buffer, input, seconds, feedback)
+//   }
+// }
+//
+// #[unsafe(no_mangle)]
+// pub extern "C" fn delay_play_cubic(delay: *mut DelayRust, buffer: *mut f32, buf_len: usize, input: f32, seconds: f32, feedback: f32) -> f32 {
+//   unsafe {
+//     let buffer = from_raw_parts_mut(buffer, buf_len);
+//     (*(delay as *mut Delay)).play::<Cubic>(buffer, input, seconds, feedback)
+//   }
+// }
 
 
 

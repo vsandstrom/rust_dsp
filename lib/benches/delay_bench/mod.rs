@@ -3,12 +3,13 @@ use rust_dsp::delay::{Delay, FixedDelay, delay};
 use rust_dsp::interpolation::Linear;
 
 const SIZE: usize = 8*48000;
+const DELAY: usize = 12345;
 
 fn delay_interpolated(d: &mut Delay, input: f32, buffer: &mut [f32]) {
   for _ in 0..256 {d.play::<Linear>(buffer, input, 0.1, 0.1);}
 }
 
-fn fixed_delay(fd: &mut FixedDelay<SIZE>, input: f32) {
+fn fixed_delay(fd: &mut FixedDelay<DELAY, SIZE>, input: f32) {
   for _ in 0..256 {fd.play(input, 0.1);}
 }
 
@@ -52,7 +53,7 @@ pub fn criterion_benchmark_delay(c: &mut Criterion) {
   });
   
   let signal = 1.0;
-  group.bench_function("fixed size delay", |b| {
+  group.bench_function("fixed size delay with bitmask", |b| {
     b.iter(|| {
       fixed_delay(&mut fd, signal);
     })
@@ -102,7 +103,6 @@ pub fn outer_delay(buffer: &mut [f32], pos: &mut usize, input: f32, feedback: f3
   *pos += 1;
   out
 }
-
  
 impl FixedDelayAltered {
   pub fn play(&mut self, buffer: &mut [f32], input: f32, feedback: f32) -> f32 {
